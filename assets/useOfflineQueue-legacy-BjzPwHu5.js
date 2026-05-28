@@ -1,0 +1,1 @@
+System.register(["./useOfflineQueue-legacy-Dylu7Joy.js"],function(e,t){var u;return{setters:[function(e){u=e.n,e.t}],execute:function(){e("queueWrite",u)}}});
