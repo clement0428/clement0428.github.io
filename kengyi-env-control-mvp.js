@@ -4,8 +4,8 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "control-proposal-tabs";
-  const DEPLOYED_AT = "2026-06-01T09:40:00+08:00";
+  const BUILD_ID = "control-proposal-ledger";
+  const DEPLOYED_AT = "2026-06-01T10:20:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
@@ -211,6 +211,45 @@
         舊版環控功能保留在下方原頁面。切回「耕譯建議」時，只顯示已由耕譯篩選的環控候選。
       </div>
       <div class="kengyi-new-content" data-testid="kengyi-control-proposal-content">
+
+      <div class="kengyi-active-panel" data-testid="kengyi-active-control-suggestions">
+        <div class="kengyi-section-title">目前有效建議</div>
+        <div class="kengyi-active-grid">
+          <div class="kengyi-active-card"><b>V7-V12 今日澆水排程</b><span>清水日短脈衝測試，依排液 EC 與排液率回看。</span><em>testing</em></div>
+          <div class="kengyi-active-card"><b>11:00 後禁止大量灌溉</b><span>高溫時段先保守，避免水溫與蒸散造成誤判。</span><em>active_rule</em></div>
+          <div class="kengyi-active-card"><b>給肥日不得當補水</b><span>水肥同管時，加水會同步加肥，不得解讀成單純補水。</span><em>validated_rule</em></div>
+        </div>
+      </div>
+
+      <div class="kengyi-ledger-panel" data-testid="kengyi-analysis-ledger">
+        <div class="kengyi-ledger-head">
+          <div>
+            <div class="kengyi-section-title">耕譯分析批次</div>
+            <div class="kengyi-ledger-title">2026/06/01 麻豆1場｜EC 與控水分析</div>
+          </div>
+          <span>4 個問題 · 6 筆環控建議 · 不覆蓋歷史</span>
+        </div>
+        <div class="kengyi-issue-list">
+          <section class="kengyi-issue-card" data-testid="kengyi-issue-1">
+            <div class="kengyi-issue-head"><b>問題1：排液 EC 不均</b><span>linked_memory: madou-ec-uneven-root-cause-20260601</span></div>
+            <div class="kengyi-proposal-row"><strong>V7-V10 清水日短脈衝</strong><span>pending_confirmation</span><em>control-proposal-20260601-001</em></div>
+            <div class="kengyi-proposal-row"><strong>追蹤排液率 15-20%</strong><span>verifying</span><em>control-proposal-20260601-001b</em></div>
+          </section>
+          <section class="kengyi-issue-card" data-testid="kengyi-issue-2">
+            <div class="kengyi-issue-head"><b>問題2：高溫時段風險</b><span>no_go_conditions</span></div>
+            <div class="kengyi-proposal-row"><strong>11:00 後禁止大量灌溉</strong><span>active_rule</span><em>control-proposal-20260601-002</em></div>
+          </section>
+          <section class="kengyi-issue-card" data-testid="kengyi-issue-3">
+            <div class="kengyi-issue-head"><b>問題3：給肥日誤判</b><span>fertigation_context: clear_water_day_only</span></div>
+            <div class="kengyi-proposal-row"><strong>給肥日不得把加水解讀成補水</strong><span>validated_rule</span><em>control-proposal-20260601-003</em></div>
+          </section>
+          <section class="kengyi-issue-card current" data-testid="kengyi-issue-4">
+            <div class="kengyi-issue-head"><b>問題4：控水策略</b><span>supersedes: none · related: 001, 002, 003</span></div>
+            <div class="kengyi-proposal-row"><strong>V7-V12 今日澆水排程</strong><span>testing</span><em>control-proposal-20260601-004</em></div>
+            <div class="kengyi-proposal-row"><strong>若作物勢下降，回復前一版秒數</strong><span>pending_confirmation</span><em>rollback-plan-20260601-004</em></div>
+          </section>
+        </div>
+      </div>
 
       <div class="kengyi-workbench">
         <div class="kengyi-section-title">待處理環控建議</div>

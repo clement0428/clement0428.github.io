@@ -132,12 +132,128 @@
 }
 
 .kengyi-workbench,
-.kengyi-trace-panel {
+.kengyi-trace-panel,
+.kengyi-active-panel,
+.kengyi-ledger-panel {
   margin-bottom: 14px;
   padding: 14px;
   border: 1px solid #dfe5e6;
   border-radius: 10px;
   background: #fbfcfc;
+}
+
+.kengyi-active-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kengyi-active-card {
+  min-height: 112px;
+  padding: 12px;
+  border: 1px solid #b7d8bd;
+  border-radius: 8px;
+  background: #eef8ef;
+}
+
+.kengyi-active-card b,
+.kengyi-proposal-row strong {
+  display: block;
+  color: #132225;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.kengyi-active-card span {
+  display: block;
+  margin-top: 7px;
+  color: #405055;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.kengyi-active-card em,
+.kengyi-proposal-row span {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #fff8c9;
+  color: #5f5400;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.kengyi-ledger-head {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.kengyi-ledger-head > span {
+  color: #667579;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.kengyi-ledger-title {
+  color: #132225;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.kengyi-issue-list {
+  display: grid;
+  gap: 10px;
+}
+
+.kengyi-issue-card {
+  padding: 12px;
+  border: 1px solid #dfe5e6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.kengyi-issue-card.current {
+  border-color: #42a651;
+  background: #f4fbf5;
+}
+
+.kengyi-issue-head {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.kengyi-issue-head b {
+  color: #132225;
+  font-size: 14px;
+}
+
+.kengyi-issue-head span,
+.kengyi-proposal-row em {
+  color: #667579;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.kengyi-proposal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid #eef1f2;
+}
+
+.kengyi-proposal-row:first-of-type {
+  border-top: 0;
 }
 
 .kengyi-queue-card {
@@ -743,6 +859,7 @@
   .kengyi-decision-island,
   .kengyi-outcome-strip,
   .kengyi-operational-grid,
+  .kengyi-active-grid,
   .kengyi-queue-card,
   .kengyi-trace-grid,
   .kengyi-taguchi-grid {
@@ -751,6 +868,17 @@
 
   .kengyi-lifecycle {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kengyi-ledger-head,
+  .kengyi-issue-head,
+  .kengyi-proposal-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .kengyi-ledger-head > span {
+    white-space: normal;
   }
 
   .kengyi-monitor-grid {
