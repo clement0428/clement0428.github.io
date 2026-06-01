@@ -4,8 +4,8 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "control-proposal-ledger";
-  const DEPLOYED_AT = "2026-06-01T10:20:00+08:00";
+  const BUILD_ID = "control-orchestrator";
+  const DEPLOYED_AT = "2026-06-01T11:05:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
@@ -212,6 +212,95 @@
       </div>
       <div class="kengyi-new-content" data-testid="kengyi-control-proposal-content">
 
+      <div class="kengyi-orchestrator" data-testid="kengyi-ai-orchestrator">
+        <div class="kengyi-orchestrator-top">
+          <div>
+            <div class="kengyi-section-title">AI 決策流 Orchestrator</div>
+            <div class="kengyi-orchestrator-title">2026/06/01 麻豆1場｜EC 與控水分析</div>
+            <div class="kengyi-orchestrator-subtitle">問題不是報告項目，而是可切換的決策節點；每個節點都有設備、限制、驗證、回寫與取代關係。</div>
+          </div>
+          <div class="kengyi-live-rules" data-testid="kengyi-live-rules">
+            <b>現場現在要遵守</b>
+            <span>V7-V12 今日澆水排程</span>
+            <span>11:00 後禁止大量灌溉</span>
+            <span>給肥日不得當補水</span>
+          </div>
+        </div>
+
+        <div class="kengyi-orchestrator-grid">
+          <nav class="kengyi-issue-nav" data-testid="kengyi-issue-switcher" aria-label="耕譯問題切換">
+            <button class="active" type="button" data-kengyi-issue="1" onclick="window.__kengyiSetIssue && window.__kengyiSetIssue('1')"><em>01</em><b>排液 EC 不均</b><span>pending + verifying</span></button>
+            <button type="button" data-kengyi-issue="2" onclick="window.__kengyiSetIssue && window.__kengyiSetIssue('2')"><em>02</em><b>高溫時段風險</b><span>active_rule</span></button>
+            <button type="button" data-kengyi-issue="3" onclick="window.__kengyiSetIssue && window.__kengyiSetIssue('3')"><em>03</em><b>給肥日誤判</b><span>validated_rule</span></button>
+            <button type="button" data-kengyi-issue="4" onclick="window.__kengyiSetIssue && window.__kengyiSetIssue('4')"><em>04</em><b>控水策略</b><span>testing</span></button>
+          </nav>
+
+          <main class="kengyi-decision-stage" data-testid="kengyi-decision-stage">
+            <section class="kengyi-issue-pane active" data-kengyi-issue-pane="1" data-testid="kengyi-issue-pane-1">
+              <div class="kengyi-pane-kicker">問題1 · control-proposal-20260601-001</div>
+              <h3>排液 EC 不均：先用 V7-V10 清水短脈衝驗證</h3>
+              <p>這不是單點補水，而是先驗證 L1-L21 的排液 EC 是否收斂。AI 只提出候選，Hugreen 仍由人工設定。</p>
+              <div class="kengyi-action-matrix">
+                <div><b>設備</b><span>V7 / V8 / V9 / V10</span></div>
+                <div><b>建議</b><span>清水日 5 次/天，0:45-1:20</span></div>
+                <div><b>驗證</b><span>排液 EC、排液率、Brix、A級率</span></div>
+              </div>
+            </section>
+            <section class="kengyi-issue-pane" data-kengyi-issue-pane="2" data-testid="kengyi-issue-pane-2">
+              <div class="kengyi-pane-kicker">問題2 · control-proposal-20260601-002</div>
+              <h3>高溫時段風險：11:00 後禁止大量灌溉</h3>
+              <p>高溫時段水溫、蒸散與根區反應容易混在一起；先形成保護規則，避免把控水測試誤判成補水成功。</p>
+              <div class="kengyi-action-matrix">
+                <div><b>規則</b><span>11:00 後不做大量灌溉</span></div>
+                <div><b>狀態</b><span>active_rule</span></div>
+                <div><b>回寫</b><span>若違反限制，標記測試無效</span></div>
+              </div>
+            </section>
+            <section class="kengyi-issue-pane" data-kengyi-issue-pane="3" data-testid="kengyi-issue-pane-3">
+              <div class="kengyi-pane-kicker">問題3 · control-proposal-20260601-003</div>
+              <h3>給肥日誤判：加水不能被當成單純補水</h3>
+              <p>水肥同管時，給肥日加水會同步改變肥分。這條已驗證規則會約束後續所有控水建議。</p>
+              <div class="kengyi-action-matrix">
+                <div><b>上下文</b><span>fertigation_context: clear_water_day_only</span></div>
+                <div><b>狀態</b><span>validated_rule</span></div>
+                <div><b>約束</b><span>給肥日不得當補水</span></div>
+              </div>
+            </section>
+            <section class="kengyi-issue-pane" data-kengyi-issue-pane="4" data-testid="kengyi-issue-pane-4">
+              <div class="kengyi-pane-kicker">問題4 · control-proposal-20260601-004</div>
+              <h3>控水策略：V7-V12 今日澆水排程進入測試</h3>
+              <p>問題4 不覆蓋問題1/2/3，而是引用它們：EC 不均提供目標，高溫限制提供 no-go，給肥日規則提供執行邊界。</p>
+              <div class="kengyi-action-matrix">
+                <div><b>設備</b><span>V7-V12</span></div>
+                <div><b>狀態</b><span>testing</span></div>
+                <div><b>回復</b><span>作物勢下降或 EC 過度稀釋即回前版</span></div>
+              </div>
+            </section>
+          </main>
+
+          <aside class="kengyi-ai-context" data-testid="kengyi-ai-context">
+            <div class="kengyi-context-block"><b>引用記憶</b><span data-kengyi-context="memory">madou-ec-uneven-root-cause-20260601</span></div>
+            <div class="kengyi-context-block"><b>限制條件</b><span data-kengyi-context="guardrail">清水日限定；11:00 後不大量灌溉</span></div>
+            <div class="kengyi-context-block"><b>取代關係</b><span data-kengyi-context="supersede">不取代舊建議；建立 related_proposal_ids</span></div>
+            <div class="kengyi-context-block"><b>下一步</b><span data-kengyi-context="next">人工確認後寫入 operation_event_logs</span></div>
+          </aside>
+        </div>
+
+        <div class="kengyi-learning-rail" data-testid="kengyi-learning-loop">
+          <span>耕譯分析批次</span>
+          <i></i>
+          <span>問題節點</span>
+          <i></i>
+          <span>環控候選</span>
+          <i></i>
+          <span>人工確認</span>
+          <i></i>
+          <span>現場驗證</span>
+          <i></i>
+          <span>回寫學習</span>
+        </div>
+      </div>
+
       <div class="kengyi-active-panel" data-testid="kengyi-active-control-suggestions">
         <div class="kengyi-section-title">目前有效建議</div>
         <div class="kengyi-active-grid">
@@ -349,7 +438,16 @@
     } else {
       target.parentNode.insertBefore(panel, target.nextSibling);
     }
-    setupControlTabs(panel, target);
+    try {
+      setupControlTabs(panel, target);
+    } catch (error) {
+      console.warn("KengYi control tabs setup failed", error);
+    }
+    try {
+      setupIssueOrchestrator(panel);
+    } catch (error) {
+      console.warn("KengYi issue orchestrator setup failed", error);
+    }
     panel.querySelector('[data-kengyi-action="post"]').addEventListener("click", postEventLog);
     panel.querySelector('[data-kengyi-action="copy"]').addEventListener("click", copySuggestion);
     panel.querySelector('[data-kengyi-action="testing"]').addEventListener("click", () => {
@@ -397,6 +495,57 @@
     });
     window.__kengyiControlTabs = { setTab };
     setTab("proposal");
+  }
+
+  function setupIssueOrchestrator(panel) {
+    const context = {
+      "1": {
+        memory: "madou-ec-uneven-root-cause-20260601",
+        guardrail: "清水日限定；給肥日不當補水",
+        supersede: "保留原建議，等待驗證結果",
+        next: "確認 V7-V10 是否讓排液 EC 收斂"
+      },
+      "2": {
+        memory: "madou-high-temp-irrigation-risk-20260601",
+        guardrail: "11:00 後不做大量灌溉",
+        supersede: "成為所有控水測試的 no-go rule",
+        next: "若違反限制，該次測試標記無效"
+      },
+      "3": {
+        memory: "madou-fertigation-coupled-risk-20260601",
+        guardrail: "給肥日不得解讀成單純補水",
+        supersede: "validated_rule，約束後續建議",
+        next: "耕譯輸出需帶 fertigation_context"
+      },
+      "4": {
+        memory: "madou-water-control-strategy-20260601",
+        guardrail: "引用問題1/2/3 的限制後執行",
+        supersede: "不覆蓋 001/002/003；建立 related_proposal_ids",
+        next: "進入 testing，24-48h 後回寫 validated 或 failed"
+      }
+    };
+    const setIssue = (issueId) => {
+      panel.querySelectorAll("[data-kengyi-issue]").forEach((button) => {
+        const active = button.getAttribute("data-kengyi-issue") === issueId;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      panel.querySelectorAll("[data-kengyi-issue-pane]").forEach((pane) => {
+        pane.classList.toggle("active", pane.getAttribute("data-kengyi-issue-pane") === issueId);
+      });
+      const selected = context[issueId];
+      if (!selected) return;
+      Object.entries(selected).forEach(([key, value]) => {
+        const target = panel.querySelector(`[data-kengyi-context="${key}"]`);
+        if (target) target.textContent = value;
+      });
+    };
+    panel.querySelectorAll("[data-kengyi-issue]").forEach((button) => {
+      button.addEventListener("click", () => setIssue(button.getAttribute("data-kengyi-issue")));
+    });
+    window.__kengyiSetIssue = setIssue;
+    window.__kengyiIssueOrchestrator = { setIssue };
+    setIssue("1");
   }
 
   function markDeviceCards() {

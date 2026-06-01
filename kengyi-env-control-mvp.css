@@ -131,6 +131,227 @@
   color: #243033;
 }
 
+.kengyi-orchestrator {
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid #cfd8da;
+  border-radius: 10px;
+  background: #f8fbfb;
+}
+
+.kengyi-orchestrator-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.kengyi-orchestrator-title {
+  color: #132225;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.kengyi-orchestrator-subtitle {
+  margin-top: 6px;
+  color: #667579;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.kengyi-live-rules {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid #b7d8bd;
+  border-radius: 8px;
+  background: #eef8ef;
+}
+
+.kengyi-live-rules b {
+  color: #132225;
+  font-size: 13px;
+}
+
+.kengyi-live-rules span {
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: #fff;
+  color: #263238;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.kengyi-orchestrator-grid {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr) 280px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.kengyi-issue-nav {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.kengyi-issue-nav button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 5px 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #dfe5e6;
+  border-radius: 8px;
+  background: #fff;
+  color: #243033;
+  cursor: pointer;
+  text-align: left;
+}
+
+.kengyi-issue-nav button.active {
+  border-color: #42a651;
+  background: #eef8ef;
+  box-shadow: inset 4px 0 0 #42a651;
+}
+
+.kengyi-issue-nav em {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #e2cf35;
+  color: #132225;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.kengyi-issue-nav b {
+  color: #132225;
+  font-size: 13px;
+}
+
+.kengyi-issue-nav span {
+  color: #667579;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.kengyi-decision-stage,
+.kengyi-ai-context {
+  min-height: 360px;
+  padding: 14px;
+  border: 1px solid #dfe5e6;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.kengyi-issue-pane {
+  display: none;
+}
+
+.kengyi-issue-pane.active {
+  display: block;
+}
+
+.kengyi-pane-kicker {
+  color: #6b640f;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.kengyi-issue-pane h3 {
+  margin: 8px 0 8px;
+  color: #132225;
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.kengyi-issue-pane p {
+  margin: 0;
+  color: #405055;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.kengyi-action-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.kengyi-action-matrix div,
+.kengyi-context-block {
+  padding: 10px;
+  border: 1px solid #dfe5e6;
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+
+.kengyi-action-matrix b,
+.kengyi-context-block b {
+  display: block;
+  margin-bottom: 5px;
+  color: #132225;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.kengyi-action-matrix span,
+.kengyi-context-block span {
+  color: #405055;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.kengyi-ai-context {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+}
+
+.kengyi-learning-rail {
+  display: grid;
+  grid-template-columns: repeat(6, auto) 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid #dfe5e6;
+  border-radius: 8px;
+  background: #fff;
+  overflow-x: auto;
+}
+
+.kengyi-learning-rail span {
+  color: #132225;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.kengyi-learning-rail i {
+  width: 24px;
+  height: 2px;
+  background: #42a651;
+}
+
+.kengyi-active-panel,
+.kengyi-ledger-panel,
+.kengyi-workbench,
+.kengyi-outcome-strip,
+.kengyi-operational-grid,
+.kengyi-monitor-section,
+.kengyi-trace-panel {
+  display: none;
+}
+
 .kengyi-workbench,
 .kengyi-trace-panel,
 .kengyi-active-panel,
@@ -857,9 +1078,12 @@
 @media (max-width: 980px) {
   .kengyi-loop,
   .kengyi-decision-island,
+  .kengyi-orchestrator-top,
+  .kengyi-orchestrator-grid,
   .kengyi-outcome-strip,
   .kengyi-operational-grid,
   .kengyi-active-grid,
+  .kengyi-action-matrix,
   .kengyi-queue-card,
   .kengyi-trace-grid,
   .kengyi-taguchi-grid {
