@@ -184,6 +184,77 @@
   font-weight: 800;
 }
 
+.kengyi-equation-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(420px, 0.9fr);
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #202833;
+  border-radius: 10px;
+  background: #111820;
+  color: #fff;
+}
+
+.kengyi-equation-main {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-height: 96px;
+}
+
+.kengyi-equation-label {
+  color: #e2cf35;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.kengyi-equation-main code,
+.kengyi-formula-card code {
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  letter-spacing: 0;
+}
+
+.kengyi-equation-main code {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.kengyi-equation-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kengyi-equation-kpis div {
+  min-height: 96px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.kengyi-equation-kpis b,
+.kengyi-equation-kpis span {
+  display: block;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.kengyi-equation-kpis strong {
+  display: block;
+  margin: 7px 0 6px;
+  color: #e2cf35;
+  font-size: 21px;
+  line-height: 1;
+}
+
 .kengyi-orchestrator-grid {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr) 280px;
@@ -277,6 +348,36 @@
   color: #405055;
   font-size: 14px;
   line-height: 1.65;
+}
+
+.kengyi-formula-card {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #a8c6d9;
+  border-left: 5px solid #277da1;
+  border-radius: 8px;
+  background: #f3f9fc;
+}
+
+.kengyi-formula-card b {
+  color: #0d3b4b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.kengyi-formula-card code {
+  color: #132225;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.kengyi-formula-card span {
+  color: #405055;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .kengyi-action-matrix {
@@ -1079,6 +1180,7 @@
   .kengyi-loop,
   .kengyi-decision-island,
   .kengyi-orchestrator-top,
+  .kengyi-equation-board,
   .kengyi-orchestrator-grid,
   .kengyi-outcome-strip,
   .kengyi-operational-grid,
@@ -1091,6 +1193,10 @@
   }
 
   .kengyi-lifecycle {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kengyi-equation-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1146,8 +1252,14 @@
 
   .kengyi-mvp-head,
   .kengyi-lifecycle,
+  .kengyi-equation-kpis,
   .kengyi-monitor-grid {
     grid-template-columns: 1fr;
+  }
+
+  .kengyi-equation-main code,
+  .kengyi-formula-card code {
+    font-size: 15px;
   }
 
   .kengyi-mvp-title,

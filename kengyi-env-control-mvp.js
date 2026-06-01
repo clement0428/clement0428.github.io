@@ -4,8 +4,8 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "control-orchestrator";
-  const DEPLOYED_AT = "2026-06-01T11:05:00+08:00";
+  const BUILD_ID = "control-equation-engine";
+  const DEPLOYED_AT = "2026-06-01T19:55:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
@@ -227,6 +227,19 @@
           </div>
         </div>
 
+        <div class="kengyi-equation-board" data-testid="kengyi-control-equation-engine">
+          <div class="kengyi-equation-main">
+            <span class="kengyi-equation-label">本輪目標函數</span>
+            <code>Max Score = 0.42*Yield + 0.28*Quality - 0.18*WaterCost - 0.12*Risk</code>
+          </div>
+          <div class="kengyi-equation-kpis">
+            <div><b>產量</b><strong>+8~12%</strong><span>排液率 15-20%</span></div>
+            <div><b>品質</b><strong>+5%</strong><span>Brix / A級率</span></div>
+            <div><b>成本</b><strong>-10~15%</strong><span>水肥與工時</span></div>
+            <div><b>風險</b><strong>&lt; 0.30</strong><span>高溫/給肥日 no-go</span></div>
+          </div>
+        </div>
+
         <div class="kengyi-orchestrator-grid">
           <nav class="kengyi-issue-nav" data-testid="kengyi-issue-switcher" aria-label="耕譯問題切換">
             <button class="active" type="button" data-kengyi-issue="1" onclick="window.__kengyiSetIssue && window.__kengyiSetIssue('1')"><em>01</em><b>排液 EC 不均</b><span>pending + verifying</span></button>
@@ -240,6 +253,11 @@
               <div class="kengyi-pane-kicker">問題1 · control-proposal-20260601-001</div>
               <h3>排液 EC 不均：先用 V7-V10 清水短脈衝驗證</h3>
               <p>這不是單點補水，而是先驗證 L1-L21 的排液 EC 是否收斂。AI 只提出候選，Hugreen 仍由人工設定。</p>
+              <div class="kengyi-formula-card" data-testid="kengyi-equation-issue-1">
+                <b>候選方程式</b>
+                <code>EC均勻度 = 1 - std(DrainEC_L1..L21) / avg(DrainEC_L1..L21)</code>
+                <span>本輪門檻：EC均勻度 >= 0.82，排液率維持 15-20%，才允許升級為 active_rule。</span>
+              </div>
               <div class="kengyi-action-matrix">
                 <div><b>設備</b><span>V7 / V8 / V9 / V10</span></div>
                 <div><b>建議</b><span>清水日 5 次/天，0:45-1:20</span></div>
@@ -250,6 +268,11 @@
               <div class="kengyi-pane-kicker">問題2 · control-proposal-20260601-002</div>
               <h3>高溫時段風險：11:00 後禁止大量灌溉</h3>
               <p>高溫時段水溫、蒸散與根區反應容易混在一起；先形成保護規則，避免把控水測試誤判成補水成功。</p>
+              <div class="kengyi-formula-card" data-testid="kengyi-equation-issue-2">
+                <b>候選方程式</b>
+                <code>HeatRisk = sigmoid(0.18*(AirTemp-30) + 0.12*(WaterTemp-28) + 0.35*After11)</code>
+                <span>本輪門檻：HeatRisk >= 0.65 時，候選只可提醒，不可推送大量灌溉。</span>
+              </div>
               <div class="kengyi-action-matrix">
                 <div><b>規則</b><span>11:00 後不做大量灌溉</span></div>
                 <div><b>狀態</b><span>active_rule</span></div>
@@ -260,6 +283,11 @@
               <div class="kengyi-pane-kicker">問題3 · control-proposal-20260601-003</div>
               <h3>給肥日誤判：加水不能被當成單純補水</h3>
               <p>水肥同管時，給肥日加水會同步改變肥分。這條已驗證規則會約束後續所有控水建議。</p>
+              <div class="kengyi-formula-card" data-testid="kengyi-equation-issue-3">
+                <b>候選方程式</b>
+                <code>ValidWaterTest = ClearWaterDay * (FertigationEC_Delta <= 0.10) * SameValveGroup</code>
+                <span>本輪門檻：ValidWaterTest = 1 才能把結果回寫成控水學習資料。</span>
+              </div>
               <div class="kengyi-action-matrix">
                 <div><b>上下文</b><span>fertigation_context: clear_water_day_only</span></div>
                 <div><b>狀態</b><span>validated_rule</span></div>
@@ -270,6 +298,11 @@
               <div class="kengyi-pane-kicker">問題4 · control-proposal-20260601-004</div>
               <h3>控水策略：V7-V12 今日澆水排程進入測試</h3>
               <p>問題4 不覆蓋問題1/2/3，而是引用它們：EC 不均提供目標，高溫限制提供 no-go，給肥日規則提供執行邊界。</p>
+              <div class="kengyi-formula-card" data-testid="kengyi-equation-issue-4">
+                <b>候選方程式</b>
+                <code>WaterPulseSec = clamp(BaseSec * (TargetDrainRate / ActualDrainRate) * RootStressFactor, 45, 80)</code>
+                <span>本輪數字：V7=60s、V8=45s、V9=80s、V10=80s；若排液率高於 20% 或 EC 過度稀釋，回復前版。</span>
+              </div>
               <div class="kengyi-action-matrix">
                 <div><b>設備</b><span>V7-V12</span></div>
                 <div><b>狀態</b><span>testing</span></div>
