@@ -4,8 +4,8 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "mobile-native-control-only";
-  const DEPLOYED_AT = "2026-06-02T12:05:00+08:00";
+  const BUILD_ID = "farm-marquee-control-boundary";
+  const DEPLOYED_AT = "2026-06-02T12:35:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
@@ -91,8 +91,11 @@
   }
 
   function isControlPage() {
-    const text = document.body?.innerText || "";
-    return location.hash.includes("/cultivation/control") || text.includes("\u74b0\u63a7\u8a2d\u7f6e");
+    return location.hash.includes("/cultivation/control");
+  }
+
+  function isFarmManagementPage() {
+    return location.hash.includes("/farm-mgmt");
   }
 
   function isMobileViewport() {
@@ -107,6 +110,11 @@
       node.classList.remove("kengyi-mvp-device-card");
       node.removeAttribute("title");
     });
+  }
+
+  function cleanupFarmMarquee() {
+    if (isFarmManagementPage()) return;
+    document.querySelectorAll(".kengyi-farm-marquee").forEach((node) => node.remove());
   }
 
   function proposalPayload() {
@@ -198,6 +206,7 @@
   }
 
   function renderPanel() {
+    cleanupFarmMarquee();
     cleanupMobileInjection();
     if (isMobileViewport()) return;
     if (!isControlPage() || document.querySelector(".kengyi-mvp-system")) return;
@@ -512,6 +521,30 @@
     });
   }
 
+  function renderFarmMarquee() {
+    cleanupFarmMarquee();
+    if (!isFarmManagementPage() || document.querySelector(".kengyi-farm-marquee")) return;
+    const target =
+      document.querySelector(".farm-selector-bar") ||
+      document.querySelector(".page-wrap .page-header") ||
+      document.querySelector(".page-wrap") ||
+      document.querySelector(".app-main");
+    if (!target || !target.parentNode) return;
+    const marquee = document.createElement("button");
+    marquee.type = "button";
+    marquee.className = "kengyi-farm-marquee";
+    marquee.setAttribute("data-testid", "kengyi-farm-control-marquee");
+    marquee.innerHTML = `
+      <span>\u8015\u8b6f\u63d0\u9192</span>
+      <marquee scrollamount="4">\u6709 1 \u7b46\u74b0\u63a7\u5019\u9078\u7b49\u5f85\u78ba\u8a8d\uff1a\u9ebb\u8c461\u5834 V7-V12 \u6f86\u6c34\u6392\u7a0b\u3002\u8acb\u5230\u300c\u74b0\u63a7\u8a2d\u7f6e\u300d\u67e5\u770b\u8a2d\u5099\u3001\u9650\u5236\u8207\u9a57\u8b49\u3002</marquee>
+      <b>\u524d\u5f80\u74b0\u63a7</b>
+    `;
+    marquee.addEventListener("click", () => {
+      location.hash = "#/cultivation/control";
+    });
+    target.parentNode.insertBefore(marquee, target.nextSibling);
+  }
+
   function setupControlTabs(panel, target) {
     const buttons = [...panel.querySelectorAll("[data-kengyi-tab]")];
     const legacyNodes = [];
@@ -628,6 +661,7 @@
 
   function boot() {
     renderPanel();
+    renderFarmMarquee();
     markDeviceCards();
   }
 

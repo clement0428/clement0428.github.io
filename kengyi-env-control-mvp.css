@@ -1161,6 +1161,37 @@
   background: #fffdf0 !important;
 }
 
+.kengyi-farm-marquee {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: calc(100% - 32px);
+  margin: 0 16px 12px;
+  padding: 9px 12px;
+  border: 1px solid #e2cf35;
+  border-radius: 8px;
+  background: #fffbe0;
+  color: #132225;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.kengyi-farm-marquee span,
+.kengyi-farm-marquee b {
+  color: #132225;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.kengyi-farm-marquee marquee {
+  color: #405055;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
 .kengyi-mvp-toast {
   position: fixed;
   right: 24px;
