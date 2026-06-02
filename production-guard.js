@@ -80,9 +80,11 @@
       stamp.setAttribute("data-testid", "wegrow-build-stamp");
       document.body.appendChild(stamp);
     }
+    if (stamp.getAttribute("data-build-source") === "github") return;
     stamp.textContent = `build: ${shortCommit(build.commit)} / deployed_at: ${build.deployed_at}`;
     stamp.setAttribute("data-build-commit", build.commit || "unknown");
     stamp.setAttribute("data-build-deployed-at", build.deployed_at || "unknown");
+    stamp.setAttribute("data-build-source", "build-meta");
   }
 
   function renderUpdateBanner(latest) {
@@ -120,10 +122,7 @@
             stamp.textContent = `build: ${shortCommit(github.sha)} / deployed_at: ${latestAt}`;
             stamp.setAttribute("data-build-commit", github.sha);
             stamp.setAttribute("data-build-deployed-at", latestAt);
-          }
-          if (build.commit && build.commit !== "pending" && github.sha !== build.commit) {
-            renderUpdateBanner({ commit: github.sha });
-            return;
+            stamp.setAttribute("data-build-source", "github");
           }
         }
       }
