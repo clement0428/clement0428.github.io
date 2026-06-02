@@ -103,6 +103,10 @@
     document.body.appendChild(banner);
   }
 
+  function removeUpdateBanner() {
+    document.querySelectorAll("[data-testid='wegrow-update-banner']").forEach((node) => node.remove());
+  }
+
   function markSentinels() {
     document.querySelectorAll("[data-testid='kengyi-decision-workbench']").forEach((node) => {
       node.setAttribute("data-legacy-testid", "kengyi-decision-workbench");
@@ -132,6 +136,8 @@
       const latestCommit = match ? match[1] : "";
       if (latestCommit && build.commit && latestCommit !== build.commit) {
         renderUpdateBanner({ commit: latestCommit });
+      } else {
+        removeUpdateBanner();
       }
     } catch {
       // Build refresh hints should never break the app.
@@ -141,6 +147,7 @@
   function boot() {
     if (!document.body) return;
     injectStyles();
+    removeUpdateBanner();
     renderBuildStamp();
     markSentinels();
     if (build.commit) localStorage.setItem(STORAGE_KEY, build.commit);
