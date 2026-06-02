@@ -4,8 +4,8 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "mobile-layout-restore";
-  const DEPLOYED_AT = "2026-06-02T00:20:00+08:00";
+  const BUILD_ID = "mobile-native-control-only";
+  const DEPLOYED_AT = "2026-06-02T12:05:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
@@ -93,6 +93,20 @@
   function isControlPage() {
     const text = document.body?.innerText || "";
     return location.hash.includes("/cultivation/control") || text.includes("\u74b0\u63a7\u8a2d\u7f6e");
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia("(max-width: 700px)").matches;
+  }
+
+  function cleanupMobileInjection() {
+    if (!isMobileViewport()) return;
+    document.querySelectorAll(".kengyi-mvp-system").forEach((node) => node.remove());
+    document.querySelectorAll(".kengyi-mvp-device-hint").forEach((node) => node.remove());
+    document.querySelectorAll(".kengyi-mvp-device-card").forEach((node) => {
+      node.classList.remove("kengyi-mvp-device-card");
+      node.removeAttribute("title");
+    });
   }
 
   function proposalPayload() {
@@ -184,11 +198,12 @@
   }
 
   function renderPanel() {
+    cleanupMobileInjection();
+    if (isMobileViewport()) return;
     if (!isControlPage() || document.querySelector(".kengyi-mvp-system")) return;
     const target =
       document.querySelector(".page-header") ||
-      document.querySelector(".farms-page") ||
-      document.querySelector("#app");
+      document.querySelector(".farms-page");
     if (!target || !target.parentNode) return;
 
     const panel = document.createElement("section");
@@ -582,6 +597,8 @@
   }
 
   function markDeviceCards() {
+    cleanupMobileInjection();
+    if (isMobileViewport()) return;
     if (!document.body) return;
     const candidates = [...document.querySelectorAll("div, section")].filter((node) => {
       if (node.classList.contains("kengyi-mvp-device-card")) return false;
