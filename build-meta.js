@@ -1,4 +1,4 @@
 window.__WEGROW_ORBIT_BUILD__ = {
-  commit: "3bb3c6b",
-  deployed_at: "2026-06-02T23:29:40+08:00"
+  commit: "ce346bf",
+  deployed_at: "2026-06-02T23:30:45+08:00"
 };
