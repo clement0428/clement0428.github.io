@@ -53,6 +53,17 @@
         cursor: pointer;
         white-space: nowrap;
       }
+      .kengyi-visible-title {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 0 10px;
+        border: 1px solid rgba(226, 207, 53, 0.55);
+        border-radius: 6px;
+        background: rgba(255, 249, 200, 0.92);
+        color: #23343a;
+        padding: 6px 10px;
+        font: 800 14px/1.4 system-ui, -apple-system, "Microsoft JhengHei", sans-serif;
+      }
       @media (max-width: 640px) {
         .wegrow-build-stamp {
           right: 8px;
@@ -118,6 +129,13 @@
     document.querySelectorAll("[data-testid='kengyi-decision-workbench']").forEach((node) => {
       node.setAttribute("data-legacy-testid", "kengyi-decision-workbench");
       node.setAttribute("data-testid", "kengyi-decision-island");
+      if (!node.querySelector("[data-testid='kengyi-decision-island-title']")) {
+        const title = document.createElement("div");
+        title.className = "kengyi-visible-title";
+        title.setAttribute("data-testid", "kengyi-decision-island-title");
+        title.textContent = "AI 驅動智慧溫室：耕譯決策島";
+        node.prepend(title);
+      }
     });
   }
 
