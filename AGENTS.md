@@ -1,5 +1,11 @@
 # WeGrow Orbit Deployment Rules
 
+Canonical 2026-06-02 rule: use only `已本機完成`, `已推 Git`, `已部署到 production`, `已在你的 production 畫面驗證可見`. Before claiming the last stage, run:
+
+```powershell
+& 'C:\Users\cowle\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' 'C:\Users\cowle\Documents\Codex\WeGrow-Orbit-Total-Memory\scripts\verify-production.mjs' --run-id=<short-purpose-or-commit>
+```
+
 This repo is the production deployment artifact for `wegrow-orbit.com`.
 
 Before starting work, read:
