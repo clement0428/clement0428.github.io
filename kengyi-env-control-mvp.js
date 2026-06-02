@@ -4,8 +4,9 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "control-actions-selectable";
-  const DEPLOYED_AT = "2026-06-02T13:05:00+08:00";
+  const LOOP_KEY = "orbit_kengyi_control_verification_loops";
+  const BUILD_ID = "control-48h-verification-loop";
+  const DEPLOYED_AT = "2026-06-02T13:45:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
@@ -98,6 +99,119 @@
     });
     const status = panel.querySelector(".kengyi-mvp-status");
     if (status && label) status.textContent = label;
+  }
+
+  function addHours(date, hours) {
+    return new Date(date.getTime() + hours * 60 * 60 * 1000);
+  }
+
+  function formatTime(value) {
+    try {
+      return new Date(value).toLocaleString("zh-TW", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      });
+    } catch {
+      return value;
+    }
+  }
+
+  function latestLoop() {
+    const loops = readJson(LOOP_KEY, []);
+    return loops.find((loop) => loop.proposal_id === activeProposal.proposal_id) || null;
+  }
+
+  function appendQueueEvent(event) {
+    const queue = readJson(QUEUE_KEY, []);
+    queue.push({
+      id: `${event.event_type || "event"}-${Date.now()}`,
+      source: "kengyi",
+      created_at: new Date().toISOString(),
+      ...event
+    });
+    writeJson(QUEUE_KEY, queue.slice(-80));
+  }
+
+  function startVerificationLoop(panel) {
+    const startedAt = new Date();
+    const loop = {
+      proposal_id: activeProposal.proposal_id,
+      source: "kengyi",
+      event_type: "control_verification_loop",
+      status: "verifying",
+      execution_mode: "recommendation_only",
+      configured_in_hugreen_at: startedAt.toISOString(),
+      next_check_at: addHours(startedAt, 6).toISOString(),
+      due_at: addHours(startedAt, 48).toISOString(),
+      equation: "Score48h = 0.42*ECUniformity + 0.24*DrainRateFit + 0.18*CropVigor - 0.16*Risk",
+      notification: {
+        required: true,
+        recipients: EMAIL_RECIPIENTS,
+        message: "Hugreen 已人工設定，耕譯進入 48hr 自動判讀迴圈。"
+      },
+      checkpoints: [
+        { label: "0h", status: "done", text: "人工標記 Hugreen 已設定" },
+        { label: "6h", status: "pending", text: "讀取 EC / 水分 / 土溫快照" },
+        { label: "24h", status: "pending", text: "比對排液率與風險限制" },
+        { label: "48h", status: "pending", text: "耕譯判讀 validated / failed" }
+      ],
+      linked_memory_ids: activeProposal.linked_memory_ids,
+      no_go_conditions: activeProposal.no_go_conditions,
+      rollback_plan: activeProposal.rollback_plan
+    };
+    const loops = readJson(LOOP_KEY, []).filter((item) => item.proposal_id !== activeProposal.proposal_id);
+    loops.unshift(loop);
+    writeJson(LOOP_KEY, loops.slice(0, 20));
+    appendQueueEvent({
+      event_type: "control_verification_loop_started",
+      proposal_id: activeProposal.proposal_id,
+      status: "verifying",
+      next_check_at: loop.next_check_at,
+      due_at: loop.due_at,
+      notification_required: true,
+      notification_recipients: EMAIL_RECIPIENTS
+    });
+    renderLoopState(panel);
+    return loop;
+  }
+
+  function renderLoopState(panel) {
+    const node = panel.querySelector("[data-testid='kengyi-48h-loop']");
+    if (!node) return;
+    const loop = latestLoop();
+    if (!loop) {
+      node.setAttribute("data-loop-status", "waiting");
+      node.removeAttribute("data-loop-proposal-id");
+      node.removeAttribute("data-loop-next-at");
+      node.removeAttribute("data-loop-due-at");
+      node.querySelector("[data-loop-state]").textContent = "等待 Hugreen 人工設定";
+      node.querySelector("[data-loop-next]").textContent = "按下「標記已在 Hugreen 設定」後，自動進入 48hr 判讀。";
+      node.querySelector("[data-loop-equation]").textContent = "Score48h = 尚未啟動";
+      node.querySelector("[data-loop-steps]").innerHTML = "";
+      return;
+    }
+    const now = new Date();
+    const due = new Date(loop.due_at);
+    const next = new Date(loop.next_check_at);
+    const dueReached = now >= due;
+    node.setAttribute("data-loop-status", dueReached ? "ready_for_judgement" : loop.status);
+    node.setAttribute("data-loop-proposal-id", loop.proposal_id);
+    node.setAttribute("data-loop-next-at", loop.next_check_at);
+    node.setAttribute("data-loop-due-at", loop.due_at);
+    node.querySelector("[data-loop-state]").textContent = dueReached
+      ? "48hr 到期 · 等待耕譯判讀與通知"
+      : "verifying · AI 正在持續追蹤";
+    node.querySelector("[data-loop-next]").textContent = dueReached
+      ? `到期時間 ${formatTime(loop.due_at)}，下一步：耕譯判讀 validated / failed 並通知。`
+      : `下一次自動檢查 ${formatTime(next)}；48hr 判讀 ${formatTime(due)}。`;
+    node.querySelector("[data-loop-equation]").textContent = loop.equation;
+    node.querySelector("[data-loop-steps]").innerHTML = loop.checkpoints.map((step) => {
+      const active = step.status === "done" ? "done" : "pending";
+      return `<span class="${active}"><b>${step.label}</b>${step.text}</span>`;
+    }).join("");
   }
 
   function isControlPage() {
@@ -429,6 +543,19 @@
           <div class="kengyi-life-step"><b>verifying</b><span>追蹤 24-48h 指標。</span></div>
           <div class="kengyi-life-step"><b>validated / failed</b><span>結果回寫耕譯，作為下次判斷依據。</span></div>
         </div>
+
+        <div class="kengyi-continuous-loop" data-testid="kengyi-48h-loop" data-loop-status="waiting">
+          <div class="kengyi-loop-head">
+            <div>
+              <b>48hr 耕譯自動判讀迴圈</b>
+              <span data-loop-state>等待 Hugreen 人工設定</span>
+            </div>
+            <em>不中斷</em>
+          </div>
+          <code data-loop-equation>Score48h = 尚未啟動</code>
+          <div class="kengyi-loop-next" data-loop-next>按下「標記已在 Hugreen 設定」後，自動進入 48hr 判讀。</div>
+          <div class="kengyi-loop-steps" data-loop-steps></div>
+        </div>
       </div>
 
       <div class="kengyi-outcome-strip">
@@ -515,6 +642,7 @@
     } catch (error) {
       console.warn("KengYi issue orchestrator setup failed", error);
     }
+    renderLoopState(panel);
     panel.addEventListener("click", (event) => {
       const button = event.target.closest("[data-kengyi-action]");
       if (!button || !panel.contains(button)) return;
@@ -528,14 +656,16 @@
         copySuggestion();
       }
       if (action === "testing") {
-        saveLocalProposal("testing");
-        setSelectedAction(panel, action, "configured_in_hugreen · 已標記設定");
-        toast("\u5df2\u6a19\u8a18\u70ba Hugreen \u5df2\u8a2d\u5b9a\uff0c\u7b49\u5f85 24-48h \u9a57\u8b49\u3002");
+        saveLocalProposal("configured_in_hugreen");
+        startVerificationLoop(panel);
+        setSelectedAction(panel, action, "verifying · Hugreen 已設定，48hr 判讀中");
+        toast("\u5df2\u555f\u52d5 48hr \u8015\u8b6f\u81ea\u52d5\u5224\u8b80\u8ff4\u5708\uff1a6h/24h/48h \u6301\u7e8c\u8ffd\u8e64\u4e26\u6e96\u5099\u901a\u77e5\u3002");
       }
       if (action === "verify") {
-        saveLocalProposal("verification_pending");
-        setSelectedAction(panel, action, "verifying · 等待回填驗證");
-        toast("\u5df2\u6a19\u8a18\u70ba\u7b49\u5f85\u9a57\u8b49\uff0c\u5f8c\u7e8c\u9700\u56de\u586b EC\u3001\u6392\u6db2\u7387\u3001Brix\u3001A\u7d1a\u7387\u3002");
+        saveLocalProposal("verifying");
+        startVerificationLoop(panel);
+        setSelectedAction(panel, action, "verifying · 48hr 判讀迴圈已啟動");
+        toast("\u5df2\u9032\u5165 48hr \u9a57\u8b49\u8ff4\u5708\uff0c\u4e0d\u505c\u5728\u55ae\u6b21\u9078\u64c7\u3002");
       }
       if (action === "reject") {
         saveLocalProposal("rejected");
