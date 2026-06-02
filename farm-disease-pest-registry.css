@@ -1,0 +1,205 @@
+.orbit-pd-panel {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #d8e2e3;
+  border-left: 6px solid #42a651;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #142327;
+  box-shadow: 0 8px 22px rgba(20, 35, 39, 0.06);
+}
+
+.pd-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.pd-head b {
+  display: block;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.pd-head span,
+.pd-head em {
+  color: #5f6f74;
+  font-size: 13px;
+  font-style: normal;
+}
+
+.pd-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+}
+
+.pd-tabs button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid #d8e2e3;
+  border-radius: 8px;
+  background: #f7fafb;
+  color: #142327;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pd-tabs button.active {
+  border-color: #132225;
+  background: #132225;
+  color: #fff;
+}
+
+.pd-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pd-form label {
+  display: grid;
+  gap: 5px;
+  color: #4a5a5f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pd-form select,
+.pd-form input {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid #d8e2e3;
+  border-radius: 8px;
+  background: #fff;
+  color: #142327;
+  font-size: 14px;
+}
+
+.pd-note {
+  grid-column: span 2;
+}
+
+.pd-form button {
+  min-height: 38px;
+  border: 1px solid #e2cf35;
+  border-radius: 8px;
+  background: #e2cf35;
+  color: #172126;
+  font-weight: 900;
+}
+
+.pd-form output {
+  display: grid;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: #eef8ef;
+  color: #1a5d26;
+  font-weight: 900;
+}
+
+.pd-equation {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f4f7f8;
+  color: #142327;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  font-size: 13px;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.pd-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pd-lists > div {
+  padding: 10px;
+  border: 1px solid #d8e2e3;
+  border-radius: 8px;
+  background: #fbfcfc;
+}
+
+.pd-lists b {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.pd-lists span {
+  display: inline-block;
+  margin: 0 6px 6px 0;
+  padding: 4px 8px;
+  border: 1px solid #d8e2e3;
+  border-radius: 999px;
+  background: #fff;
+  color: #314248;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pd-history {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.pd-event,
+.pd-empty {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr auto;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #d8e2e3;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+}
+
+.pd-empty {
+  display: block;
+  color: #6d7d82;
+}
+
+.pd-event em {
+  color: #1a5d26;
+  font-style: normal;
+  font-weight: 900;
+}
+
+@media (max-width: 900px) {
+  .pd-head,
+  .pd-lists {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .pd-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .orbit-pd-panel {
+    margin: 10px 0;
+    padding: 12px;
+  }
+
+  .pd-form,
+  .pd-event {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-note {
+    grid-column: auto;
+  }
+}
