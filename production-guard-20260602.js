@@ -96,6 +96,13 @@
       <span>偵測到新版，請重新載入</span>
       <button type="button">重新載入新版</button>
     `;
+    banner.textContent = "";
+    const message = document.createElement("span");
+    message.textContent = "偵測到新版，請重新載入";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "重新載入新版";
+    banner.append(message, button);
     banner.querySelector("button").addEventListener("click", () => {
       localStorage.setItem(STORAGE_KEY, latest.commit || "");
       location.reload();
