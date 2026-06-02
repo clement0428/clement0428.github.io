@@ -1180,16 +1180,34 @@
   .kengyi-loop,
   .kengyi-decision-island,
   .kengyi-orchestrator-top,
-  .kengyi-equation-board,
-  .kengyi-orchestrator-grid,
   .kengyi-outcome-strip,
   .kengyi-operational-grid,
   .kengyi-active-grid,
-  .kengyi-action-matrix,
   .kengyi-queue-card,
   .kengyi-trace-grid,
   .kengyi-taguchi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .kengyi-new-content {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kengyi-orchestrator {
+    min-width: 1060px;
+  }
+
+  .kengyi-equation-board {
+    grid-template-columns: minmax(0, 1.1fr) minmax(420px, 0.9fr);
+  }
+
+  .kengyi-orchestrator-grid {
+    grid-template-columns: 230px minmax(0, 1fr) 280px;
+  }
+
+  .kengyi-action-matrix {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .kengyi-lifecycle {
@@ -1197,7 +1215,7 @@
   }
 
   .kengyi-equation-kpis {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .kengyi-ledger-head,
@@ -1252,7 +1270,6 @@
 
   .kengyi-mvp-head,
   .kengyi-lifecycle,
-  .kengyi-equation-kpis,
   .kengyi-monitor-grid {
     grid-template-columns: 1fr;
   }

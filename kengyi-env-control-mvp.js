@@ -4,8 +4,8 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "control-equation-engine";
-  const DEPLOYED_AT = "2026-06-01T19:55:00+08:00";
+  const BUILD_ID = "mobile-layout-restore";
+  const DEPLOYED_AT = "2026-06-02T00:20:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
