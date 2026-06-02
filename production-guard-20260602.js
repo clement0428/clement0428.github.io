@@ -130,6 +130,7 @@
           }
         }
       }
+
       const response = await fetch(`/build-meta.js?check=${Date.now()}`, { cache: "no-store" });
       const text = await response.text();
       const match = text.match(/commit:\s*"([^"]+)"/);
