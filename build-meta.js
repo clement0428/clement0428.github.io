@@ -1,4 +1,4 @@
 window.__WEGROW_ORBIT_BUILD__ = {
-  commit: "04008c9",
-  deployed_at: "2026-06-02T22:50:47+08:00"
+  commit: "pending-kengyi-error-ledger",
+  deployed_at: "2026-06-02T23:01:50+08:00"
 };
