@@ -1125,6 +1125,19 @@
   color: #8a1f1f;
 }
 
+.kengyi-mvp-button.is-selected {
+  border-color: #132225;
+  background: #132225;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(226, 207, 53, 0.42);
+}
+
+.kengyi-mvp-button.is-selected::after {
+  content: " 已選";
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .kengyi-mvp-note {
   margin-top: 10px;
   color: #667579;

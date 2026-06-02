@@ -4,8 +4,8 @@
   const EMAIL_RECIPIENTS = ["clement0428@gmail.com", "clement@wegrow.asia"];
   const PROPOSAL_KEY = "orbit_kengyi_control_proposals";
   const QUEUE_KEY = "orbit_kengyi_eventlog_queue";
-  const BUILD_ID = "farm-marquee-control-boundary";
-  const DEPLOYED_AT = "2026-06-02T12:35:00+08:00";
+  const BUILD_ID = "control-actions-selectable";
+  const DEPLOYED_AT = "2026-06-02T13:05:00+08:00";
 
   const activeProposal = {
     id: "kengyi-control-20260601-madou-v7-v10",
@@ -88,6 +88,16 @@
     el.textContent = message;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 4200);
+  }
+
+  function setSelectedAction(panel, action, label) {
+    panel.querySelectorAll("[data-kengyi-action]").forEach((button) => {
+      const selected = button.getAttribute("data-kengyi-action") === action;
+      button.classList.toggle("is-selected", selected);
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+    const status = panel.querySelector(".kengyi-mvp-status");
+    if (status && label) status.textContent = label;
   }
 
   function isControlPage() {
@@ -479,11 +489,11 @@
       </div>
 
       <div class="kengyi-mvp-actions">
-        <button class="kengyi-mvp-button" data-kengyi-action="post">確認通知並寫入</button>
-        <button class="kengyi-mvp-button secondary" data-kengyi-action="copy">複製通知內容</button>
-        <button class="kengyi-mvp-button secondary" data-kengyi-action="testing">標記已在 Hugreen 設定</button>
-        <button class="kengyi-mvp-button secondary" data-kengyi-action="verify">進入驗證</button>
-        <button class="kengyi-mvp-button danger" data-kengyi-action="reject">駁回建議</button>
+        <button type="button" class="kengyi-mvp-button" data-kengyi-action="post" aria-pressed="false">確認通知並寫入</button>
+        <button type="button" class="kengyi-mvp-button secondary" data-kengyi-action="copy" aria-pressed="false">複製通知內容</button>
+        <button type="button" class="kengyi-mvp-button secondary" data-kengyi-action="testing" aria-pressed="false">標記已在 Hugreen 設定</button>
+        <button type="button" class="kengyi-mvp-button secondary" data-kengyi-action="verify" aria-pressed="false">進入驗證</button>
+        <button type="button" class="kengyi-mvp-button danger" data-kengyi-action="reject" aria-pressed="false">駁回建議</button>
       </div>
       <div class="kengyi-mvp-note">保護規則：此頁不直接控制 Hugreen；所有動作都以 source: "kengyi" 寫入 operation_event_logs 或本機佇列。</div>
       </div>
@@ -505,19 +515,33 @@
     } catch (error) {
       console.warn("KengYi issue orchestrator setup failed", error);
     }
-    panel.querySelector('[data-kengyi-action="post"]').addEventListener("click", postEventLog);
-    panel.querySelector('[data-kengyi-action="copy"]').addEventListener("click", copySuggestion);
-    panel.querySelector('[data-kengyi-action="testing"]').addEventListener("click", () => {
-      saveLocalProposal("testing");
-      toast("\u5df2\u6a19\u8a18\u70ba\u6e2c\u8a66\u4e2d\uff0c\u7b49\u5f85 24-48h \u9a57\u8b49\u3002");
-    });
-    panel.querySelector('[data-kengyi-action="verify"]').addEventListener("click", () => {
-      saveLocalProposal("verification_pending");
-      toast("\u5df2\u6a19\u8a18\u70ba\u7b49\u5f85\u9a57\u8b49\uff0c\u5f8c\u7e8c\u9700\u56de\u586b EC\u3001\u6392\u6db2\u7387\u3001Brix\u3001A\u7d1a\u7387\u3002");
-    });
-    panel.querySelector('[data-kengyi-action="reject"]').addEventListener("click", () => {
-      saveLocalProposal("rejected");
-      toast("\u5df2\u99c1\u56de\u4e26\u4fdd\u7559\u7d00\u9304\uff0c\u4f9b\u8015\u8b6f\u56de\u770b\u539f\u56e0\u3002");
+    panel.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-kengyi-action]");
+      if (!button || !panel.contains(button)) return;
+      const action = button.getAttribute("data-kengyi-action");
+      if (action === "post") {
+        setSelectedAction(panel, action, "notified · 已確認通知並寫入");
+        postEventLog();
+      }
+      if (action === "copy") {
+        setSelectedAction(panel, action, "copied · 已複製通知內容");
+        copySuggestion();
+      }
+      if (action === "testing") {
+        saveLocalProposal("testing");
+        setSelectedAction(panel, action, "configured_in_hugreen · 已標記設定");
+        toast("\u5df2\u6a19\u8a18\u70ba Hugreen \u5df2\u8a2d\u5b9a\uff0c\u7b49\u5f85 24-48h \u9a57\u8b49\u3002");
+      }
+      if (action === "verify") {
+        saveLocalProposal("verification_pending");
+        setSelectedAction(panel, action, "verifying · 等待回填驗證");
+        toast("\u5df2\u6a19\u8a18\u70ba\u7b49\u5f85\u9a57\u8b49\uff0c\u5f8c\u7e8c\u9700\u56de\u586b EC\u3001\u6392\u6db2\u7387\u3001Brix\u3001A\u7d1a\u7387\u3002");
+      }
+      if (action === "reject") {
+        saveLocalProposal("rejected");
+        setSelectedAction(panel, action, "rejected · 已駁回並保留紀錄");
+        toast("\u5df2\u99c1\u56de\u4e26\u4fdd\u7559\u7d00\u9304\uff0c\u4f9b\u8015\u8b6f\u56de\u770b\u539f\u56e0\u3002");
+      }
     });
   }
 
