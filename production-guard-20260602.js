@@ -7,9 +7,17 @@
     var build = window.__WEGROW_BUILD_META__ || window.__WEGROW_ORBIT_BUILD__ || {};
     var commit = build.commit || "unknown";
     var deployedAt = build.deployed_at || "unknown";
+    var stampText = "build: " + commit + " / deployed_at: " + deployedAt;
+    function updateExistingStamps() {
+      document.querySelectorAll('[data-testid="wegrow-build-stamp"]').forEach(function (node) {
+        node.textContent = stampText;
+      });
+    }
+    updateExistingStamps();
+    window.setTimeout(updateExistingStamps, 500);
     var stamp = document.createElement("div");
     stamp.setAttribute("data-testid", "wegrow-build-stamp");
-    stamp.textContent = "build: " + commit + " / deployed_at: " + deployedAt;
+    stamp.textContent = stampText;
     stamp.style.cssText = "position:fixed;right:14px;bottom:10px;z-index:2147483646;background:rgba(255,255,255,.96);border:1px solid #d7dde2;border-radius:6px;padding:8px 12px;font:700 13px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;color:#1f2933;box-shadow:0 4px 16px rgba(15,23,42,.16);";
     document.body.appendChild(stamp);
 
