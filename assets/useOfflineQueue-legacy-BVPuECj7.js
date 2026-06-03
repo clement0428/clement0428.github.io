@@ -1,0 +1,1 @@
+System.register(["./useOfflineQueue-legacy-DHuAk_k5.js"],function(e,t){var u;return{setters:[function(e){u=e.n,e.t}],execute:function(){e("queueWrite",u)}}});
