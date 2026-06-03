@@ -4,7 +4,7 @@
     else fn();
   }
   ready(function () {
-    var build = window.__WEGROW_ORBIT_BUILD__ || window.__WEGROW_BUILD_META__ || {};
+    var build = window.__WEGROW_BUILD_META__ || window.__WEGROW_ORBIT_BUILD__ || {};
     var commit = build.commit || "unknown";
     var deployedAt = build.deployed_at || "unknown";
     var stamp = document.createElement("div");

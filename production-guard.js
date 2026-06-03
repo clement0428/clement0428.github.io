@@ -1,5 +1,5 @@
 (function () {
-  const build = window.__WEGROW_ORBIT_BUILD__ || { commit: "unknown", deployed_at: "unknown" };
+  const build = window.__WEGROW_BUILD_META__ || window.__WEGROW_ORBIT_BUILD__ || { commit: "unknown", deployed_at: "unknown" };
   const GITHUB_BRANCH_API = "https://api.github.com/repos/clement0428/clement0428.github.io/commits/main";
   const STORAGE_KEY = "wegrow_orbit_seen_build";
 
