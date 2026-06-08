@@ -12,7 +12,7 @@
 
     function updateExistingStamps() {
       document.querySelectorAll('[data-testid="wegrow-build-stamp"]').forEach(function (node) {
-        node.textContent = stampText;
+        if (node.textContent !== stampText) node.textContent = stampText;
       });
     }
 
