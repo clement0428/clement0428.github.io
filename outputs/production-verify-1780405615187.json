@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-06-02T13:07:05.939Z",
+  "production_url": "https://wegrow-orbit.com/#/analysis",
+  "frontend_bundle_deployed": {
+    "status": "fail",
+    "index_status": 0,
+    "build_meta_status": 0,
+    "no_removed_overlay": true
+  },
+  "photo_storage_check": {
+    "status": "fail",
+    "status_code": 0,
+    "url": "https://api.wegrow-orbit.com/bucket",
+    "error": "TypeError: fetch failed"
+  },
+  "visibility_gate": {
+    "status": "requires_browser",
+    "target_text": "AI 驅動智慧溫室：耕譯決策島",
+    "target_testid": "kengyi-decision-island",
+    "note": "DOM visibility and screenshots must be verified with Browser against the production route."
+  }
+}
