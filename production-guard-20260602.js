@@ -39,9 +39,8 @@
     } catch (err) {}
 
     try {
-      var key = "wegrow-orbit:last-seen-build";
-      var previous = localStorage.getItem(key);
-      if (previous && previous !== commit) {
+      function showUpdateBanner() {
+        if (document.querySelector('[data-testid="wegrow-update-banner"]')) return;
         var banner = document.createElement("div");
         banner.setAttribute("data-testid", "wegrow-update-banner");
         banner.style.cssText = "position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:2147483647;background:#111827;color:white;border-radius:8px;padding:10px 12px;display:flex;gap:10px;align-items:center;font:700 14px/1.2 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.28);";
@@ -51,12 +50,37 @@
         button.type = "button";
         button.textContent = "\u91cd\u65b0\u8f09\u5165\u65b0\u7248";
         button.style.cssText = "border:0;border-radius:6px;background:#e2cf35;color:#1f2933;font-weight:900;padding:7px 10px;cursor:pointer;";
-        button.onclick = function () { location.reload(); };
+        button.onclick = function () {
+          var base = location.origin + location.pathname;
+          location.replace(base + "?v=" + encodeURIComponent(commit) + "&t=" + Date.now() + location.hash);
+        };
         banner.appendChild(text);
         banner.appendChild(button);
         document.body.appendChild(banner);
       }
+
+      var key = "wegrow-orbit:last-seen-build";
+      var previous = localStorage.getItem(key);
+      if (previous && previous !== commit) {
+        showUpdateBanner();
+      }
       localStorage.setItem(key, commit);
+
+      var currentIndexScript = Array.prototype.slice.call(document.scripts)
+        .map(function (s) { return s.getAttribute("src") || ""; })
+        .filter(function (src) { return /\/assets\/index-[^/]+\.js/.test(src); })[0] || "";
+      if (currentIndexScript && window.fetch) {
+        fetch("/?orbit_index_probe=" + encodeURIComponent(commit) + "&t=" + Date.now(), { cache: "no-store" })
+          .then(function (res) { return res.text(); })
+          .then(function (html) {
+            var match = html.match(/\/assets\/index-[^"'<]+\.js/);
+            var latestIndexScript = match && match[0];
+            if (latestIndexScript && currentIndexScript.indexOf(latestIndexScript) === -1) {
+              showUpdateBanner();
+            }
+          })
+          .catch(function () {});
+      }
     } catch (err) {}
   });
 })();
