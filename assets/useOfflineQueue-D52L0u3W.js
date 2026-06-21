@@ -1,0 +1,1 @@
+import{n as e}from"./useOfflineQueue-CFQr_iw6.js";export{e as queueWrite};
