@@ -1,0 +1,1 @@
+System.register(["./useOfflineQueue-legacy-Rl0d1c4y.js"],function(e,t){var u;return{setters:[function(e){u=e.n,e.t}],execute:function(){e("queueWrite",u)}}});
