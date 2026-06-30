@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WeGrow 企業認養加購費用計算機</title>
+  <meta name="description" content="WeGrow 企業認養農場方案物流、加工與企業禮盒設計費用試算。">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fbfaf4;
+      --panel: #ffffff;
+      --ink: #151814;
+      --soft-ink: #596258;
+      --line: #dedbd0;
+      --green: #153f2a;
+      --green-2: #24563d;
+      --gold: #b68a35;
+      --gold-2: #d6c18d;
+      --mist: #edf1e7;
+      --rose: #b75545;
+      --shadow: 0 24px 70px rgba(21, 24, 20, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid rgba(21, 24, 20, .09);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+    }
+
+    .brand img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .brand-mark {
+      width: 1px;
+      height: 36px;
+      background: rgba(21, 24, 20, .18);
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-copy strong,
+    .brand-copy span {
+      display: block;
+      white-space: nowrap;
+    }
+
+    .brand-copy strong {
+      color: var(--green);
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 850;
+    }
+
+    .brand-copy span {
+      margin-top: 4px;
+      color: var(--soft-ink);
+      font-size: 12px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--soft-ink);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .nav-links a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: currentColor;
+    }
+
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rose);
+      box-shadow: 0 0 0 5px rgba(183, 85, 69, .13);
+    }
+
+    main {
+      padding: 28px 0 46px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 34px;
+      align-items: stretch;
+      min-height: 420px;
+    }
+
+    .hero-copy {
+      position: relative;
+      overflow: hidden;
+      padding: 42px;
+      background:
+        linear-gradient(90deg, rgba(20, 61, 42, .88), rgba(20, 61, 42, .62)),
+        url("assets/greenhouse-room.jpg") center / cover;
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--gold-2);
+      font-size: 13px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 10em;
+      margin: 0;
+      font-size: clamp(38px, 5vw, 66px);
+      line-height: 1;
+      font-weight: 850;
+    }
+
+    .hero-copy p {
+      max-width: 660px;
+      margin: 22px 0 0;
+      color: rgba(255, 255, 255, .86);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .hero-meta {
+      position: absolute;
+      left: 42px;
+      right: 42px;
+      bottom: 32px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: rgba(255, 255, 255, .2);
+    }
+
+    .hero-meta div {
+      min-height: 82px;
+      padding: 17px 18px;
+      background: rgba(20, 61, 42, .72);
+    }
+
+    .hero-meta b {
+      display: block;
+      color: #fff;
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .hero-meta span {
+      display: block;
+      margin-top: 9px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .summary-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 28px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .summary-panel h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .grand-total {
+      margin-top: 22px;
+    }
+
+    .grand-total span {
+      display: block;
+      color: var(--soft-ink);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .grand-total strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--green);
+      font-size: clamp(38px, 4vw, 54px);
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .summary-lines {
+      margin-top: 26px;
+      border-top: 1px solid var(--line);
+    }
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--soft-ink);
+      font-size: 14px;
+    }
+
+    .summary-line b {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .per-person {
+      margin-top: 20px;
+      padding: 18px;
+      background: var(--mist);
+      color: var(--green);
+    }
+
+    .per-person span {
+      display: block;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .per-person b {
+      display: block;
+      margin-top: 7px;
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 34px;
+      margin-top: 34px;
+      align-items: start;
+    }
+
+    .calculator {
+      display: grid;
+      gap: 18px;
+    }
+
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 26px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+
+    .section h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: 21px;
+      line-height: 1.2;
+    }
+
+    .section-head span {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--soft-ink);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 12px;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(181, 138, 53, .13);
+    }
+
+    .fineprint {
+      margin: 18px 0 0;
+      color: var(--soft-ink);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .price-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .price-table th,
+    .price-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .price-table th {
+      color: var(--green);
+      font-weight: 850;
+    }
+
+    .price-table td:last-child,
+    .price-table th:last-child {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .action {
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 850;
+    }
+
+    .action.secondary {
+      background: transparent;
+      color: var(--green);
+    }
+
+    .quote {
+      position: sticky;
+      top: 18px;
+      background: var(--green);
+      color: #fff;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .quote h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .quote-detail {
+      margin-top: 22px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .quote-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, .18);
+      color: rgba(255, 255, 255, .76);
+      font-size: 14px;
+    }
+
+    .quote-row b {
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .quote-total {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 2px solid rgba(214, 193, 141, .8);
+    }
+
+    .quote-total span {
+      color: var(--gold-2);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .quote-total b {
+      display: block;
+      margin-top: 8px;
+      font-size: 42px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .quote-note {
+      margin: 24px 0 0;
+      color: rgba(255, 255, 255, .66);
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .topbar,
+      .hero,
+      .actions,
+      .fineprint {
+        display: none;
+      }
+
+      .workspace {
+        display: block;
+        margin-top: 0;
+      }
+
+      .quote {
+        position: static;
+        box-shadow: none;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-panel,
+      .quote {
+        position: static;
+      }
+
+      .hero-copy {
+        min-height: 520px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 24px, 1240px);
+      }
+
+      .topbar {
+        height: auto;
+        padding: 16px 0;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .status,
+      .nav-links {
+        font-size: 12px;
+      }
+
+      .hero-copy,
+      .summary-panel,
+      .section,
+      .quote {
+        padding: 22px;
+      }
+
+      .hero-copy {
+        min-height: 560px;
+      }
+
+      .hero-meta {
+        left: 22px;
+        right: 22px;
+        bottom: 22px;
+        grid-template-columns: 1fr;
+      }
+
+      .hero-meta div {
+        min-height: auto;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .section-head span {
+        display: block;
+        margin-top: 8px;
+      }
+    }
+  </style>
+  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-20260630-live-sync">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand" aria-label="SOL WeGrow">
+        <img src="assets/brand/sol-logo.png" alt="SOL">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <img src="assets/brand/wegrow-logo.png" alt="WeGrow">
+        <div class="brand-copy">
+          <strong>企業認養農場方案</strong>
+          <span>物流、加工、設計費用試算</span>
+        </div>
+      </div>
+      <div class="nav-links" aria-label="相關頁面">
+        <a href="index.html">品牌展示</a>
+        <a href="index.html#admin">企業後台</a>
+        <span class="status">採購與福委會預算評估</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-label="方案摘要">
+        <div class="hero-copy">
+          <p class="eyebrow">Cost Simulator / Executive View</p>
+          <h1>加購費用一打就知道</h1>
+          <p>把企業認養後續最常追加的物流、加工與禮盒設計費拆成三個清楚模組，讓總務、福委會與高階主管能在同一頁看到未稅、稅額、含稅與人均成本。</p>
+          <div class="hero-meta">
+            <div>
+              <b>3</b>
+              <span>只保留三種加購費用，不混入主合約年費。</span>
+            </div>
+            <div>
+              <b>5%</b>
+              <span>自動估算營業稅，便於採購核銷。</span>
+            </div>
+            <div>
+              <b>NT$</b>
+              <span>支援列印給企業決策者確認預算。</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="summary-panel" aria-label="即時總額">
+          <div>
+            <h2>目前估算總額</h2>
+            <div class="grand-total">
+              <span>含稅加購總額</span>
+              <strong id="heroTotal">NT$0</strong>
+            </div>
+            <div class="summary-lines">
+              <div class="summary-line"><span>物流費</span><b id="heroLogistics">NT$0</b></div>
+              <div class="summary-line"><span>加工費</span><b id="heroProcessing">NT$0</b></div>
+              <div class="summary-line"><span>設計費</span><b id="heroDesign">NT$0</b></div>
+            </div>
+          </div>
+          <div class="per-person">
+            <span>每位員工平均成本</span>
+            <b id="heroPerPerson">NT$0</b>
+          </div>
+        </aside>
+      </section>
+
+      <section class="workspace" aria-label="費用計算機">
+        <div class="calculator">
+          <section class="section">
+            <div class="section-head">
+              <h2>1. 物流費用</h2>
+              <span>鮮果低溫 / 禮盒常溫</span>
+            </div>
+            <div class="grid">
+              <div class="field">
+                <label for="strawberryQty">草莓鮮果盒數</label>
+                <input id="strawberryQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="melonQty">美濃瓜 6 顆組數</label>
+                <input id="melonQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="giftQty">果醬/果茶禮盒數</label>
+                <input id="giftQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+            </div>
+            <table class="price-table" aria-label="物流預設單價">
+              <thead>
+                <tr>
+                  <th>品項</th>
+                  <th>尺寸與溫層</th>
+                  <th>單價</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>草莓鮮果</td>
+                  <td>17.5 x 17.5 x 5 cm，低溫 60cm 以下</td>
+                  <td>160</td>
+                </tr>
+                <tr>
+                  <td>美濃瓜</td>
+                  <td>38 x 25 x 11.5 cm，低溫 61-90cm</td>
+                  <td>225</td>
+                </tr>
+                <tr>
+                  <td>果醬/果茶禮盒</td>
+                  <td>約 17 x 12 x 10 cm，常溫 60cm 以下</td>
+                  <td>130</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h2>2. 果醬/果茶加工費用</h2>
+              <span>依請款單預設單價</span>
+            </div>
+            <div class="grid">
+              <div class="field">
+                <label for="jamQty">森林莓果果醬 200g 瓶數</label>
+                <input id="jamQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="teaBottleQty">蜜香蘋果茶 30g 瓶數</label>
+                <input id="teaBottleQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="teaBagQty">蜜香蘋果茶 600g 袋數</label>
+                <input id="teaBagQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="boxQty">新箱/禮盒盒材數</label>
+                <input id="boxQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+            </div>
+            <p class="fineprint">預設單價：果醬 75 元/瓶、30g 果茶 103 元/瓶、600g 果茶 1,950 元/袋、新箱 50 元/個。</p>
+          </section>
+
+          <section class="section">
+            <div class="section-head">
+              <h2>3. 包裝設計費用</h2>
+              <span>外盒 / 腰封 / 瓶罐貼紙</span>
+            </div>
+            <div class="grid">
+              <div class="field">
+                <label for="designPlan">設計方案</label>
+                <select id="designPlan">
+                  <option value="0">不需要設計</option>
+                  <option value="8000">基礎套版 NT$8,000</option>
+                  <option value="25000" selected>標準企業禮盒 NT$25,000</option>
+                  <option value="45000">完整客製 NT$45,000</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="employeeQty">員工/收禮人數</label>
+                <input id="employeeQty" type="number" min="1" step="1" value="100" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="taxMode">報價顯示</label>
+                <select id="taxMode">
+                  <option value="taxed" selected>顯示含稅總額</option>
+                  <option value="untaxed">顯示未稅總額</option>
+                </select>
+              </div>
+            </div>
+            <p class="fineprint">設計費採行情包：基礎套版、標準企業禮盒、完整客製。包材印刷、打樣、特殊結構刀模與急件另報。</p>
+            <div class="actions">
+              <button class="action" type="button" id="printBtn">列印估算</button>
+              <button class="action secondary" type="button" id="resetBtn">重設數字</button>
+            </div>
+          </section>
+        </div>
+
+        <aside class="quote" aria-label="估算明細">
+          <h2>企業加購費用估算單</h2>
+          <div class="quote-detail">
+            <div class="quote-row"><span>物流費小計</span><b id="logisticsTotal">NT$0</b></div>
+            <div class="quote-row"><span>加工費小計</span><b id="processingTotal">NT$0</b></div>
+            <div class="quote-row"><span>設計費小計</span><b id="designTotal">NT$0</b></div>
+            <div class="quote-row"><span>未稅總額</span><b id="subtotal">NT$0</b></div>
+            <div class="quote-row"><span>營業稅 5%</span><b id="tax">NT$0</b></div>
+          </div>
+          <div class="quote-total">
+            <span id="quoteLabel">含稅總額</span>
+            <b id="quoteTotal">NT$0</b>
+          </div>
+          <p class="quote-note">本頁僅估算企業認養方案的加購費用，不含主合約認養年費、農場租金、季度活動與特殊採購條件。實際物流、加工與設計交付仍以最終採購單或報價單為準。</p>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const rates = {
+      strawberryShip: 160,
+      melonShip: 225,
+      giftShip: 130,
+      jam: 75,
+      teaBottle: 103,
+      teaBag: 1950,
+      box: 50,
+      tax: 0.05
+    };
+
+    const ids = [
+      "strawberryQty",
+      "melonQty",
+      "giftQty",
+      "jamQty",
+      "teaBottleQty",
+      "teaBagQty",
+      "boxQty",
+      "designPlan",
+      "employeeQty",
+      "taxMode"
+    ];
+
+    const format = (value) => `NT$${Math.round(value).toLocaleString("zh-TW")}`;
+    const number = (id) => Math.max(0, Number(document.getElementById(id).value || 0));
+    const setText = (id, text) => {
+      document.getElementById(id).textContent = text;
+    };
+
+    function calculate() {
+      const logistics =
+        number("strawberryQty") * rates.strawberryShip +
+        number("melonQty") * rates.melonShip +
+        number("giftQty") * rates.giftShip;
+
+      const processing =
+        number("jamQty") * rates.jam +
+        number("teaBottleQty") * rates.teaBottle +
+        number("teaBagQty") * rates.teaBag +
+        number("boxQty") * rates.box;
+
+      const design = number("designPlan");
+      const subtotal = logistics + processing + design;
+      const tax = subtotal * rates.tax;
+      const taxed = subtotal + tax;
+      const employeeQty = Math.max(1, number("employeeQty"));
+      const displayTotal = document.getElementById("taxMode").value === "taxed" ? taxed : subtotal;
+      const displayLabel = document.getElementById("taxMode").value === "taxed" ? "含稅總額" : "未稅總額";
+
+      setText("logisticsTotal", format(logistics));
+      setText("processingTotal", format(processing));
+      setText("designTotal", format(design));
+      setText("subtotal", format(subtotal));
+      setText("tax", format(tax));
+      setText("quoteLabel", displayLabel);
+      setText("quoteTotal", format(displayTotal));
+
+      setText("heroTotal", format(taxed));
+      setText("heroLogistics", format(logistics));
+      setText("heroProcessing", format(processing));
+      setText("heroDesign", format(design));
+      setText("heroPerPerson", format(taxed / employeeQty));
+    }
+
+    ids.forEach((id) => {
+      document.getElementById(id).addEventListener("input", calculate);
+      document.getElementById(id).addEventListener("change", calculate);
+    });
+
+    document.getElementById("printBtn").addEventListener("click", () => window.print());
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("strawberryQty").value = 0;
+      document.getElementById("melonQty").value = 0;
+      document.getElementById("giftQty").value = 0;
+      document.getElementById("jamQty").value = 0;
+      document.getElementById("teaBottleQty").value = 0;
+      document.getElementById("teaBagQty").value = 0;
+      document.getElementById("boxQty").value = 0;
+      document.getElementById("designPlan").value = 25000;
+      document.getElementById("employeeQty").value = 100;
+      document.getElementById("taxMode").value = "taxed";
+      calculate();
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
