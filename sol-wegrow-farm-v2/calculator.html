@@ -637,10 +637,6 @@
               <div class="summary-line"><span>設計費</span><b id="heroDesign">NT$0</b></div>
             </div>
           </div>
-          <div class="per-person">
-            <span>每位員工平均成本</span>
-            <b id="heroPerPerson">NT$0</b>
-          </div>
         </aside>
       </section>
 
@@ -735,10 +731,6 @@
                 </select>
               </div>
               <div class="field">
-                <label for="employeeQty">員工/收禮人數</label>
-                <input id="employeeQty" type="number" min="1" step="1" value="100" inputmode="numeric">
-              </div>
-              <div class="field">
                 <label for="taxMode">報價顯示</label>
                 <select id="taxMode">
                   <option value="taxed" selected>顯示含稅總額</option>
@@ -794,7 +786,6 @@
       "teaBagQty",
       "boxQty",
       "designPlan",
-      "employeeQty",
       "taxMode"
     ];
 
@@ -820,7 +811,6 @@
       const subtotal = logistics + processing + design;
       const tax = subtotal * rates.tax;
       const taxed = subtotal + tax;
-      const employeeQty = Math.max(1, number("employeeQty"));
       const displayTotal = document.getElementById("taxMode").value === "taxed" ? taxed : subtotal;
       const displayLabel = document.getElementById("taxMode").value === "taxed" ? "含稅總額" : "未稅總額";
 
@@ -836,7 +826,6 @@
       setText("heroLogistics", format(logistics));
       setText("heroProcessing", format(processing));
       setText("heroDesign", format(design));
-      setText("heroPerPerson", format(taxed / employeeQty));
     }
 
     ids.forEach((id) => {
@@ -854,7 +843,6 @@
       document.getElementById("teaBagQty").value = 0;
       document.getElementById("boxQty").value = 0;
       document.getElementById("designPlan").value = 25000;
-      document.getElementById("employeeQty").value = 100;
       document.getElementById("taxMode").value = "taxed";
       calculate();
     });
