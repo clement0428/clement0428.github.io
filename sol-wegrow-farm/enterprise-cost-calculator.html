@@ -631,7 +631,7 @@
       }
     }
   </style>
-  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-yield-calculator-20260701">
+  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-no-monthly-summary-20260701">
 </head>
 <body>
   <div class="shell">
@@ -685,7 +685,6 @@
               <div class="summary-line"><span>物流費</span><b id="heroLogistics">NT$0</b></div>
               <div class="summary-line"><span>加工費</span><b id="heroProcessing">NT$0</b></div>
               <div class="summary-line"><span>設計費</span><b id="heroDesign">NT$0</b></div>
-              <div class="summary-line"><span>認養月費參考</span><b id="heroBaseMonthly">NT$0</b></div>
             </div>
           </div>
         </aside>
@@ -976,7 +975,6 @@
       setText("heroLogistics", format(logistics));
       setText("heroProcessing", format(processing));
       setText("heroDesign", format(design));
-      setText("heroBaseMonthly", format(baseMonthly));
     }
 
     function activateStep(step) {
