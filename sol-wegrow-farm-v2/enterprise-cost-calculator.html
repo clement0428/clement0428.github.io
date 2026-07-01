@@ -631,7 +631,7 @@
       }
     }
   </style>
-  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-guided-calculator-20260701">
+  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-yield-calculator-20260701">
 </head>
 <body>
   <div class="shell">
@@ -751,7 +751,7 @@
             </div>
             <div class="metric-grid">
               <div class="metric"><span>鮮果份數</span><b id="freshUnits">0 份</b></div>
-              <div class="metric"><span>禮盒份數</span><b id="giftUnits">0 份</b></div>
+              <div class="metric"><span>禮盒加工量</span><b id="giftUnits">0 g</b></div>
               <div class="metric"><span>本段物流估算</span><b id="logisticsPreview">NT$0</b></div>
             </div>
             <div class="actions">
@@ -762,14 +762,14 @@
 
           <section class="section" data-step="3">
             <div class="section-head">
-              <h2>可製作禮盒數量</h2>
+              <h2>可製作數量</h2>
               <span>步驟 3 / 5</span>
             </div>
-            <p class="step-copy">依禮盒比例自動換算可製作數量。每份禮盒先以一個完成品搭配一組外盒估算，後續可再依實際提案調整。</p>
+            <p class="step-copy">依禮盒比例先換算可加工草莓量，再用果醬每罐 200g、果茶每瓶 90g 估算可製作數量。</p>
             <div class="metric-grid">
-              <div class="metric"><span>可製作禮盒</span><b id="availableGiftBoxes">0 盒</b></div>
+              <div class="metric"><span>可做果醬上限</span><b id="availableGiftBoxes">0 瓶</b></div>
               <div class="metric"><span>外盒需求</span><b id="boxDemand">0 個</b></div>
-              <div class="metric"><span>禮盒物流估算</span><b id="giftShippingPreview">NT$0</b></div>
+              <div class="metric"><span>可做果茶上限</span><b id="giftShippingPreview">0 瓶</b></div>
             </div>
             <div class="actions">
               <button class="action secondary" type="button" data-prev-step>上一步</button>
@@ -782,7 +782,7 @@
               <h2>果醬和果茶比例</h2>
               <span>步驟 4 / 5</span>
             </div>
-            <p class="step-copy">決定禮盒內果醬與果茶的配置。加工單價採現有報價：果醬 NT$75、果茶 NT$103、外盒 NT$50。</p>
+            <p class="step-copy">決定可加工草莓量要分配給果醬或果茶。加工單價採現有報價：果醬 NT$75、果茶 NT$103、外盒 NT$50。</p>
             <div class="grid">
               <div class="field">
                 <label for="jamPercent">果醬比例</label>
@@ -843,7 +843,7 @@
           <h2>估算結果</h2>
           <div class="quote-detail">
             <div class="quote-row"><span>認養單位</span><b id="quoteUnits">0 單位</b></div>
-            <div class="quote-row"><span>鮮果 / 禮盒</span><b id="quoteMix">0 / 0</b></div>
+            <div class="quote-row"><span>鮮果 / 加工</span><b id="quoteMix">0 / 0</b></div>
             <div class="quote-row"><span>果醬 / 果茶</span><b id="quoteProductMix">0 / 0</b></div>
             <div class="quote-row"><span>包裝客制</span><b id="quoteDesignPlan">標準客製</b></div>
             <div class="quote-row"><span>物流費</span><b id="logisticsTotal">NT$0</b></div>
@@ -865,6 +865,10 @@
   <script>
     const rates = {
       monthlyRent: 3300,
+      plantsPerUnit: 100,
+      strawberryGramPerPlant: 300,
+      jamGramPerBottle: 200,
+      teaGramPerBottle: 90,
       strawberryShip: 160,
       melonShip: 225,
       giftShip: 130,
@@ -900,23 +904,30 @@
 
     function calculate() {
       const adoptionUnits = Math.max(1, Math.round(number("adoptionUnits")));
+      const totalPlants = adoptionUnits * rates.plantsPerUnit;
+      const totalHarvestGram = totalPlants * rates.strawberryGramPerPlant;
       const freshPercent = Math.min(100, Math.max(0, number("freshPercent")));
       const giftPercent = 100 - freshPercent;
-      const freshUnits = Math.round(adoptionUnits * freshPercent / 100);
-      const giftUnits = Math.max(0, adoptionUnits - freshUnits);
+      const freshGram = Math.round(totalHarvestGram * freshPercent / 100);
+      const giftGram = Math.max(0, totalHarvestGram - freshGram);
+      const freshUnits = Math.ceil(freshGram / rates.strawberryGramPerPlant);
       const freshSplit = splitFreshUnits(freshUnits, document.getElementById("fruitMix").value);
       const jamPercent = Math.min(100, Math.max(0, number("jamPercent")));
       const teaPercent = 100 - jamPercent;
-      const jamQty = Math.round(giftUnits * jamPercent / 100);
-      const teaBottleQty = Math.max(0, giftUnits - jamQty);
+      const jamGram = Math.round(giftGram * jamPercent / 100);
+      const teaGram = Math.max(0, giftGram - jamGram);
+      const jamQty = Math.floor(jamGram / rates.jamGramPerBottle);
+      const teaBottleQty = Math.floor(teaGram / rates.teaGramPerBottle);
+      const maxJamQty = Math.floor(giftGram / rates.jamGramPerBottle);
+      const maxTeaBottleQty = Math.floor(giftGram / rates.teaGramPerBottle);
       const bulkTeaQty = Math.round(number("bulkTeaQty"));
-      const boxQty = giftUnits;
+      const boxQty = jamQty + teaBottleQty + bulkTeaQty;
       const design = number("designPlan");
 
       const logistics =
         freshSplit.strawberry * rates.strawberryShip +
         freshSplit.melon * rates.melonShip +
-        giftUnits * rates.giftShip;
+        boxQty * rates.giftShip;
 
       const processing =
         jamQty * rates.jam +
@@ -938,11 +949,11 @@
       setText("freshPercentLabel", `${freshPercent}%`);
       setText("giftPercentLabel", `禮盒 ${giftPercent}%`);
       setText("freshUnits", `${freshUnits.toLocaleString("zh-TW")} 份`);
-      setText("giftUnits", `${giftUnits.toLocaleString("zh-TW")} 份`);
+      setText("giftUnits", `${giftGram.toLocaleString("zh-TW")} g`);
       setText("logisticsPreview", format(logistics));
-      setText("availableGiftBoxes", `${giftUnits.toLocaleString("zh-TW")} 盒`);
+      setText("availableGiftBoxes", `${maxJamQty.toLocaleString("zh-TW")} 瓶`);
       setText("boxDemand", `${boxQty.toLocaleString("zh-TW")} 個`);
-      setText("giftShippingPreview", format(giftUnits * rates.giftShip));
+      setText("giftShippingPreview", `${maxTeaBottleQty.toLocaleString("zh-TW")} 瓶`);
       setText("jamPercentLabel", `${jamPercent}%`);
       setText("teaPercentLabel", `果茶 ${teaPercent}%`);
       setText("jamQtyLabel", `${jamQty.toLocaleString("zh-TW")} 瓶`);
@@ -950,7 +961,7 @@
       setText("processingPreview", format(processing));
 
       setText("quoteUnits", `${adoptionUnits.toLocaleString("zh-TW")} 單位`);
-      setText("quoteMix", `${freshUnits.toLocaleString("zh-TW")} 份 / ${giftUnits.toLocaleString("zh-TW")} 盒`);
+      setText("quoteMix", `${freshGram.toLocaleString("zh-TW")} g / ${giftGram.toLocaleString("zh-TW")} g`);
       setText("quoteProductMix", `${jamQty.toLocaleString("zh-TW")} 瓶 / ${teaBottleQty.toLocaleString("zh-TW")} 瓶`);
       setText("quoteDesignPlan", selectedDesign);
       setText("logisticsTotal", format(logistics));
