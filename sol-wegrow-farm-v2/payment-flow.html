@@ -261,6 +261,94 @@
 
     .quota-card.warning b { color: var(--rose); }
 
+    .calendar {
+      display: grid;
+      gap: 12px;
+    }
+
+    .calendar-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 14px;
+    }
+
+    .calendar-title strong {
+      color: var(--green);
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .calendar-title span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      text-align: right;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .harvest-day {
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+      min-height: 178px;
+    }
+
+    .harvest-day.warning {
+      border-color: rgba(183, 85, 69, .66);
+      background: #fff8f6;
+    }
+
+    .harvest-day h3 {
+      margin: 0;
+      color: var(--green);
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .harvest-day small {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .harvest-day dl {
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .harvest-day div {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 850;
+      border-bottom: 1px solid rgba(21, 24, 20, .1);
+      padding-bottom: 7px;
+    }
+
+    .harvest-day div:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .harvest-day b {
+      color: var(--ink);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .harvest-day.warning b:last-child { color: var(--rose); }
+
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -455,6 +543,7 @@
     @media (max-width: 960px) {
       .layout,
       .quota,
+      .calendar-grid,
       .grid {
         grid-template-columns: 1fr;
       }
@@ -527,6 +616,14 @@
             <strong>付款確認前不出貨</strong>
             <span>資料可先填寫與分配；藍新付款確認後，才會依下方配送明細安排出貨。</span>
           </div>
+
+          <section class="calendar" aria-label="供貨日曆">
+            <div class="calendar-title">
+              <strong>供貨日曆</strong>
+              <span>截止前未填地址的鮮果，轉入加工製作</span>
+            </div>
+            <div class="calendar-grid" id="harvestCalendar"></div>
+          </section>
 
           <div class="quota" aria-label="可配送量">
             <div class="quota-card">
@@ -602,6 +699,8 @@
           <div class="summary-lines">
             <div class="line"><span>客戶</span><b id="summaryClient">企業客戶</b></div>
             <div class="line"><span>配送地址</span><b id="summaryAddresses">1 筆</b></div>
+            <div class="line"><span>可出貨</span><b id="summaryShippable">鮮果 0 / 禮盒 0</b></div>
+            <div class="line"><span>待補地址</span><b id="summaryPendingAddress">鮮果 0 / 禮盒 0</b></div>
             <div class="line"><span>鮮果已分配</span><b id="summaryFresh">0 / 120 盒</b></div>
             <div class="line"><span>禮盒已分配</span><b id="summaryGift">0 / 80 盒</b></div>
             <div class="line" id="summaryRemainingLine"><span>剩餘可分配</span><b id="summaryRemaining">鮮果 120 / 禮盒 80</b></div>
@@ -636,7 +735,7 @@
       <div class="grid">
         <label>
           到貨日期
-          <input data-field="date" type="date">
+          <select data-field="date"></select>
         </label>
         <label>
           可收件時段
@@ -680,9 +779,15 @@
   </template>
 
   <script>
+    const harvestPlan = [
+      { date: "2026-07-15", label: "7/15", fresh: 60, gift: 40, cutoff: "7/13 18:00" },
+      { date: "2026-07-17", label: "7/17", fresh: 40, gift: 30, cutoff: "7/15 18:00" },
+      { date: "2026-07-20", label: "7/20", fresh: 20, gift: 10, cutoff: "7/18 18:00" }
+    ];
+
     const quota = {
-      fresh: 120,
-      gift: 80
+      fresh: harvestPlan.reduce((sum, day) => sum + day.fresh, 0),
+      gift: harvestPlan.reduce((sum, day) => sum + day.gift, 0)
     };
 
     const fields = {
@@ -694,12 +799,15 @@
       deliveryTemplate: document.querySelector("#deliveryTemplate"),
       addDelivery: document.querySelector("#addDelivery"),
       copySummary: document.querySelector("#copySummary"),
+      harvestCalendar: document.querySelector("#harvestCalendar"),
       freshQuotaText: document.querySelector("#freshQuotaText"),
       giftQuotaText: document.querySelector("#giftQuotaText"),
       remainingCard: document.querySelector("#remainingCard"),
       remainingText: document.querySelector("#remainingText"),
       summaryClient: document.querySelector("#summaryClient"),
       summaryAddresses: document.querySelector("#summaryAddresses"),
+      summaryShippable: document.querySelector("#summaryShippable"),
+      summaryPendingAddress: document.querySelector("#summaryPendingAddress"),
       summaryFresh: document.querySelector("#summaryFresh"),
       summaryGift: document.querySelector("#summaryGift"),
       summaryRemaining: document.querySelector("#summaryRemaining"),
@@ -734,13 +842,64 @@
         sum.fresh += item.fresh;
         sum.gift += item.gift;
         if (item.date) sum.dates.push(item.date);
+        const hasAddress = Boolean(item.receiver && item.receiverPhone && item.address);
+        if (hasAddress) {
+          sum.shipFresh += item.fresh;
+          sum.shipGift += item.gift;
+        } else {
+          sum.pendingFresh += item.fresh;
+          sum.pendingGift += item.gift;
+        }
+        if (!sum.byDate[item.date]) sum.byDate[item.date] = { fresh: 0, gift: 0, shipFresh: 0, shipGift: 0, pendingFresh: 0, pendingGift: 0 };
+        sum.byDate[item.date].fresh += item.fresh;
+        sum.byDate[item.date].gift += item.gift;
+        sum.byDate[item.date].shipFresh += hasAddress ? item.fresh : 0;
+        sum.byDate[item.date].shipGift += hasAddress ? item.gift : 0;
+        sum.byDate[item.date].pendingFresh += hasAddress ? 0 : item.fresh;
+        sum.byDate[item.date].pendingGift += hasAddress ? 0 : item.gift;
         return sum;
-      }, { fresh: 0, gift: 0, dates: [] });
+      }, { fresh: 0, gift: 0, dates: [], shipFresh: 0, shipGift: 0, pendingFresh: 0, pendingGift: 0, byDate: {} });
     }
 
     function earliestDate(dates) {
       if (!dates.length) return "待確認";
       return [...dates].sort()[0];
+    }
+
+    function formatBoxes(fresh, gift) {
+      return `鮮果 ${fresh.toLocaleString("zh-TW")} / 禮盒 ${gift.toLocaleString("zh-TW")}`;
+    }
+
+    function renderCalendar(total) {
+      fields.harvestCalendar.innerHTML = harvestPlan.map((day) => {
+        const used = total.byDate[day.date] || { fresh: 0, gift: 0, pendingFresh: 0, pendingGift: 0 };
+        const freshRemaining = day.fresh - used.fresh;
+        const giftRemaining = day.gift - used.gift;
+        const over = freshRemaining < 0 || giftRemaining < 0;
+        const remaining = over
+          ? `超出 鮮果 ${Math.max(0, -freshRemaining).toLocaleString("zh-TW")} / 禮盒 ${Math.max(0, -giftRemaining).toLocaleString("zh-TW")}`
+          : formatBoxes(freshRemaining, giftRemaining);
+        return `
+          <article class="harvest-day${over ? " warning" : ""}" data-harvest-day="${day.date}">
+            <small>填寫截止 ${day.cutoff}</small>
+            <h3>${day.label}</h3>
+            <dl>
+              <div><span>可配送</span><b>${formatBoxes(day.fresh, day.gift)}</b></div>
+              <div><span>已分配</span><b>${formatBoxes(used.fresh, used.gift)}</b></div>
+              <div><span>待補地址</span><b>${formatBoxes(used.pendingFresh, used.pendingGift)}</b></div>
+              <div><span>${over ? "超出量" : "剩餘"}</span><b>${remaining}</b></div>
+            </dl>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function populateDateSelect(select, value = "") {
+      select.innerHTML = harvestPlan.map((day) => {
+        const label = `${day.label}｜鮮果 ${day.fresh} 盒・禮盒 ${day.gift} 盒｜截止 ${day.cutoff}`;
+        return `<option value="${day.date}">${label}</option>`;
+      }).join("");
+      select.value = value || harvestPlan[0].date;
     }
 
     function render() {
@@ -755,6 +914,7 @@
       const remainingGift = quota.gift - total.gift;
       const over = remainingFresh < 0 || remainingGift < 0;
 
+      renderCalendar(total);
       fields.freshQuotaText.textContent = quota.fresh.toLocaleString("zh-TW");
       fields.giftQuotaText.textContent = quota.gift.toLocaleString("zh-TW");
       fields.remainingText.textContent = `鮮果 ${remainingFresh.toLocaleString("zh-TW")} / 禮盒 ${remainingGift.toLocaleString("zh-TW")}`;
@@ -763,6 +923,8 @@
 
       fields.summaryClient.textContent = fields.clientName.value.trim() || "企業客戶";
       fields.summaryAddresses.textContent = `${cards.length.toLocaleString("zh-TW")} 筆`;
+      fields.summaryShippable.textContent = formatBoxes(total.shipFresh, total.shipGift);
+      fields.summaryPendingAddress.textContent = formatBoxes(total.pendingFresh, total.pendingGift);
       fields.summaryFresh.textContent = `${total.fresh.toLocaleString("zh-TW")} / ${quota.fresh.toLocaleString("zh-TW")} 盒`;
       fields.summaryGift.textContent = `${total.gift.toLocaleString("zh-TW")} / ${quota.gift.toLocaleString("zh-TW")} 盒`;
       fields.summaryRemaining.textContent = over
@@ -779,7 +941,7 @@
         if (input && value !== undefined) input.value = value;
       };
 
-      set("date", seed.date);
+      populateDateSelect(card.querySelector('[data-field="date"]'), seed.date);
       set("time", seed.time || "不限");
       set("fresh", seed.fresh ?? 0);
       set("gift", seed.gift ?? 0);
@@ -824,6 +986,8 @@
         lines.push("");
       });
 
+      lines.push(`可出貨：${fields.summaryShippable.textContent}`);
+      lines.push(`待補地址：${fields.summaryPendingAddress.textContent}`);
       lines.push(`合計鮮果：${fields.summaryFresh.textContent}`);
       lines.push(`合計禮盒：${fields.summaryGift.textContent}`);
       lines.push(`剩餘可分配：${fields.summaryRemaining.textContent}`);
