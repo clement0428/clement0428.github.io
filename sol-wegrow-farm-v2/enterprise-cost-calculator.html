@@ -631,7 +631,7 @@
       }
     }
   </style>
-  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-no-monthly-summary-20260701">
+  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-shipping-batch10-20260701">
 </head>
 <body>
   <div class="shell">
@@ -732,7 +732,7 @@
               <h2>鮮果和禮盒比例</h2>
               <span>步驟 2 / 5</span>
             </div>
-            <p class="step-copy">設定這次交付中鮮果與加工禮盒的比例。鮮果依低溫宅配估算；禮盒會帶入下一步的可製作量。</p>
+            <p class="step-copy">設定這次交付中鮮果與加工禮盒的比例。物流以每 10 盒合併一件估算；禮盒會帶入下一步的可製作量。</p>
             <div class="grid">
               <div class="field">
                 <label for="freshPercent">鮮果比例</label>
@@ -855,7 +855,7 @@
             <span id="quoteLabel">含稅估算</span>
             <b id="quoteTotal">NT$0</b>
           </div>
-          <p class="quote-note">此頁為客製加購費用估算；企業認養月費另依正式合約與採購單確認。實際金額會依當季產量、配送地點、包裝打樣與採購條件調整。</p>
+          <p class="quote-note">此頁為客製加購費用估算；物流以每 10 盒合併一件預估。實際金額會依當季產量、配送地點、包裝打樣與採購條件調整。</p>
         </aside>
       </section>
     </main>
@@ -868,6 +868,7 @@
       strawberryGramPerPlant: 300,
       jamGramPerBottle: 200,
       teaGramPerBottle: 90,
+      shippingBatchSize: 10,
       strawberryShip: 160,
       melonShip: 225,
       giftShip: 130,
@@ -901,6 +902,10 @@
       return { strawberry, melon: total - strawberry };
     }
 
+    function shippingBatches(quantity) {
+      return Math.ceil(Math.max(0, quantity) / rates.shippingBatchSize);
+    }
+
     function calculate() {
       const adoptionUnits = Math.max(1, Math.round(number("adoptionUnits")));
       const totalPlants = adoptionUnits * rates.plantsPerUnit;
@@ -924,9 +929,9 @@
       const design = number("designPlan");
 
       const logistics =
-        freshSplit.strawberry * rates.strawberryShip +
-        freshSplit.melon * rates.melonShip +
-        boxQty * rates.giftShip;
+        shippingBatches(freshSplit.strawberry) * rates.strawberryShip +
+        shippingBatches(freshSplit.melon) * rates.melonShip +
+        shippingBatches(boxQty) * rates.giftShip;
 
       const processing =
         jamQty * rates.jam +
