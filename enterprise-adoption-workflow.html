@@ -1,0 +1,921 @@
+﻿<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="wegrow-static-deploy" content="enterprise-adoption-workflow-20260701-2">
+  <title>WeGrow 企業認養工作台</title>
+  <meta name="description" content="WeGrow 企業認養方案工作台，整合現場果況、金流資料與客製費用預估。">
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #132219;
+      --muted: #59685d;
+      --paper: #f7f4ea;
+      --white: #ffffff;
+      --line: #d8d2bf;
+      --green: #10452d;
+      --green-2: #1c6541;
+      --sage: #e8eee1;
+      --sage-2: #d6e3cf;
+      --gold: #b48b3d;
+      --red: #a94639;
+      --shadow: 0 18px 58px rgba(19, 34, 25, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    button, input, select, textarea { font: inherit; letter-spacing: 0; }
+
+    .shell {
+      width: min(1240px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .nav {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid rgba(19, 34, 25, .12);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand img {
+      width: auto;
+      max-width: 146px;
+      height: 38px;
+      object-fit: contain;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 34px;
+      background: rgba(19, 34, 25, .18);
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .brand span:last-child {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .nav-links a {
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 10px;
+      border: 1px solid transparent;
+    }
+
+    .nav-links a:hover { border-color: var(--line); color: var(--green); }
+
+    .hero {
+      position: relative;
+      min-height: 440px;
+      margin-top: 22px;
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      background: var(--green);
+    }
+
+    .hero img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(.92) contrast(1.02);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(16, 69, 45, .91), rgba(16, 69, 45, .68) 48%, rgba(16, 69, 45, .22));
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      padding: 48px;
+      color: var(--white);
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: #ead39d;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(40px, 6vw, 74px);
+      line-height: 1.02;
+      font-weight: 900;
+    }
+
+    .hero-copy p:last-child {
+      margin: 18px 0 0;
+      max-width: 700px;
+      font-size: 18px;
+      line-height: 1.7;
+      color: rgba(255,255,255,.88);
+    }
+
+    .top-summary {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      min-height: 112px;
+      padding: 18px;
+      background: var(--white);
+      border: 1px solid var(--line);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 9px;
+      color: var(--green);
+      font-size: clamp(23px, 3vw, 34px);
+      line-height: 1.05;
+    }
+
+    .workflow {
+      margin: 18px 0 34px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, .9fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      box-shadow: 0 12px 32px rgba(19, 34, 25, .06);
+    }
+
+    .panel-head {
+      padding: 22px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: 26px;
+    }
+
+    .panel-note {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      background: var(--sage);
+      color: var(--green);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      margin: 22px 24px 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--line);
+    }
+
+    .tab {
+      min-height: 54px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: var(--sage);
+      color: var(--green);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .tab:last-child { border-right: 0; }
+    .tab.is-active { background: var(--green); color: var(--white); }
+
+    .pane { display: none; padding: 24px; }
+    .pane.is-active { display: block; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label, .field-label {
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      background: #fffdf7;
+      color: var(--ink);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    textarea { min-height: 86px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(180, 139, 61, .14); }
+
+    input[type="range"] { padding: 0; accent-color: var(--green); }
+
+    .range-line {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .metrics-grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric-box {
+      min-height: 96px;
+      padding: 15px;
+      background: var(--sage);
+      border: 1px solid var(--line);
+    }
+
+    .metric-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .metric-box strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--green);
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: #fff7e2;
+      border: 1px solid #e3c879;
+      color: #5e4617;
+      font-size: 13px;
+      line-height: 1.6;
+      font-weight: 800;
+    }
+
+    .actions {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      min-height: 44px;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: var(--white);
+      padding: 0 16px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color: var(--green);
+    }
+
+    .quote {
+      position: sticky;
+      top: 16px;
+    }
+
+    .quote-body { padding: 20px 24px 24px; }
+
+    .total-card {
+      padding: 20px;
+      background: var(--green);
+      color: var(--white);
+    }
+
+    .total-card span {
+      display: block;
+      color: rgba(255,255,255,.72);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .total-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 40px;
+      line-height: 1;
+    }
+
+    .split {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .row b { color: var(--ink); text-align: right; }
+
+    .status-list {
+      margin-top: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .status-item {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: #fffdf7;
+    }
+
+    .status-dot {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      background: var(--sage);
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .status-item.is-active .status-dot { background: var(--green); color: var(--white); }
+    .status-item.is-risk .status-dot { background: var(--red); color: var(--white); }
+
+    .status-item strong { display: block; color: var(--green); }
+    .status-item span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+    .flow-band {
+      margin-bottom: 42px;
+      padding: 26px;
+      background: var(--green);
+      color: var(--white);
+    }
+
+    .flow-band h2 {
+      margin: 0 0 18px;
+      font-size: 28px;
+    }
+
+    .flow-steps {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .flow-step {
+      min-height: 150px;
+      padding: 16px;
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+    }
+
+    .flow-step b {
+      display: block;
+      color: #ead39d;
+      font-size: 13px;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 17px;
+    }
+
+    .flow-step span {
+      display: block;
+      margin-top: 8px;
+      color: rgba(255,255,255,.76);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    footer {
+      padding: 24px 0 36px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .nav { align-items: start; flex-direction: column; padding: 14px 0; }
+      .nav-links { width: 100%; overflow-x: auto; }
+      .hero { min-height: 390px; }
+      .hero-copy { padding: 28px; }
+      .top-summary, .workflow, .flow-steps { grid-template-columns: 1fr; }
+      .quote { position: static; }
+      .form-grid, .metrics-grid { grid-template-columns: 1fr; }
+      .tabs { grid-template-columns: 1fr; }
+      .tab { border-right: 0; border-bottom: 1px solid var(--line); }
+      footer { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <nav class="nav" aria-label="主選單">
+      <a class="brand" href="#top">
+        <img src="sol-wegrow-farm/assets/brand/sol-logo.png" alt="SOL">
+        <span class="brand-divider"></span>
+        <img src="sol-wegrow-farm/assets/brand/wegrow-logo.png" alt="WeGrow">
+        <span>
+          <strong>企業認養農場</strong>
+          <span>現場果況、金流與費用預估工作台</span>
+        </span>
+      </a>
+      <div class="nav-links">
+        <a href="#field">現場畫面</a>
+        <a href="#payment">金流資料</a>
+        <a href="#calculator">費用預估</a>
+        <a href="#workflow">執行流程</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top" class="shell">
+    <section class="hero" aria-label="企業認養方案">
+      <img src="sol-wegrow-farm/assets/greenhouse-room.jpg" alt="WeGrow 溫室現場">
+      <div class="hero-copy">
+        <p class="eyebrow">企業認養方案工作台</p>
+        <h1>一頁完成認養決策</h1>
+        <p>客戶填資料，現場依果況確認鮮果與禮盒比例；系統即時計算物流、加工、設計與稅金，付款完成後才通知出貨或加工。</p>
+      </div>
+    </section>
+
+    <section class="top-summary" aria-label="即時摘要">
+      <article class="stat"><span>認養單位</span><strong id="summaryUnits">30 單位</strong></article>
+      <article class="stat"><span>現場可出鮮果</span><strong id="summaryFresh">36 kg</strong></article>
+      <article class="stat"><span>威果客製費含稅</span><strong id="summaryCustom">NT$0</strong></article>
+      <article class="stat"><span>付款狀態</span><strong id="summaryStatus">待付款</strong></article>
+    </section>
+
+    <section class="workflow" aria-label="認養工作台">
+      <section class="panel" aria-label="三功能工作區">
+        <div class="panel-head">
+          <div>
+            <h2>認養方案設定</h2>
+            <p class="panel-note">三個功能共用同一份資料：現場果況決定比例，金流資料決定能否出貨，費用預估提供簽約前預算。</p>
+          </div>
+          <span class="pill" id="caseId">案件 WG-ADOPT-0701</span>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="功能切換">
+          <button class="tab is-active" type="button" data-tab="field" id="field">1 現場畫面</button>
+          <button class="tab" type="button" data-tab="payment" id="payment">2 金流資料</button>
+          <button class="tab" type="button" data-tab="calculator" id="calculator">3 費用預估</button>
+        </div>
+
+        <div class="pane is-active" data-pane="field">
+          <div class="form-grid">
+            <div class="field">
+              <label for="companyName">公司名稱</label>
+              <input id="companyName" value="亞果遊艇股份有限公司">
+            </div>
+            <div class="field">
+              <label for="contactName">聯絡窗口</label>
+              <input id="contactName" value="福委會 / 總務窗口">
+            </div>
+            <div class="field">
+              <label for="adoptionUnits">認養單位</label>
+              <input id="adoptionUnits" type="number" min="1" step="1" value="30">
+              <span class="hint">每單位 100 株，每株以 300g 草莓估算。</span>
+            </div>
+            <div class="field">
+              <label for="onsiteFreshPercent">現場判定鮮果比例</label>
+              <input id="onsiteFreshPercent" type="range" min="0" max="100" step="5" value="40">
+              <div class="range-line"><span id="freshReadout">鮮果 40%</span><span id="giftReadout">禮盒 60%</span></div>
+            </div>
+            <div class="field">
+              <label for="fruitCondition">今日果況</label>
+              <select id="fruitCondition">
+                <option value="good">果況穩定，可部分鮮果出貨</option>
+                <option value="mixed" selected>果況混合，鮮果與加工並行</option>
+                <option value="processing">果況適合加工，鮮果保留較低</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="paymentDeadline">付款截止時間</label>
+              <input id="paymentDeadline" type="datetime-local">
+            </div>
+            <div class="field full">
+              <label for="fieldNote">現場備註</label>
+              <textarea id="fieldNote">鮮果與禮盒比例由現場依成熟度、品質、採收量決定；客戶填寫偏好，但不視為固定交付承諾。</textarea>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-box"><span>預估總產量</span><strong id="totalHarvest">900 kg</strong></div>
+            <div class="metric-box"><span>鮮果出貨量</span><strong id="freshWeight">360 kg</strong></div>
+            <div class="metric-box"><span>轉加工量</span><strong id="giftWeight">540 kg</strong></div>
+          </div>
+          <div class="notice">原則：客戶可以填偏好，但鮮果/禮盒比例由現場依果況確認。付款完成前，不通知物流出貨，也不保留鮮果名額。</div>
+        </div>
+
+        <div class="pane" data-pane="payment">
+          <div class="form-grid">
+            <div class="field">
+              <label for="taxId">統一編號</label>
+              <input id="taxId" value="54662081">
+            </div>
+            <div class="field">
+              <label for="invoiceTitle">發票抬頭</label>
+              <input id="invoiceTitle" value="亞果遊艇股份有限公司">
+            </div>
+            <div class="field full">
+              <label for="deliveryAddress">收件地址</label>
+              <input id="deliveryAddress" value="請填寫公司或員工統一收件地址">
+            </div>
+            <div class="field">
+              <label for="mainContractStatus">四葉年約主約</label>
+              <select id="mainContractStatus">
+                <option value="pending" selected>待匯款</option>
+                <option value="paid">已匯款</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="customPaymentStatus">威果客製費</label>
+              <select id="customPaymentStatus">
+                <option value="pending" selected>待付款</option>
+                <option value="paid">已付款</option>
+                <option value="expired">逾時未付款</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="newebpayNo">藍新付款編號</label>
+              <input id="newebpayNo" value="待系統建立">
+            </div>
+            <div class="field">
+              <label for="receiptEmail">付款通知信箱</label>
+              <input id="receiptEmail" value="finance@example.com">
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-box"><span>四葉收款</span><strong id="mainAnnual">NT$1,188,000</strong></div>
+            <div class="metric-box"><span>威果收款</span><strong id="customPayable">NT$0</strong></div>
+            <div class="metric-box"><span>出貨條件</span><strong id="shippingGate">未放行</strong></div>
+          </div>
+          <div class="notice">主約年費走四葉公司匯款；物流、加工、設計與包材等客製費由威果開立付款頁與發票。威果客製費付款完成後，才通知出貨、加工與設計。</div>
+        </div>
+
+        <div class="pane" data-pane="calculator">
+          <div class="form-grid">
+            <div class="field">
+              <label for="jamPercent">果醬比例</label>
+              <input id="jamPercent" type="range" min="0" max="100" step="5" value="60">
+              <div class="range-line"><span id="jamReadout">果醬 60%</span><span id="teaReadout">果茶 40%</span></div>
+            </div>
+            <div class="field">
+              <label for="designPlan">包裝客製需求</label>
+              <select id="designPlan">
+                <option value="0">無客製設計</option>
+                <option value="8000">基本排版與貼紙 NT$8,000</option>
+                <option value="25000" selected>外盒、腰封、瓶貼 NT$25,000</option>
+                <option value="45000">完整聯名視覺 NT$45,000</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="bulkTeaQty">額外果茶袋數</label>
+              <input id="bulkTeaQty" type="number" min="0" step="1" value="0">
+            </div>
+            <div class="field">
+              <label for="taxMode">報價顯示</label>
+              <select id="taxMode">
+                <option value="taxed" selected>含 5% 營業稅</option>
+                <option value="untaxed">未稅</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-box"><span>可製作果醬</span><strong id="jamQty">0 罐</strong></div>
+            <div class="metric-box"><span>可製作果茶</span><strong id="teaQty">0 瓶</strong></div>
+            <div class="metric-box"><span>禮盒外箱件數</span><strong id="giftShipments">0 件</strong></div>
+          </div>
+          <div class="notice">物流以每 10 盒合併一件估算；草莓鮮果、美濃瓜與禮盒依不同箱型分開估算。實際金額仍以出貨日報價與配送地址確認。</div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="button" id="saveBtn">儲存本機資料</button>
+          <button class="btn secondary" type="button" id="printBtn">列印 / 存成 PDF</button>
+          <button class="btn secondary" type="button" id="resetBtn">恢復預設</button>
+        </div>
+      </section>
+
+      <aside class="panel quote" aria-label="費用與狀態摘要">
+        <div class="panel-head">
+          <div>
+            <h2>即時摘要</h2>
+            <p class="panel-note">主管、福委會與財務可在同一頁看到未稅、稅額、含稅與出貨條件。</p>
+          </div>
+        </div>
+        <div class="quote-body">
+          <div class="total-card">
+            <span id="quoteTotalLabel">威果客製費含稅</span>
+            <strong id="quoteTotal">NT$0</strong>
+          </div>
+          <div class="split">
+            <div class="row"><span>物流費用</span><b id="logisticsTotal">NT$0</b></div>
+            <div class="row"><span>加工與禮盒費</span><b id="processingTotal">NT$0</b></div>
+            <div class="row"><span>設計費用</span><b id="designTotal">NT$25,000</b></div>
+            <div class="row"><span>未稅小計</span><b id="subtotal">NT$0</b></div>
+            <div class="row"><span>營業稅 5%</span><b id="tax">NT$0</b></div>
+            <div class="row"><span>四葉主約年費</span><b id="mainAnnualSide">NT$1,188,000</b></div>
+          </div>
+
+          <div class="status-list">
+            <div class="status-item is-active" id="statusData">
+              <div class="status-dot">1</div>
+              <div><strong>客戶資料送出</strong><span id="statusDataText">公司、發票、地址與需求已建立。</span></div>
+            </div>
+            <div class="status-item is-active" id="statusField">
+              <div class="status-dot">2</div>
+              <div><strong>現場果況確認</strong><span id="statusFieldText">鮮果與禮盒比例以現場判定為準。</span></div>
+            </div>
+            <div class="status-item" id="statusPay">
+              <div class="status-dot">3</div>
+              <div><strong>付款狀態</strong><span id="statusPayText">等待威果客製費付款。</span></div>
+            </div>
+            <div class="status-item" id="statusRelease">
+              <div class="status-dot">4</div>
+              <div><strong>出貨 / 加工</strong><span id="statusReleaseText">付款完成才通知出貨與加工。</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="flow-band" id="workflow" aria-label="執行流程">
+      <h2>核心執行流程</h2>
+      <div class="flow-steps">
+        <div class="flow-step"><b>01</b><strong>客戶填資料</strong><span>公司、統編、發票、地址、數量與交付偏好。</span></div>
+        <div class="flow-step"><b>02</b><strong>現場定比例</strong><span>依成熟度、品質、採收量確認鮮果與禮盒比例。</span></div>
+        <div class="flow-step"><b>03</b><strong>系統算費用</strong><span>物流、加工、設計、稅金與主約年費拆開顯示。</span></div>
+        <div class="flow-step"><b>04</b><strong>付款才放行</strong><span>威果客製費付款完成後，才通知物流與加工。</span></div>
+        <div class="flow-step"><b>05</b><strong>逾時轉加工</strong><span>未付款自動提醒；逾時鮮果釋出或轉入加工。</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <span>WeGrow 企業認養工作台</span>
+    <span>客戶可讀版本：只呈現價值、流程與費用，不呈現內部討論語氣。</span>
+  </footer>
+
+  <script>
+    const rates = {
+      monthlyRent: 3300,
+      plantsPerUnit: 100,
+      gramPerPlant: 300,
+      jamGram: 200,
+      teaGram: 90,
+      freshShipBatch: 10,
+      giftShipBatch: 10,
+      strawberryShip: 160,
+      melonShip: 225,
+      giftShip: 130,
+      jamProcess: 75,
+      teaProcess: 103,
+      bulkTeaProcess: 1950,
+      box: 50,
+      tax: 0.05
+    };
+
+    const ids = [
+      "companyName", "contactName", "adoptionUnits", "onsiteFreshPercent", "fruitCondition",
+      "paymentDeadline", "fieldNote", "taxId", "invoiceTitle", "deliveryAddress",
+      "mainContractStatus", "customPaymentStatus", "newebpayNo", "receiptEmail",
+      "jamPercent", "designPlan", "bulkTeaQty", "taxMode"
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const money = (n) => `NT$${Math.round(n).toLocaleString("zh-TW")}`;
+    const kg = (g) => `${(g / 1000).toLocaleString("zh-TW", { maximumFractionDigits: 1 })} kg`;
+    const num = (id) => Math.max(0, Number($(id).value || 0));
+    const set = (id, value) => { $(id).textContent = value; };
+
+    function calculate() {
+      const units = Math.max(1, Math.round(num("adoptionUnits")));
+      const totalGram = units * rates.plantsPerUnit * rates.gramPerPlant;
+      const freshPercent = Math.min(100, Math.max(0, num("onsiteFreshPercent")));
+      const giftPercent = 100 - freshPercent;
+      const freshGram = Math.round(totalGram * freshPercent / 100);
+      const giftGram = Math.max(0, totalGram - freshGram);
+      const jamPercent = Math.min(100, Math.max(0, num("jamPercent")));
+      const teaPercent = 100 - jamPercent;
+      const jamQty = Math.floor((giftGram * jamPercent / 100) / rates.jamGram);
+      const teaQty = Math.floor((giftGram * teaPercent / 100) / rates.teaGram);
+      const bulkTeaQty = Math.round(num("bulkTeaQty"));
+      const boxQty = jamQty + teaQty + bulkTeaQty;
+      const freshBoxes = Math.ceil(freshGram / rates.gramPerPlant);
+      const strawberryShipments = Math.ceil(freshBoxes / rates.freshShipBatch);
+      const giftShipments = Math.ceil(boxQty / rates.giftShipBatch);
+      const logistics = strawberryShipments * rates.strawberryShip + giftShipments * rates.giftShip;
+      const processing = jamQty * rates.jamProcess + teaQty * rates.teaProcess + bulkTeaQty * rates.bulkTeaProcess + boxQty * rates.box;
+      const design = num("designPlan");
+      const subtotal = logistics + processing + design;
+      const tax = subtotal * rates.tax;
+      const taxed = subtotal + tax;
+      const displayTotal = $("taxMode").value === "taxed" ? taxed : subtotal;
+      const mainAnnual = units * rates.monthlyRent * 12;
+      const isPaid = $("customPaymentStatus").value === "paid";
+      const isExpired = $("customPaymentStatus").value === "expired";
+
+      set("summaryUnits", `${units.toLocaleString("zh-TW")} 單位`);
+      set("summaryFresh", kg(freshGram));
+      set("summaryCustom", money(taxed));
+      set("summaryStatus", isPaid ? "已付款" : isExpired ? "逾時未付款" : "待付款");
+      set("freshReadout", `鮮果 ${freshPercent}%`);
+      set("giftReadout", `禮盒 ${giftPercent}%`);
+      set("totalHarvest", kg(totalGram));
+      set("freshWeight", kg(freshGram));
+      set("giftWeight", kg(giftGram));
+      set("mainAnnual", money(mainAnnual));
+      set("mainAnnualSide", money(mainAnnual));
+      set("customPayable", money(taxed));
+      set("shippingGate", isPaid ? "可放行" : "未放行");
+      set("jamReadout", `果醬 ${jamPercent}%`);
+      set("teaReadout", `果茶 ${teaPercent}%`);
+      set("jamQty", `${jamQty.toLocaleString("zh-TW")} 罐`);
+      set("teaQty", `${teaQty.toLocaleString("zh-TW")} 瓶`);
+      set("giftShipments", `${giftShipments.toLocaleString("zh-TW")} 件`);
+      set("quoteTotalLabel", $("taxMode").value === "taxed" ? "威果客製費含稅" : "威果客製費未稅");
+      set("quoteTotal", money(displayTotal));
+      set("logisticsTotal", money(logistics));
+      set("processingTotal", money(processing));
+      set("designTotal", money(design));
+      set("subtotal", money(subtotal));
+      set("tax", money(tax));
+
+      $("statusPay").classList.toggle("is-active", isPaid);
+      $("statusPay").classList.toggle("is-risk", isExpired);
+      $("statusRelease").classList.toggle("is-active", isPaid);
+      $("statusRelease").classList.toggle("is-risk", isExpired);
+      set("statusDataText", `${$("companyName").value || "企業"}資料已建立，收件地址與發票資料可供付款使用。`);
+      set("statusFieldText", `現場判定鮮果 ${freshPercent}%、禮盒 ${giftPercent}%，可出鮮果 ${kg(freshGram)}。`);
+      set("statusPayText", isPaid ? "威果客製費已付款，系統可通知出貨與加工。" : isExpired ? "已逾付款時間，鮮果不再保留，需改由現場安排加工。" : `待付款；截止時間 ${$("paymentDeadline").value || "尚未設定"}。`);
+      set("statusReleaseText", isPaid ? "已放行：通知物流、加工與設計。" : isExpired ? "未放行：鮮果釋出或轉加工，通知客戶改方案。" : "未放行：付款完成前不通知物流與加工。");
+
+      const state = Object.fromEntries(ids.map((id) => [id, $(id).value]));
+      localStorage.setItem("wegrowAdoptionDraft", JSON.stringify(state));
+    }
+
+    function loadDraft() {
+      const saved = localStorage.getItem("wegrowAdoptionDraft");
+      if (!saved) return;
+      try {
+        const state = JSON.parse(saved);
+        ids.forEach((id) => {
+          if (state[id] !== undefined && $(id)) $(id).value = state[id];
+        });
+      } catch {}
+    }
+
+    function setDefaultDeadline() {
+      if ($("paymentDeadline").value) return;
+      const date = new Date();
+      date.setHours(date.getHours() + 4);
+      const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      $("paymentDeadline").value = local;
+    }
+
+    document.querySelectorAll(".tab").forEach((button) => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("is-active", tab === button));
+        document.querySelectorAll(".pane").forEach((pane) => pane.classList.toggle("is-active", pane.dataset.pane === button.dataset.tab));
+      });
+    });
+
+    ids.forEach((id) => {
+      $(id).addEventListener("input", calculate);
+      $(id).addEventListener("change", calculate);
+    });
+
+    $("saveBtn").addEventListener("click", () => {
+      calculate();
+      $("saveBtn").textContent = "已儲存";
+      setTimeout(() => $("saveBtn").textContent = "儲存本機資料", 1200);
+    });
+    $("printBtn").addEventListener("click", () => window.print());
+    $("resetBtn").addEventListener("click", () => {
+      localStorage.removeItem("wegrowAdoptionDraft");
+      window.location.reload();
+    });
+
+    loadDraft();
+    setDefaultDeadline();
+    calculate();
+  </script>
+</body>
+</html>
