@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOL × WeGrow 金流架構</title>
+  <meta name="description" content="企業認養農場金流架構，整合年約主約、客製費用、付款狀態與出貨放行。">
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --paper: #fbfaf4;
+      --panel: #ffffff;
+      --ink: #151814;
+      --soft-ink: #596258;
+      --line: #dedbd0;
+      --green: #153f2a;
+      --green-2: #24563d;
+      --gold: #b68a35;
+      --gold-2: #d6c18d;
+      --mist: #edf1e7;
+      --rose: #b75545;
+      --shadow: 0 18px 50px rgba(21, 24, 20, .1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      letter-spacing: 0;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(251, 250, 244, .94);
+      backdrop-filter: blur(16px);
+    }
+
+    .topbar {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand img {
+      display: block;
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-mark {
+      width: 1px;
+      height: 34px;
+      background: rgba(21, 24, 20, .18);
+      flex: none;
+    }
+
+    .brand-copy {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .brand-copy strong {
+      font-size: 13px;
+      line-height: 1.2;
+      color: var(--green);
+      white-space: nowrap;
+    }
+
+    .brand-copy span {
+      font-size: 12px;
+      line-height: 1.2;
+      color: var(--soft-ink);
+      white-space: nowrap;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    nav a,
+    .status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      color: var(--green);
+      background: rgba(255, 255, 255, .68);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .status {
+      border-color: var(--gold-2);
+      background: var(--green);
+      color: #fff;
+    }
+
+    .hero {
+      position: relative;
+      isolation: isolate;
+      min-height: 310px;
+      display: grid;
+      align-items: end;
+      color: #fff;
+      overflow: hidden;
+      background: var(--green);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(21, 63, 42, .96), rgba(21, 63, 42, .78) 48%, rgba(21, 63, 42, .36)),
+        url("assets/greenhouse-room.jpg") center / cover;
+      z-index: -2;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 120px;
+      background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .24));
+      z-index: -1;
+    }
+
+    .hero-inner {
+      padding: 56px 0 44px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--gold-2);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(40px, 6vw, 72px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    .hero-value {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .hero-value li {
+      border: 1px solid rgba(255, 255, 255, .32);
+      background: rgba(255, 255, 255, .12);
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    main {
+      padding: 34px 0 54px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(340px, .82fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-head {
+      padding: 22px 24px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .panel h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .panel-tag {
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .flow-board {
+      padding: 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .lane {
+      display: grid;
+      grid-template-columns: 160px minmax(0, 1fr);
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .lane-title {
+      padding: 20px;
+      background: var(--mist);
+      border-right: 1px solid var(--line);
+      color: var(--green);
+      font-weight: 900;
+      display: grid;
+      align-content: center;
+      gap: 6px;
+    }
+
+    .lane-title span {
+      color: var(--soft-ink);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+    }
+
+    .step {
+      position: relative;
+      min-height: 122px;
+      padding: 18px 16px;
+      border-right: 1px solid var(--line);
+      display: grid;
+      align-content: center;
+      gap: 8px;
+    }
+
+    .step:last-child { border-right: 0; }
+
+    .step::after {
+      content: "";
+      position: absolute;
+      right: -7px;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      border-top: 2px solid var(--gold);
+      border-right: 2px solid var(--gold);
+      transform: translateY(-50%) rotate(45deg);
+      background: #fff;
+      z-index: 2;
+    }
+
+    .step:last-child::after { display: none; }
+
+    .step strong {
+      color: var(--green);
+      font-size: 16px;
+      line-height: 1.3;
+    }
+
+    .step span {
+      color: var(--soft-ink);
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .gate-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 2px;
+    }
+
+    .gate {
+      border: 1px solid var(--line);
+      background: var(--mist);
+      padding: 18px;
+      display: grid;
+      gap: 8px;
+      min-height: 124px;
+    }
+
+    .gate strong {
+      color: var(--green);
+      font-size: 18px;
+    }
+
+    .gate span {
+      color: var(--soft-ink);
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .gate.ready {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+
+    .gate.ready strong,
+    .gate.ready span { color: #fff; }
+
+    .form {
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 15px;
+      padding: 10px 12px;
+      border-radius: 0;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(182, 138, 53, .16);
+    }
+
+    .money-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .result-card {
+      border: 1px solid var(--line);
+      background: var(--mist);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .result-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid rgba(21, 24, 20, .12);
+      padding-bottom: 10px;
+      font-weight: 800;
+      color: var(--soft-ink);
+    }
+
+    .result-line strong {
+      color: var(--ink);
+      text-align: right;
+    }
+
+    .release {
+      background: var(--green);
+      color: #fff;
+      padding: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .release span {
+      color: rgba(255, 255, 255, .76);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .release strong {
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions a,
+    .actions button {
+      min-height: 46px;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #fff;
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px;
+    }
+
+    .actions a.secondary,
+    .actions button.secondary {
+      background: transparent;
+      color: var(--green);
+    }
+
+    .matrix {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .role {
+      min-height: 112px;
+      border-right: 1px solid var(--line);
+      padding: 18px;
+      display: grid;
+      align-content: center;
+      gap: 8px;
+    }
+
+    .role:last-child { border-right: 0; }
+
+    .role strong {
+      color: var(--green);
+      font-size: 18px;
+    }
+
+    .role span {
+      color: var(--soft-ink);
+      font-size: 13px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+
+    @media (max-width: 940px) {
+      .layout,
+      .lane,
+      .steps,
+      .gate-grid,
+      .matrix {
+        grid-template-columns: 1fr;
+      }
+
+      .lane-title,
+      .step,
+      .role {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .step:last-child,
+      .role:last-child { border-bottom: 0; }
+
+      .step::after { display: none; }
+    }
+
+    @media (max-width: 720px) {
+      .shell { width: min(100% - 24px, 1180px); }
+
+      .topbar {
+        min-height: auto;
+        padding: 14px 0;
+        align-items: flex-start;
+      }
+
+      .brand img { height: 28px; }
+      .brand-copy { display: none; }
+
+      nav a,
+      .status {
+        min-height: 34px;
+        padding: 8px 10px;
+        font-size: 12px;
+      }
+
+      .hero { min-height: 270px; }
+      .hero-inner { padding: 44px 0 32px; }
+      .panel-head,
+      .flow-board,
+      .form { padding: 18px; }
+      .money-grid,
+      .actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <a class="brand" href="index.html#admin" aria-label="SOL WeGrow">
+        <img src="assets/brand/sol-logo.png" alt="SOL">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <img src="assets/brand/wegrow-logo.png" alt="WeGrow">
+        <span class="brand-copy">
+          <strong>企業認養農場</strong>
+          <span>金流與放行控管</span>
+        </span>
+      </a>
+      <nav aria-label="頁面連結">
+        <a href="index.html#admin">客戶展示</a>
+        <a href="calculator.html">費用計算</a>
+        <span class="status">金流架構</span>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero" aria-label="金流架構">
+    <div class="shell hero-inner">
+      <p class="eyebrow">企業認養農場</p>
+      <h1>金流架構</h1>
+      <ul class="hero-value">
+        <li>年約主約分流</li>
+        <li>客製費用收款</li>
+        <li>付款後放行</li>
+        <li>出貨與加工同步</li>
+      </ul>
+    </div>
+  </section>
+
+  <main>
+    <div class="shell layout">
+      <section class="panel" aria-label="金流流程">
+        <div class="panel-head">
+          <h2>收款與放行</h2>
+          <span class="panel-tag">四葉 / 威果 / 藍新</span>
+        </div>
+        <div class="flow-board">
+          <div class="lane">
+            <div class="lane-title">
+              年約主約
+              <span>認養年費</span>
+            </div>
+            <div class="steps">
+              <div class="step">
+                <strong>客戶</strong>
+                <span>簽約與付款</span>
+              </div>
+              <div class="step">
+                <strong>四葉</strong>
+                <span>收款與開票</span>
+              </div>
+              <div class="step">
+                <strong>合約額度</strong>
+                <span>認養單位建檔</span>
+              </div>
+              <div class="step">
+                <strong>威果</strong>
+                <span>現場履約與資料同步</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lane">
+            <div class="lane-title">
+              客製費用
+              <span>物流 / 加工 / 設計</span>
+            </div>
+            <div class="steps">
+              <div class="step">
+                <strong>客戶資料</strong>
+                <span>地址、數量、需求</span>
+              </div>
+              <div class="step">
+                <strong>威果</strong>
+                <span>產生付款資料</span>
+              </div>
+              <div class="step">
+                <strong>藍新</strong>
+                <span>收款與狀態回傳</span>
+              </div>
+              <div class="step">
+                <strong>放行</strong>
+                <span>物流、加工、設計排程</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="gate-grid" aria-label="付款狀態">
+            <div class="gate">
+              <strong>未付款</strong>
+              <span>保留付款資料，不放行物流與加工。</span>
+            </div>
+            <div class="gate ready">
+              <strong>已付款</strong>
+              <span>通知物流、通知加工、更新履約紀錄。</span>
+            </div>
+            <div class="gate">
+              <strong>逾時</strong>
+              <span>鮮果釋出或轉入加工，庫存重新計算。</span>
+            </div>
+          </div>
+
+          <div class="matrix" aria-label="角色分工">
+            <div class="role">
+              <strong>客戶</strong>
+              <span>填資料、確認需求、完成付款</span>
+            </div>
+            <div class="role">
+              <strong>四葉</strong>
+              <span>主約收款、主約發票、合約控管</span>
+            </div>
+            <div class="role">
+              <strong>威果</strong>
+              <span>客製報價、出貨加工、執行紀錄</span>
+            </div>
+            <div class="role">
+              <strong>藍新</strong>
+              <span>付款頁、交易狀態、對帳資料</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel" aria-label="付款資料">
+        <div class="panel-head">
+          <h2>付款資料</h2>
+          <span class="panel-tag">即時狀態</span>
+        </div>
+        <form class="form" id="paymentForm">
+          <label>
+            客戶名稱
+            <input id="clientName" value="企業客戶" autocomplete="organization">
+          </label>
+
+          <div class="money-grid">
+            <label>
+              主約年費
+              <input id="annualFee" type="number" min="0" step="1000" value="1188000">
+            </label>
+            <label>
+              客製費用
+              <input id="customFee" type="number" min="0" step="100" value="0">
+            </label>
+          </div>
+
+          <label>
+            付款狀態
+            <select id="paymentStatus">
+              <option value="paid">已付款</option>
+              <option value="pending">未付款</option>
+              <option value="expired">逾時</option>
+            </select>
+          </label>
+
+          <div class="result-card" aria-live="polite">
+            <div class="result-line">
+              <span>主約收款</span>
+              <strong id="mainPayee">四葉 NT$1,188,000</strong>
+            </div>
+            <div class="result-line">
+              <span>客製收款</span>
+              <strong id="customPayee">威果 NT$0</strong>
+            </div>
+            <div class="result-line">
+              <span>總付款</span>
+              <strong id="totalFee">NT$1,188,000</strong>
+            </div>
+          </div>
+
+          <div class="release">
+            <span id="releaseClient">企業客戶</span>
+            <strong id="releaseState">可通知物流與加工</strong>
+          </div>
+
+          <div class="actions">
+            <button type="button" id="copySummary">複製摘要</button>
+            <a class="secondary" href="calculator.html">費用計算</a>
+          </div>
+        </form>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const currency = new Intl.NumberFormat("zh-TW", {
+      maximumFractionDigits: 0
+    });
+
+    const fields = {
+      clientName: document.querySelector("#clientName"),
+      annualFee: document.querySelector("#annualFee"),
+      customFee: document.querySelector("#customFee"),
+      paymentStatus: document.querySelector("#paymentStatus"),
+      mainPayee: document.querySelector("#mainPayee"),
+      customPayee: document.querySelector("#customPayee"),
+      totalFee: document.querySelector("#totalFee"),
+      releaseClient: document.querySelector("#releaseClient"),
+      releaseState: document.querySelector("#releaseState"),
+      copySummary: document.querySelector("#copySummary")
+    };
+
+    function money(value) {
+      return `NT$${currency.format(Math.max(0, Number(value) || 0))}`;
+    }
+
+    function getReleaseText(status) {
+      if (status === "paid") return "可通知物流與加工";
+      if (status === "expired") return "鮮果釋出或轉加工";
+      return "等待付款，不放行";
+    }
+
+    function render() {
+      const client = fields.clientName.value.trim() || "企業客戶";
+      const annualFee = Math.max(0, Number(fields.annualFee.value) || 0);
+      const customFee = Math.max(0, Number(fields.customFee.value) || 0);
+      const total = annualFee + customFee;
+      const status = fields.paymentStatus.value;
+
+      fields.mainPayee.textContent = `四葉 ${money(annualFee)}`;
+      fields.customPayee.textContent = `威果 ${money(customFee)}`;
+      fields.totalFee.textContent = money(total);
+      fields.releaseClient.textContent = client;
+      fields.releaseState.textContent = getReleaseText(status);
+    }
+
+    function copySummary() {
+      const text = [
+        `客戶：${fields.clientName.value.trim() || "企業客戶"}`,
+        `主約收款：${fields.mainPayee.textContent}`,
+        `客製收款：${fields.customPayee.textContent}`,
+        `總付款：${fields.totalFee.textContent}`,
+        `放行狀態：${fields.releaseState.textContent}`
+      ].join("\n");
+
+      navigator.clipboard.writeText(text).then(() => {
+        fields.copySummary.textContent = "已複製";
+        window.setTimeout(() => fields.copySummary.textContent = "複製摘要", 1400);
+      });
+    }
+
+    document.querySelectorAll("input, select").forEach((field) => {
+      field.addEventListener("input", render);
+      field.addEventListener("change", render);
+    });
+
+    fields.copySummary.addEventListener("click", copySummary);
+    render();
+  </script>
+</body>
+</html>
