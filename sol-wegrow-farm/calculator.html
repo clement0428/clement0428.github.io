@@ -3,11 +3,1035 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>WeGrow 客製費用預估</title>
-  <meta http-equiv="refresh" content="0; url=index.html#calculator">
-  <link rel="canonical" href="index.html#calculator">
+  <title>WeGrow 客制費用估算</title>
+  <meta name="description" content="WeGrow 企業認養農場客制費用估算，依認養單位、鮮果禮盒比例、加工與包裝需求快速估算加購費用。">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fbfaf4;
+      --panel: #ffffff;
+      --ink: #151814;
+      --soft-ink: #596258;
+      --line: #dedbd0;
+      --green: #153f2a;
+      --green-2: #24563d;
+      --gold: #b68a35;
+      --gold-2: #d6c18d;
+      --mist: #edf1e7;
+      --rose: #b75545;
+      --shadow: 0 24px 70px rgba(21, 24, 20, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid rgba(21, 24, 20, .09);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      min-width: 0;
+    }
+
+    .brand img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .brand-mark {
+      width: 1px;
+      height: 36px;
+      background: rgba(21, 24, 20, .18);
+    }
+
+    .brand-copy strong,
+    .brand-copy span {
+      display: block;
+      white-space: nowrap;
+    }
+
+    .brand-copy strong {
+      color: var(--green);
+      font-size: 14px;
+      line-height: 1.1;
+      font-weight: 850;
+    }
+
+    .brand-copy span {
+      margin-top: 4px;
+      color: var(--soft-ink);
+      font-size: 12px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--soft-ink);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .nav-links a {
+      color: inherit;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: currentColor;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--green);
+      font-weight: 850;
+    }
+
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rose);
+      box-shadow: 0 0 0 5px rgba(183, 85, 69, .13);
+    }
+
+    main {
+      padding: 28px 0 46px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 34px;
+      align-items: stretch;
+      min-height: 420px;
+    }
+
+    .hero-copy {
+      position: relative;
+      overflow: hidden;
+      padding: 42px;
+      background:
+        linear-gradient(90deg, rgba(20, 61, 42, .88), rgba(20, 61, 42, .62)),
+        url("assets/greenhouse-room.jpg") center / cover;
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--gold-2);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    h1 {
+      max-width: 9em;
+      margin: 0;
+      font-size: clamp(38px, 5vw, 66px);
+      line-height: 1;
+      font-weight: 850;
+    }
+
+    .hero-copy p {
+      max-width: 660px;
+      margin: 22px 0 0;
+      color: rgba(255, 255, 255, .86);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .hero-meta {
+      position: absolute;
+      left: 42px;
+      right: 42px;
+      bottom: 32px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      background: rgba(255, 255, 255, .2);
+    }
+
+    .hero-meta div {
+      min-height: 82px;
+      padding: 17px 18px;
+      background: rgba(20, 61, 42, .72);
+    }
+
+    .hero-meta b {
+      display: block;
+      color: #fff;
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .hero-meta span {
+      display: block;
+      margin-top: 9px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .summary-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 28px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .summary-panel h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .grand-total {
+      margin-top: 22px;
+    }
+
+    .grand-total span {
+      display: block;
+      color: var(--soft-ink);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .grand-total strong {
+      display: block;
+      margin-top: 8px;
+      color: var(--green);
+      font-size: clamp(38px, 4vw, 54px);
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .summary-lines {
+      margin-top: 26px;
+      border-top: 1px solid var(--line);
+    }
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--soft-ink);
+      font-size: 14px;
+    }
+
+    .summary-line b {
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;
+      gap: 34px;
+      margin-top: 34px;
+      align-items: start;
+    }
+
+    .calculator {
+      display: grid;
+      gap: 18px;
+    }
+
+    .flow-progress {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 10px;
+    }
+
+    .step-tab {
+      min-height: 46px;
+      border: 1px solid transparent;
+      background: var(--mist);
+      color: var(--soft-ink);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .step-tab.is-active {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .step-tab.is-done {
+      border-color: rgba(182, 138, 53, .45);
+      color: var(--green);
+    }
+
+    .step-tab.is-active.is-done {
+      color: #fff;
+    }
+
+    .section {
+      display: none;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 26px;
+    }
+
+    .section.is-active {
+      display: block;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 12px;
+    }
+
+    .section h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: 24px;
+      line-height: 1.2;
+    }
+
+    .section-head span {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .step-copy {
+      max-width: 720px;
+      margin: 0 0 22px;
+      color: var(--soft-ink);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--soft-ink);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 12px;
+      outline: none;
+      font-size: 16px;
+    }
+
+    .field input[type="range"] {
+      min-height: 34px;
+      padding: 0;
+      accent-color: var(--green);
+      border: 0;
+      background: transparent;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(181, 138, 53, .13);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 20px 0 0;
+    }
+
+    .metric {
+      min-height: 92px;
+      padding: 16px;
+      background: var(--mist);
+      border: 1px solid rgba(21, 63, 42, .08);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--soft-ink);
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
+    .metric b {
+      display: block;
+      margin-top: 8px;
+      color: var(--green);
+      font-size: 26px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .range-readout {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 8px;
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .action {
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 850;
+    }
+
+    .action.secondary {
+      background: transparent;
+      color: var(--green);
+    }
+
+    .quote {
+      position: sticky;
+      top: 18px;
+      background: var(--green);
+      color: #fff;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    .quote h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .quote-detail {
+      margin-top: 22px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .quote-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, .18);
+      color: rgba(255, 255, 255, .76);
+      font-size: 14px;
+    }
+
+    .quote-row b {
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .quote-total {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 2px solid rgba(214, 193, 141, .8);
+    }
+
+    .quote-total span {
+      color: var(--gold-2);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .quote-total b {
+      display: block;
+      margin-top: 8px;
+      font-size: 42px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .quote-note {
+      margin: 24px 0 0;
+      color: rgba(255, 255, 255, .66);
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .topbar,
+      .hero,
+      .flow-progress,
+      .actions {
+        display: none;
+      }
+
+      .workspace {
+        display: block;
+        margin-top: 0;
+      }
+
+      .section {
+        display: block;
+        page-break-inside: avoid;
+      }
+
+      .quote {
+        position: static;
+        box-shadow: none;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-panel,
+      .quote {
+        position: static;
+      }
+
+      .hero-copy {
+        min-height: 520px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 24px, 1240px);
+      }
+
+      .topbar {
+        height: auto;
+        padding: 16px 0;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .nav-links {
+        font-size: 12px;
+        flex-wrap: wrap;
+      }
+
+      .hero-copy,
+      .summary-panel,
+      .section,
+      .quote {
+        padding: 22px;
+      }
+
+      .hero-copy {
+        min-height: 560px;
+      }
+
+      .hero-meta {
+        left: 22px;
+        right: 22px;
+        bottom: 22px;
+        grid-template-columns: 1fr;
+      }
+
+      .hero-meta div {
+        min-height: auto;
+      }
+
+      .flow-progress,
+      .grid,
+      .grid.three,
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .section-head span {
+        display: block;
+        margin-top: 8px;
+      }
+    }
+  </style>
+  <meta name="wegrow-static-deploy" content="sol-wegrow-farm-shipping-batch10-20260701">
 </head>
 <body>
-  <p><a href="index.html#calculator">前往客製費用預估</a></p>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand" aria-label="SOL WeGrow">
+        <img src="assets/brand/sol-logo.png" alt="SOL">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <img src="assets/brand/wegrow-logo.png" alt="WeGrow">
+        <div class="brand-copy">
+          <strong>企業認養農場</strong>
+          <span>客製禮盒與鮮果交付估算</span>
+        </div>
+      </div>
+      <div class="nav-links" aria-label="頁面導覽">
+        <a href="index.html">方案總覽</a>
+        <a href="index.html#admin">管理服務</a>
+        <span class="status">費用估算</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-label="客制費用估算">
+        <div class="hero-copy">
+          <p class="eyebrow">客制費用估算</p>
+          <h1>客制費用估算</h1>
+          <p>依認養單位、鮮果與禮盒比例、加工品配置與包裝需求，快速估算物流、加工、設計與稅金，協助企業確認預算範圍與可執行方案。</p>
+          <div class="hero-meta">
+            <div>
+              <b>5</b>
+              <span>逐步確認認養規模、禮盒比例、加工品與包裝需求。</span>
+            </div>
+            <div>
+              <b>3300</b>
+              <span>每單位月費另列，本頁聚焦加購與客製費用。</span>
+            </div>
+            <div>
+              <b>NT$</b>
+              <span>右側同步產出未稅、稅金與含稅估算。</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="summary-panel" aria-label="即時費用摘要">
+          <div>
+            <h2>目前估算</h2>
+            <div class="grand-total">
+              <span>加購含稅估算</span>
+              <strong id="heroTotal">NT$0</strong>
+            </div>
+            <div class="summary-lines">
+              <div class="summary-line"><span>物流費</span><b id="heroLogistics">NT$0</b></div>
+              <div class="summary-line"><span>加工費</span><b id="heroProcessing">NT$0</b></div>
+              <div class="summary-line"><span>設計費</span><b id="heroDesign">NT$0</b></div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="workspace" aria-label="估算流程">
+        <div class="calculator" data-current-step="1">
+          <nav class="flow-progress" aria-label="估算步驟">
+            <button class="step-tab is-active" type="button" data-step-target="1">1 認養單位</button>
+            <button class="step-tab" type="button" data-step-target="2">2 交付比例</button>
+            <button class="step-tab" type="button" data-step-target="3">3 可製作量</button>
+            <button class="step-tab" type="button" data-step-target="4">4 品項比例</button>
+            <button class="step-tab" type="button" data-step-target="5">5 包裝客制</button>
+          </nav>
+
+          <section class="section is-active" data-step="1">
+            <div class="section-head">
+              <h2>認養單位</h2>
+              <span>步驟 1 / 5</span>
+            </div>
+            <p class="step-copy">先輸入預計認養單位。每單位月費以 NT$3,300 估算，作為主合約金額參考；下方加購費用另行估算。</p>
+            <div class="grid">
+              <div class="field">
+                <label for="adoptionUnits">認養單位</label>
+                <input id="adoptionUnits" type="number" min="1" step="1" value="30" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="monthlyRent">每單位月費</label>
+                <input id="monthlyRent" type="text" value="NT$3,300" readonly>
+              </div>
+            </div>
+            <div class="metric-grid">
+              <div class="metric"><span>每月認養費參考</span><b id="baseMonthly">NT$0</b></div>
+              <div class="metric"><span>年度認養費參考</span><b id="baseAnnual">NT$0</b></div>
+              <div class="metric"><span>可配置交付份數</span><b id="allocationUnits">0 份</b></div>
+            </div>
+            <div class="actions">
+              <span></span>
+              <button class="action" type="button" data-next-step>下一步</button>
+            </div>
+          </section>
+
+          <section class="section" data-step="2">
+            <div class="section-head">
+              <h2>鮮果和禮盒比例</h2>
+              <span>步驟 2 / 5</span>
+            </div>
+            <p class="step-copy">設定這次交付中鮮果與加工禮盒的比例。物流以每 10 盒合併一件估算；禮盒會帶入下一步的可製作量。</p>
+            <div class="grid">
+              <div class="field">
+                <label for="freshPercent">鮮果比例</label>
+                <input id="freshPercent" type="range" min="0" max="100" step="5" value="40">
+                <div class="range-readout"><span id="freshPercentLabel">40%</span><span id="giftPercentLabel">禮盒 60%</span></div>
+              </div>
+              <div class="field">
+                <label for="fruitMix">鮮果配置</label>
+                <select id="fruitMix">
+                  <option value="mixed" selected>草莓與美濃瓜綜合</option>
+                  <option value="strawberry">以草莓為主</option>
+                  <option value="melon">以美濃瓜為主</option>
+                </select>
+              </div>
+            </div>
+            <div class="metric-grid">
+              <div class="metric"><span>鮮果份數</span><b id="freshUnits">0 份</b></div>
+              <div class="metric"><span>禮盒加工量</span><b id="giftUnits">0 g</b></div>
+              <div class="metric"><span>本段物流估算</span><b id="logisticsPreview">NT$0</b></div>
+            </div>
+            <div class="actions">
+              <button class="action secondary" type="button" data-prev-step>上一步</button>
+              <button class="action" type="button" data-next-step>下一步</button>
+            </div>
+          </section>
+
+          <section class="section" data-step="3">
+            <div class="section-head">
+              <h2>可製作數量</h2>
+              <span>步驟 3 / 5</span>
+            </div>
+            <p class="step-copy">依禮盒比例先換算可加工草莓量，再用果醬每罐 200g、果茶每瓶 90g 估算可製作數量。</p>
+            <div class="metric-grid">
+              <div class="metric"><span>可做果醬上限</span><b id="availableGiftBoxes">0 瓶</b></div>
+              <div class="metric"><span>外盒需求</span><b id="boxDemand">0 個</b></div>
+              <div class="metric"><span>可做果茶上限</span><b id="giftShippingPreview">0 瓶</b></div>
+            </div>
+            <div class="actions">
+              <button class="action secondary" type="button" data-prev-step>上一步</button>
+              <button class="action" type="button" data-next-step>下一步</button>
+            </div>
+          </section>
+
+          <section class="section" data-step="4">
+            <div class="section-head">
+              <h2>果醬和果茶比例</h2>
+              <span>步驟 4 / 5</span>
+            </div>
+            <p class="step-copy">決定可加工草莓量要分配給果醬或果茶。加工單價採現有報價：果醬 NT$75、果茶 NT$103、外盒 NT$50。</p>
+            <div class="grid">
+              <div class="field">
+                <label for="jamPercent">果醬比例</label>
+                <input id="jamPercent" type="range" min="0" max="100" step="5" value="60">
+                <div class="range-readout"><span id="jamPercentLabel">60%</span><span id="teaPercentLabel">果茶 40%</span></div>
+              </div>
+              <div class="field">
+                <label for="bulkTeaQty">果茶補充包</label>
+                <input id="bulkTeaQty" type="number" min="0" step="1" value="0" inputmode="numeric">
+              </div>
+            </div>
+            <div class="metric-grid">
+              <div class="metric"><span>果醬數量</span><b id="jamQtyLabel">0 瓶</b></div>
+              <div class="metric"><span>果茶數量</span><b id="teaQtyLabel">0 瓶</b></div>
+              <div class="metric"><span>加工費估算</span><b id="processingPreview">NT$0</b></div>
+            </div>
+            <div class="actions">
+              <button class="action secondary" type="button" data-prev-step>上一步</button>
+              <button class="action" type="button" data-next-step>下一步</button>
+            </div>
+          </section>
+
+          <section class="section" data-step="5">
+            <div class="section-head">
+              <h2>包裝客制需求</h2>
+              <span>步驟 5 / 5</span>
+            </div>
+            <p class="step-copy">選擇是否需要外盒、腰封或瓶罐貼紙設計。估算結果可作為內部核銷、福委會提案或採購單準備使用。</p>
+            <div class="grid">
+              <div class="field">
+                <label for="designPlan">包裝客制</label>
+                <select id="designPlan">
+                  <option value="0">不客制包裝</option>
+                  <option value="8000">基礎版 NT$8,000</option>
+                  <option value="25000" selected>標準客製 NT$25,000</option>
+                  <option value="45000">完整客製 NT$45,000</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="taxMode">金額顯示</label>
+                <select id="taxMode">
+                  <option value="taxed" selected>顯示含稅估算</option>
+                  <option value="untaxed">顯示未稅估算</option>
+                </select>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="action secondary" type="button" data-prev-step>上一步</button>
+              <span>
+                <button class="action secondary" type="button" id="resetBtn">重新估算</button>
+                <button class="action" type="button" id="printBtn">列印估算</button>
+              </span>
+            </div>
+          </section>
+        </div>
+
+        <aside class="quote" aria-label="費用摘要">
+          <h2>估算結果</h2>
+          <div class="quote-detail">
+            <div class="quote-row"><span>認養單位</span><b id="quoteUnits">0 單位</b></div>
+            <div class="quote-row"><span>鮮果 / 加工</span><b id="quoteMix">0 / 0</b></div>
+            <div class="quote-row"><span>果醬 / 果茶</span><b id="quoteProductMix">0 / 0</b></div>
+            <div class="quote-row"><span>包裝客制</span><b id="quoteDesignPlan">標準客製</b></div>
+            <div class="quote-row"><span>物流費</span><b id="logisticsTotal">NT$0</b></div>
+            <div class="quote-row"><span>加工費</span><b id="processingTotal">NT$0</b></div>
+            <div class="quote-row"><span>設計費</span><b id="designTotal">NT$0</b></div>
+            <div class="quote-row"><span>未稅小計</span><b id="subtotal">NT$0</b></div>
+            <div class="quote-row"><span>營業稅 5%</span><b id="tax">NT$0</b></div>
+          </div>
+          <div class="quote-total">
+            <span id="quoteLabel">含稅估算</span>
+            <b id="quoteTotal">NT$0</b>
+          </div>
+          <p class="quote-note">此頁為客製加購費用估算；物流以每 10 盒合併一件預估。實際金額會依當季產量、配送地點、包裝打樣與採購條件調整。</p>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const rates = {
+      monthlyRent: 3300,
+      plantsPerUnit: 100,
+      strawberryGramPerPlant: 300,
+      jamGramPerBottle: 200,
+      teaGramPerBottle: 90,
+      shippingBatchSize: 10,
+      strawberryShip: 160,
+      melonShip: 225,
+      giftShip: 130,
+      jam: 75,
+      teaBottle: 103,
+      teaBag: 1950,
+      box: 50,
+      tax: 0.05
+    };
+
+    const stateIds = [
+      "adoptionUnits",
+      "freshPercent",
+      "fruitMix",
+      "jamPercent",
+      "bulkTeaQty",
+      "designPlan",
+      "taxMode"
+    ];
+
+    const format = (value) => `NT$${Math.round(value).toLocaleString("zh-TW")}`;
+    const number = (id) => Math.max(0, Number(document.getElementById(id).value || 0));
+    const setText = (id, text) => {
+      document.getElementById(id).textContent = text;
+    };
+
+    function splitFreshUnits(total, mode) {
+      if (mode === "strawberry") return { strawberry: total, melon: 0 };
+      if (mode === "melon") return { strawberry: 0, melon: total };
+      const strawberry = Math.ceil(total / 2);
+      return { strawberry, melon: total - strawberry };
+    }
+
+    function shippingBatches(quantity) {
+      return Math.ceil(Math.max(0, quantity) / rates.shippingBatchSize);
+    }
+
+    function calculate() {
+      const adoptionUnits = Math.max(1, Math.round(number("adoptionUnits")));
+      const totalPlants = adoptionUnits * rates.plantsPerUnit;
+      const totalHarvestGram = totalPlants * rates.strawberryGramPerPlant;
+      const freshPercent = Math.min(100, Math.max(0, number("freshPercent")));
+      const giftPercent = 100 - freshPercent;
+      const freshGram = Math.round(totalHarvestGram * freshPercent / 100);
+      const giftGram = Math.max(0, totalHarvestGram - freshGram);
+      const freshUnits = Math.ceil(freshGram / rates.strawberryGramPerPlant);
+      const freshSplit = splitFreshUnits(freshUnits, document.getElementById("fruitMix").value);
+      const jamPercent = Math.min(100, Math.max(0, number("jamPercent")));
+      const teaPercent = 100 - jamPercent;
+      const jamGram = Math.round(giftGram * jamPercent / 100);
+      const teaGram = Math.max(0, giftGram - jamGram);
+      const jamQty = Math.floor(jamGram / rates.jamGramPerBottle);
+      const teaBottleQty = Math.floor(teaGram / rates.teaGramPerBottle);
+      const maxJamQty = Math.floor(giftGram / rates.jamGramPerBottle);
+      const maxTeaBottleQty = Math.floor(giftGram / rates.teaGramPerBottle);
+      const bulkTeaQty = Math.round(number("bulkTeaQty"));
+      const boxQty = jamQty + teaBottleQty + bulkTeaQty;
+      const design = number("designPlan");
+
+      const logistics =
+        shippingBatches(freshSplit.strawberry) * rates.strawberryShip +
+        shippingBatches(freshSplit.melon) * rates.melonShip +
+        shippingBatches(boxQty) * rates.giftShip;
+
+      const processing =
+        jamQty * rates.jam +
+        teaBottleQty * rates.teaBottle +
+        bulkTeaQty * rates.teaBag +
+        boxQty * rates.box;
+
+      const subtotal = logistics + processing + design;
+      const tax = subtotal * rates.tax;
+      const taxed = subtotal + tax;
+      const displayTotal = document.getElementById("taxMode").value === "taxed" ? taxed : subtotal;
+      const displayLabel = document.getElementById("taxMode").value === "taxed" ? "含稅估算" : "未稅估算";
+      const selectedDesign = document.getElementById("designPlan").selectedOptions[0].textContent.replace(/\sNT\$.*/, "");
+      const baseMonthly = adoptionUnits * rates.monthlyRent;
+
+      setText("baseMonthly", format(baseMonthly));
+      setText("baseAnnual", format(baseMonthly * 12));
+      setText("allocationUnits", `${adoptionUnits.toLocaleString("zh-TW")} 份`);
+      setText("freshPercentLabel", `${freshPercent}%`);
+      setText("giftPercentLabel", `禮盒 ${giftPercent}%`);
+      setText("freshUnits", `${freshUnits.toLocaleString("zh-TW")} 份`);
+      setText("giftUnits", `${giftGram.toLocaleString("zh-TW")} g`);
+      setText("logisticsPreview", format(logistics));
+      setText("availableGiftBoxes", `${maxJamQty.toLocaleString("zh-TW")} 瓶`);
+      setText("boxDemand", `${boxQty.toLocaleString("zh-TW")} 個`);
+      setText("giftShippingPreview", `${maxTeaBottleQty.toLocaleString("zh-TW")} 瓶`);
+      setText("jamPercentLabel", `${jamPercent}%`);
+      setText("teaPercentLabel", `果茶 ${teaPercent}%`);
+      setText("jamQtyLabel", `${jamQty.toLocaleString("zh-TW")} 瓶`);
+      setText("teaQtyLabel", `${teaBottleQty.toLocaleString("zh-TW")} 瓶`);
+      setText("processingPreview", format(processing));
+
+      setText("quoteUnits", `${adoptionUnits.toLocaleString("zh-TW")} 單位`);
+      setText("quoteMix", `${freshGram.toLocaleString("zh-TW")} g / ${giftGram.toLocaleString("zh-TW")} g`);
+      setText("quoteProductMix", `${jamQty.toLocaleString("zh-TW")} 瓶 / ${teaBottleQty.toLocaleString("zh-TW")} 瓶`);
+      setText("quoteDesignPlan", selectedDesign);
+      setText("logisticsTotal", format(logistics));
+      setText("processingTotal", format(processing));
+      setText("designTotal", format(design));
+      setText("subtotal", format(subtotal));
+      setText("tax", format(tax));
+      setText("quoteLabel", displayLabel);
+      setText("quoteTotal", format(displayTotal));
+
+      setText("heroTotal", format(taxed));
+      setText("heroLogistics", format(logistics));
+      setText("heroProcessing", format(processing));
+      setText("heroDesign", format(design));
+    }
+
+    function activateStep(step) {
+      const nextStep = Math.min(5, Math.max(1, Number(step)));
+      document.querySelectorAll("[data-step]").forEach((section) => {
+        section.classList.toggle("is-active", Number(section.dataset.step) === nextStep);
+      });
+      document.querySelectorAll("[data-step-target]").forEach((tab) => {
+        const tabStep = Number(tab.dataset.stepTarget);
+        tab.classList.toggle("is-active", tabStep === nextStep);
+        tab.classList.toggle("is-done", tabStep < nextStep);
+      });
+      document.querySelector(".calculator").dataset.currentStep = String(nextStep);
+    }
+
+    stateIds.forEach((id) => {
+      document.getElementById(id).addEventListener("input", calculate);
+      document.getElementById(id).addEventListener("change", calculate);
+    });
+
+    document.querySelectorAll("[data-step-target]").forEach((button) => {
+      button.addEventListener("click", () => activateStep(button.dataset.stepTarget));
+    });
+
+    document.querySelectorAll("[data-next-step]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const current = Number(document.querySelector(".calculator").dataset.currentStep);
+        activateStep(current + 1);
+      });
+    });
+
+    document.querySelectorAll("[data-prev-step]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const current = Number(document.querySelector(".calculator").dataset.currentStep);
+        activateStep(current - 1);
+      });
+    });
+
+    document.getElementById("printBtn").addEventListener("click", () => window.print());
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("adoptionUnits").value = 30;
+      document.getElementById("freshPercent").value = 40;
+      document.getElementById("fruitMix").value = "mixed";
+      document.getElementById("jamPercent").value = 60;
+      document.getElementById("bulkTeaQty").value = 0;
+      document.getElementById("designPlan").value = 25000;
+      document.getElementById("taxMode").value = "taxed";
+      activateStep(1);
+      calculate();
+    });
+
+    calculate();
+  </script>
 </body>
 </html>
