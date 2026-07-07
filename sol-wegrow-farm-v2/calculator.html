@@ -765,9 +765,9 @@
             </div>
             <p class="step-copy">依禮盒比例先換算可加工草莓量，再用果醬每罐 200g、果茶每瓶 90g（3:1 原料換算）估算可製作數量。</p>
             <div class="metric-grid">
-              <div class="metric"><span>可做果醬上限</span><b id="availableGiftBoxes">0 瓶</b></div>
-              <div class="metric"><span>外盒需求</span><b id="boxDemand">0 個</b></div>
-              <div class="metric"><span>可做果茶上限</span><b id="giftShippingPreview">0 瓶</b></div>
+              <div class="metric"><span>可製作禮盒</span><b id="availableGiftBoxes">0 盒</b></div>
+              <div class="metric"><span>果醬數量</span><b id="boxDemand">0 瓶</b></div>
+              <div class="metric"><span>果茶數量</span><b id="giftShippingPreview">0 瓶</b></div>
             </div>
             <div class="actions">
               <button class="action secondary" type="button" data-prev-step>上一步</button>
@@ -777,15 +777,14 @@
 
           <section class="section" data-step="4">
             <div class="section-head">
-              <h2>果醬和果茶比例</h2>
+              <h2>禮盒內容</h2>
               <span>步驟 4 / 5</span>
             </div>
-            <p class="step-copy">決定可加工草莓量要分配給果醬或果茶。加工單價採現有報價：果醬 NT$75、果茶 NT$103、外盒 NT$50。</p>
+            <p class="step-copy">每盒固定 1 瓶果醬加 1 瓶果茶。加工單價採現有報價：果醬 NT$75、果茶 NT$103、外盒 NT$50。</p>
             <div class="grid">
               <div class="field">
-                <label for="jamPercent">果醬比例</label>
-                <input id="jamPercent" type="range" min="0" max="100" step="5" value="60">
-                <div class="range-readout"><span id="jamPercentLabel">60%</span><span id="teaPercentLabel">果茶 40%</span></div>
+                <label>果醬和果茶比例</label>
+                <input type="text" value="1:1（每盒 1 瓶果醬 + 1 瓶果茶）" readonly>
               </div>
               <div class="field">
                 <label for="bulkTeaQty">果茶補充包</label>
@@ -883,7 +882,6 @@
       "adoptionUnits",
       "freshPercent",
       "fruitMix",
-      "jamPercent",
       "bulkTeaQty",
       "designPlan",
       "taxMode"
@@ -918,16 +916,10 @@
       const giftBoxQty = Math.floor(giftGram / giftBoxGram);
       const freshUnits = Math.ceil(freshGram / rates.strawberryGramPerPlant);
       const freshSplit = splitFreshUnits(freshUnits, document.getElementById("fruitMix").value);
-      const jamPercent = Math.min(100, Math.max(0, number("jamPercent")));
-      const teaPercent = 100 - jamPercent;
-      const jamGram = Math.round(giftGram * jamPercent / 100);
-      const teaGram = Math.max(0, giftGram - jamGram);
-      const jamQty = Math.floor(jamGram / rates.jamGramPerBottle);
-      const teaBottleQty = Math.floor(teaGram / rates.teaGramPerBottle);
-      const maxJamQty = Math.floor(giftGram / rates.jamGramPerBottle);
-      const maxTeaBottleQty = Math.floor(giftGram / rates.teaGramPerBottle);
+      const jamQty = giftBoxQty;
+      const teaBottleQty = giftBoxQty;
       const bulkTeaQty = Math.round(number("bulkTeaQty"));
-      const boxQty = jamQty + teaBottleQty + bulkTeaQty;
+      const boxQty = giftBoxQty + bulkTeaQty;
       const design = number("designPlan");
 
       const logistics =
@@ -957,11 +949,9 @@
       setText("freshUnits", `${freshUnits.toLocaleString("zh-TW")} 份`);
       setText("giftUnits", `${giftBoxQty.toLocaleString("zh-TW")} 盒`);
       setText("logisticsPreview", format(logistics));
-      setText("availableGiftBoxes", `${maxJamQty.toLocaleString("zh-TW")} 瓶`);
-      setText("boxDemand", `${boxQty.toLocaleString("zh-TW")} 個`);
-      setText("giftShippingPreview", `${maxTeaBottleQty.toLocaleString("zh-TW")} 瓶`);
-      setText("jamPercentLabel", `${jamPercent}%`);
-      setText("teaPercentLabel", `果茶 ${teaPercent}%`);
+      setText("availableGiftBoxes", `${giftBoxQty.toLocaleString("zh-TW")} 盒`);
+      setText("boxDemand", `${jamQty.toLocaleString("zh-TW")} 瓶`);
+      setText("giftShippingPreview", `${teaBottleQty.toLocaleString("zh-TW")} 瓶`);
       setText("jamQtyLabel", `${jamQty.toLocaleString("zh-TW")} 瓶`);
       setText("teaQtyLabel", `${teaBottleQty.toLocaleString("zh-TW")} 瓶`);
       setText("processingPreview", format(processing));
@@ -1025,7 +1015,6 @@
       document.getElementById("adoptionUnits").value = 1;
       document.getElementById("freshPercent").value = 40;
       document.getElementById("fruitMix").value = "mixed";
-      document.getElementById("jamPercent").value = 60;
       document.getElementById("bulkTeaQty").value = 0;
       document.getElementById("designPlan").value = 25000;
       document.getElementById("taxMode").value = "taxed";
