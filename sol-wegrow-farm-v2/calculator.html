@@ -433,6 +433,96 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .supply-calendar {
+      margin-top: 18px;
+      padding: 26px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 52px rgba(21, 24, 20, .08);
+    }
+
+    .calendar-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .calendar-head h2 {
+      margin: 0;
+      color: var(--green);
+      font-size: 24px;
+      line-height: 1.15;
+    }
+
+    .calendar-head p {
+      max-width: 520px;
+      margin: 0;
+      color: var(--soft-ink);
+      font-size: 13px;
+      line-height: 1.55;
+      text-align: right;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .calendar-card {
+      min-height: 188px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .calendar-card .deadline {
+      display: block;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .calendar-card strong {
+      display: block;
+      margin-top: 12px;
+      color: var(--green);
+      font-size: 28px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .calendar-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 13px;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 850;
+    }
+
+    .calendar-row span:first-child {
+      color: var(--soft-ink);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .calendar-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .calendar-summary .metric {
+      min-height: 108px;
+    }
+
     .range-readout {
       display: flex;
       align-items: center;
@@ -618,8 +708,19 @@
       .flow-progress,
       .grid,
       .grid.three,
-      .metric-grid {
+      .metric-grid,
+      .calendar-grid,
+      .calendar-summary {
         grid-template-columns: 1fr;
+      }
+
+      .calendar-head {
+        display: block;
+      }
+
+      .calendar-head p {
+        margin-top: 10px;
+        text-align: left;
       }
 
       .section-head {
@@ -688,6 +789,44 @@
             </div>
           </div>
         </aside>
+      </section>
+
+      <section class="supply-calendar" aria-label="供貨日曆">
+        <div class="calendar-head">
+          <h2>供貨日曆</h2>
+          <p>草莓預計 9 月定植，約 11 月底開始有果可採收；實際批次依成熟度、採收量與客戶地址確認後配送。</p>
+        </div>
+        <div class="calendar-grid">
+          <article class="calendar-card">
+            <span class="deadline">地址截止 11/24 18:00</span>
+            <strong>11/28</strong>
+            <div class="calendar-row"><span>可配送</span><b>鮮果 60 / 禮盒 40</b></div>
+            <div class="calendar-row"><span>已分配</span><b>鮮果 0 / 禮盒 0</b></div>
+            <div class="calendar-row"><span>待補地址</span><b>鮮果 0 / 禮盒 0</b></div>
+            <div class="calendar-row"><span>剩餘</span><b>鮮果 60 / 禮盒 40</b></div>
+          </article>
+          <article class="calendar-card">
+            <span class="deadline">地址截止 12/01 18:00</span>
+            <strong>12/05</strong>
+            <div class="calendar-row"><span>可配送</span><b>鮮果 40 / 禮盒 30</b></div>
+            <div class="calendar-row"><span>已分配</span><b>鮮果 0 / 禮盒 0</b></div>
+            <div class="calendar-row"><span>待補地址</span><b>鮮果 0 / 禮盒 0</b></div>
+            <div class="calendar-row"><span>剩餘</span><b>鮮果 40 / 禮盒 30</b></div>
+          </article>
+          <article class="calendar-card">
+            <span class="deadline">地址截止 12/08 18:00</span>
+            <strong>12/12</strong>
+            <div class="calendar-row"><span>可配送</span><b>鮮果 20 / 禮盒 10</b></div>
+            <div class="calendar-row"><span>已分配</span><b>鮮果 0 / 禮盒 0</b></div>
+            <div class="calendar-row"><span>待補地址</span><b>鮮果 0 / 禮盒 0</b></div>
+            <div class="calendar-row"><span>剩餘</span><b>鮮果 20 / 禮盒 10</b></div>
+          </article>
+        </div>
+        <div class="calendar-summary">
+          <div class="metric"><span>本批可配送鮮果</span><b>120 盒</b></div>
+          <div class="metric"><span>本批可配送禮盒</span><b>80 盒</b></div>
+          <div class="metric"><span>尚可分配</span><b>鮮果 120 / 禮盒 80</b></div>
+        </div>
       </section>
 
       <section class="workspace" aria-label="估算流程">
