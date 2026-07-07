@@ -683,6 +683,7 @@
             <div class="summary-lines">
               <div class="summary-line"><span>物流費</span><b id="heroLogistics">NT$0</b></div>
               <div class="summary-line"><span>加工費</span><b id="heroProcessing">NT$0</b></div>
+              <div class="summary-line"><span>盒子費</span><b id="heroBoxCost">NT$0</b></div>
               <div class="summary-line"><span>設計費</span><b id="heroDesign">NT$0</b></div>
             </div>
           </div>
@@ -845,6 +846,7 @@
             <div class="quote-row"><span>包裝客制</span><b id="quoteDesignPlan">基礎版</b></div>
             <div class="quote-row"><span>物流費</span><b id="logisticsTotal">NT$0</b></div>
             <div class="quote-row"><span>加工費</span><b id="processingTotal">NT$0</b></div>
+            <div class="quote-row"><span>盒子費</span><b id="boxCostTotal">NT$0</b></div>
             <div class="quote-row"><span>設計費</span><b id="designTotal">NT$0</b></div>
             <div class="quote-row"><span>未稅小計</span><b id="subtotal">NT$0</b></div>
             <div class="quote-row"><span>營業稅 5%</span><b id="tax">NT$0</b></div>
@@ -930,10 +932,10 @@
       const processing =
         jamQty * rates.jam +
         teaBottleQty * rates.teaBottle +
-        bulkTeaQty * rates.teaBag +
-        boxQty * rates.box;
+        bulkTeaQty * rates.teaBag;
+      const boxCost = boxQty * rates.box;
 
-      const subtotal = logistics + processing + design;
+      const subtotal = logistics + processing + boxCost + design;
       const tax = subtotal * rates.tax;
       const taxed = subtotal + tax;
       const displayTotal = document.getElementById("taxMode").value === "taxed" ? taxed : subtotal;
@@ -962,6 +964,7 @@
       setText("quoteDesignPlan", selectedDesign);
       setText("logisticsTotal", format(logistics));
       setText("processingTotal", format(processing));
+      setText("boxCostTotal", format(boxCost));
       setText("designTotal", format(design));
       setText("subtotal", format(subtotal));
       setText("tax", format(tax));
@@ -971,6 +974,7 @@
       setText("heroTotal", format(taxed));
       setText("heroLogistics", format(logistics));
       setText("heroProcessing", format(processing));
+      setText("heroBoxCost", format(boxCost));
       setText("heroDesign", format(design));
     }
 
