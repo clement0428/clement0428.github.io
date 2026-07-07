@@ -813,8 +813,8 @@
                 <label for="designPlan">包裝客制</label>
                 <select id="designPlan">
                   <option value="0">不客制包裝</option>
-                  <option value="8000">基礎版 NT$8,000</option>
-                  <option value="25000" selected>標準客製 NT$25,000</option>
+                  <option value="8000" selected>基礎版 NT$8,000</option>
+                  <option value="25000">標準客製 NT$25,000</option>
                   <option value="45000">完整客製 NT$45,000</option>
                 </select>
               </div>
@@ -842,7 +842,7 @@
             <div class="quote-row"><span>認養單位</span><b id="quoteUnits">0 單位</b></div>
             <div class="quote-row"><span>鮮果 / 加工</span><b id="quoteMix">0 / 0</b></div>
             <div class="quote-row"><span>果醬 / 果茶</span><b id="quoteProductMix">0 / 0</b></div>
-            <div class="quote-row"><span>包裝客制</span><b id="quoteDesignPlan">標準客製</b></div>
+            <div class="quote-row"><span>包裝客制</span><b id="quoteDesignPlan">基礎版</b></div>
             <div class="quote-row"><span>物流費</span><b id="logisticsTotal">NT$0</b></div>
             <div class="quote-row"><span>加工費</span><b id="processingTotal">NT$0</b></div>
             <div class="quote-row"><span>設計費</span><b id="designTotal">NT$0</b></div>
@@ -1016,7 +1016,7 @@
       document.getElementById("freshPercent").value = 40;
       document.getElementById("fruitMix").value = "mixed";
       document.getElementById("bulkTeaQty").value = 0;
-      document.getElementById("designPlan").value = 25000;
+      document.getElementById("designPlan").value = 8000;
       document.getElementById("taxMode").value = "taxed";
       activateStep(1);
       calculate();
