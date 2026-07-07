@@ -780,7 +780,7 @@
               <h2>果醬和果茶比例</h2>
               <span>步驟 4 / 5</span>
             </div>
-            <p class="step-copy">決定可加工草莓量要分配給果醬或果茶。加工費依數量級距套用大量折扣，外盒另計。</p>
+            <p class="step-copy">決定可加工草莓量要分配給果醬或果茶。加工單價採現有報價：果醬 NT$75、果茶 NT$103、外盒 NT$50。</p>
             <div class="grid">
               <div class="field">
                 <label for="jamPercent">果醬比例</label>
@@ -875,20 +875,7 @@
       teaBottle: 103,
       teaBag: 1950,
       box: 50,
-      tax: 0.05,
-      jamDiscounts: [
-        { min: 1501, rate: 0.55 },
-        { min: 1001, rate: 0.65 },
-        { min: 601, rate: 0.75 },
-        { min: 100, rate: 0.85 },
-        { min: 0, rate: 1 }
-      ],
-      teaDiscounts: [
-        { min: 51, rate: 0.65 },
-        { min: 21, rate: 0.75 },
-        { min: 9, rate: 0.85 },
-        { min: 0, rate: 0.95 }
-      ]
+      tax: 0.05
     };
 
     const stateIds = [
@@ -918,11 +905,6 @@
       return Math.ceil(Math.max(0, quantity) / rates.shippingBatchSize);
     }
 
-    function discountFor(quantity, tiers) {
-      const qty = Math.max(0, Number(quantity) || 0);
-      return tiers.find((tier) => qty >= tier.min).rate;
-    }
-
     function calculate() {
       const adoptionUnits = Math.max(1, Math.round(number("adoptionUnits")));
       const totalPlants = adoptionUnits * rates.plantsPerUnit;
@@ -950,13 +932,10 @@
         shippingBatches(freshSplit.melon) * rates.melonShip +
         shippingBatches(boxQty) * rates.giftShip;
 
-      const jamDiscount = discountFor(jamQty, rates.jamDiscounts);
-      const teaBottleDiscount = discountFor(teaBottleQty, rates.teaDiscounts);
-      const bulkTeaDiscount = discountFor(bulkTeaQty, rates.teaDiscounts);
       const processing =
-        jamQty * rates.jam * jamDiscount +
-        teaBottleQty * rates.teaBottle * teaBottleDiscount +
-        bulkTeaQty * rates.teaBag * bulkTeaDiscount +
+        jamQty * rates.jam +
+        teaBottleQty * rates.teaBottle +
+        bulkTeaQty * rates.teaBag +
         boxQty * rates.box;
 
       const subtotal = logistics + processing + design;
