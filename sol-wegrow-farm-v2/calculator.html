@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>WeGrow 客制費用估算</title>
   <meta name="description" content="WeGrow 企業認養農場客制費用估算，依認養單位、鮮果禮盒比例、加工與包裝需求快速估算加購費用。">
-  <link rel="icon" href="data:,">
   <style>
     :root {
       color-scheme: light;
@@ -433,96 +432,6 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .supply-calendar {
-      margin-top: 18px;
-      padding: 26px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      box-shadow: 0 18px 52px rgba(21, 24, 20, .08);
-    }
-
-    .calendar-head {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 18px;
-    }
-
-    .calendar-head h2 {
-      margin: 0;
-      color: var(--green);
-      font-size: 24px;
-      line-height: 1.15;
-    }
-
-    .calendar-head p {
-      max-width: 520px;
-      margin: 0;
-      color: var(--soft-ink);
-      font-size: 13px;
-      line-height: 1.55;
-      text-align: right;
-    }
-
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .calendar-card {
-      min-height: 188px;
-      padding: 18px;
-      border: 1px solid var(--line);
-      background: #fff;
-    }
-
-    .calendar-card .deadline {
-      display: block;
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 850;
-      line-height: 1.4;
-    }
-
-    .calendar-card strong {
-      display: block;
-      margin-top: 12px;
-      color: var(--green);
-      font-size: 28px;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .calendar-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 13px;
-      color: var(--ink);
-      font-size: 14px;
-      line-height: 1.3;
-      font-weight: 850;
-    }
-
-    .calendar-row span:first-child {
-      color: var(--soft-ink);
-      font-weight: 800;
-      white-space: nowrap;
-    }
-
-    .calendar-summary {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 14px;
-    }
-
-    .calendar-summary .metric {
-      min-height: 108px;
-    }
-
     .range-readout {
       display: flex;
       align-items: center;
@@ -708,19 +617,8 @@
       .flow-progress,
       .grid,
       .grid.three,
-      .metric-grid,
-      .calendar-grid,
-      .calendar-summary {
+      .metric-grid {
         grid-template-columns: 1fr;
-      }
-
-      .calendar-head {
-        display: block;
-      }
-
-      .calendar-head p {
-        margin-top: 10px;
-        text-align: left;
       }
 
       .section-head {
@@ -748,6 +646,9 @@
         </div>
       </div>
       <div class="nav-links" aria-label="頁面導覽">
+        <a href="index.html">方案總覽</a>
+        <a href="index.html#admin">管理服務</a>
+        <a href="payment-flow.html">金流架構</a>
         <span class="status">費用估算</span>
       </div>
     </header>
@@ -784,49 +685,10 @@
             <div class="summary-lines">
               <div class="summary-line"><span>物流費</span><b id="heroLogistics">NT$0</b></div>
               <div class="summary-line"><span>加工費</span><b id="heroProcessing">NT$0</b></div>
-              <div class="summary-line"><span>盒子費</span><b id="heroBoxCost">NT$0</b></div>
               <div class="summary-line"><span>設計費</span><b id="heroDesign">NT$0</b></div>
             </div>
           </div>
         </aside>
-      </section>
-
-      <section class="supply-calendar" aria-label="供貨日曆">
-        <div class="calendar-head">
-          <h2>供貨日曆</h2>
-          <p>草莓預計 9 月定植，約 11 月底開始有果可採收；實際批次依成熟度、採收量與客戶地址確認後配送。</p>
-        </div>
-        <div class="calendar-grid">
-          <article class="calendar-card">
-            <span class="deadline">地址截止 11/24 18:00</span>
-            <strong>11/28</strong>
-            <div class="calendar-row"><span>可配送</span><b>鮮果 60 / 禮盒 40</b></div>
-            <div class="calendar-row"><span>已分配</span><b>鮮果 0 / 禮盒 0</b></div>
-            <div class="calendar-row"><span>待補地址</span><b>鮮果 0 / 禮盒 0</b></div>
-            <div class="calendar-row"><span>剩餘</span><b>鮮果 60 / 禮盒 40</b></div>
-          </article>
-          <article class="calendar-card">
-            <span class="deadline">地址截止 12/01 18:00</span>
-            <strong>12/05</strong>
-            <div class="calendar-row"><span>可配送</span><b>鮮果 40 / 禮盒 30</b></div>
-            <div class="calendar-row"><span>已分配</span><b>鮮果 0 / 禮盒 0</b></div>
-            <div class="calendar-row"><span>待補地址</span><b>鮮果 0 / 禮盒 0</b></div>
-            <div class="calendar-row"><span>剩餘</span><b>鮮果 40 / 禮盒 30</b></div>
-          </article>
-          <article class="calendar-card">
-            <span class="deadline">地址截止 12/08 18:00</span>
-            <strong>12/12</strong>
-            <div class="calendar-row"><span>可配送</span><b>鮮果 20 / 禮盒 10</b></div>
-            <div class="calendar-row"><span>已分配</span><b>鮮果 0 / 禮盒 0</b></div>
-            <div class="calendar-row"><span>待補地址</span><b>鮮果 0 / 禮盒 0</b></div>
-            <div class="calendar-row"><span>剩餘</span><b>鮮果 20 / 禮盒 10</b></div>
-          </article>
-        </div>
-        <div class="calendar-summary">
-          <div class="metric"><span>本批可配送鮮果</span><b>120 盒</b></div>
-          <div class="metric"><span>本批可配送禮盒</span><b>80 盒</b></div>
-          <div class="metric"><span>尚可分配</span><b>鮮果 120 / 禮盒 80</b></div>
-        </div>
       </section>
 
       <section class="workspace" aria-label="估算流程">
@@ -848,7 +710,7 @@
             <div class="grid">
               <div class="field">
                 <label for="adoptionUnits">認養單位</label>
-                <input id="adoptionUnits" type="number" min="1" step="1" value="1" inputmode="numeric">
+                <input id="adoptionUnits" type="number" min="1" step="1" value="30" inputmode="numeric">
               </div>
               <div class="field">
                 <label for="monthlyRent">每單位月費</label>
@@ -889,7 +751,7 @@
             </div>
             <div class="metric-grid">
               <div class="metric"><span>鮮果份數</span><b id="freshUnits">0 份</b></div>
-              <div class="metric"><span>可做禮盒數</span><b id="giftUnits">0 盒</b></div>
+              <div class="metric"><span>禮盒加工量</span><b id="giftUnits">0 g</b></div>
               <div class="metric"><span>本段物流估算</span><b id="logisticsPreview">NT$0</b></div>
             </div>
             <div class="actions">
@@ -903,11 +765,11 @@
               <h2>可製作數量</h2>
               <span>步驟 3 / 5</span>
             </div>
-            <p class="step-copy">依禮盒比例先換算可加工草莓量，再用果醬每罐 200g、果茶每瓶 90g（3:1 原料換算）估算可製作數量。</p>
+            <p class="step-copy">依禮盒比例先換算可加工草莓量，再用果醬每罐 200g、果茶每瓶 90g 估算可製作數量。</p>
             <div class="metric-grid">
-              <div class="metric"><span>可製作禮盒</span><b id="availableGiftBoxes">0 盒</b></div>
-              <div class="metric"><span>果醬數量</span><b id="boxDemand">0 瓶</b></div>
-              <div class="metric"><span>果茶數量</span><b id="giftShippingPreview">0 瓶</b></div>
+              <div class="metric"><span>可做果醬上限</span><b id="availableGiftBoxes">0 瓶</b></div>
+              <div class="metric"><span>外盒需求</span><b id="boxDemand">0 個</b></div>
+              <div class="metric"><span>可做果茶上限</span><b id="giftShippingPreview">0 瓶</b></div>
             </div>
             <div class="actions">
               <button class="action secondary" type="button" data-prev-step>上一步</button>
@@ -917,14 +779,15 @@
 
           <section class="section" data-step="4">
             <div class="section-head">
-              <h2>禮盒內容</h2>
+              <h2>果醬和果茶比例</h2>
               <span>步驟 4 / 5</span>
             </div>
-            <p class="step-copy">每盒固定 1 瓶果醬加 1 瓶果茶。加工單價採現有報價：果醬 NT$75、果茶 NT$103、禮盒盒子 NT$83。</p>
+            <p class="step-copy">決定可加工草莓量要分配給果醬或果茶。加工單價採現有報價：果醬 NT$75、果茶 NT$103、外盒 NT$50。</p>
             <div class="grid">
               <div class="field">
-                <label>果醬和果茶比例</label>
-                <input type="text" value="1:1（每盒 1 瓶果醬 + 1 瓶果茶）" readonly>
+                <label for="jamPercent">果醬比例</label>
+                <input id="jamPercent" type="range" min="0" max="100" step="5" value="60">
+                <div class="range-readout"><span id="jamPercentLabel">60%</span><span id="teaPercentLabel">果茶 40%</span></div>
               </div>
               <div class="field">
                 <label for="bulkTeaQty">果茶補充包</label>
@@ -953,8 +816,8 @@
                 <label for="designPlan">包裝客制</label>
                 <select id="designPlan">
                   <option value="0">不客制包裝</option>
-                  <option value="8000" selected>基礎版 NT$8,000</option>
-                  <option value="25000">標準客製 NT$25,000</option>
+                  <option value="8000">基礎版 NT$8,000</option>
+                  <option value="25000" selected>標準客製 NT$25,000</option>
                   <option value="45000">完整客製 NT$45,000</option>
                 </select>
               </div>
@@ -982,10 +845,9 @@
             <div class="quote-row"><span>認養單位</span><b id="quoteUnits">0 單位</b></div>
             <div class="quote-row"><span>鮮果 / 加工</span><b id="quoteMix">0 / 0</b></div>
             <div class="quote-row"><span>果醬 / 果茶</span><b id="quoteProductMix">0 / 0</b></div>
-            <div class="quote-row"><span>包裝客制</span><b id="quoteDesignPlan">基礎版</b></div>
+            <div class="quote-row"><span>包裝客制</span><b id="quoteDesignPlan">標準客製</b></div>
             <div class="quote-row"><span>物流費</span><b id="logisticsTotal">NT$0</b></div>
             <div class="quote-row"><span>加工費</span><b id="processingTotal">NT$0</b></div>
-            <div class="quote-row"><span>盒子費</span><b id="boxCostTotal">NT$0</b></div>
             <div class="quote-row"><span>設計費</span><b id="designTotal">NT$0</b></div>
             <div class="quote-row"><span>未稅小計</span><b id="subtotal">NT$0</b></div>
             <div class="quote-row"><span>營業稅 5%</span><b id="tax">NT$0</b></div>
@@ -1007,7 +869,6 @@
       strawberryGramPerPlant: 300,
       jamGramPerBottle: 200,
       teaGramPerBottle: 90,
-      teaRawConversion: 3,
       shippingBatchSize: 10,
       strawberryShip: 160,
       melonShip: 225,
@@ -1015,7 +876,7 @@
       jam: 75,
       teaBottle: 103,
       teaBag: 1950,
-      box: 83,
+      box: 50,
       tax: 0.05
     };
 
@@ -1023,6 +884,7 @@
       "adoptionUnits",
       "freshPercent",
       "fruitMix",
+      "jamPercent",
       "bulkTeaQty",
       "designPlan",
       "taxMode"
@@ -1053,14 +915,18 @@
       const giftPercent = 100 - freshPercent;
       const freshGram = Math.round(totalHarvestGram * freshPercent / 100);
       const giftGram = Math.max(0, totalHarvestGram - freshGram);
-      const giftBoxGram = rates.jamGramPerBottle + rates.teaGramPerBottle * rates.teaRawConversion;
-      const giftBoxQty = Math.floor(giftGram / giftBoxGram);
       const freshUnits = Math.ceil(freshGram / rates.strawberryGramPerPlant);
       const freshSplit = splitFreshUnits(freshUnits, document.getElementById("fruitMix").value);
-      const jamQty = giftBoxQty;
-      const teaBottleQty = giftBoxQty;
+      const jamPercent = Math.min(100, Math.max(0, number("jamPercent")));
+      const teaPercent = 100 - jamPercent;
+      const jamGram = Math.round(giftGram * jamPercent / 100);
+      const teaGram = Math.max(0, giftGram - jamGram);
+      const jamQty = Math.floor(jamGram / rates.jamGramPerBottle);
+      const teaBottleQty = Math.floor(teaGram / rates.teaGramPerBottle);
+      const maxJamQty = Math.floor(giftGram / rates.jamGramPerBottle);
+      const maxTeaBottleQty = Math.floor(giftGram / rates.teaGramPerBottle);
       const bulkTeaQty = Math.round(number("bulkTeaQty"));
-      const boxQty = giftBoxQty + bulkTeaQty;
+      const boxQty = jamQty + teaBottleQty + bulkTeaQty;
       const design = number("designPlan");
 
       const logistics =
@@ -1071,10 +937,10 @@
       const processing =
         jamQty * rates.jam +
         teaBottleQty * rates.teaBottle +
-        bulkTeaQty * rates.teaBag;
-      const boxCost = boxQty * rates.box;
+        bulkTeaQty * rates.teaBag +
+        boxQty * rates.box;
 
-      const subtotal = logistics + processing + boxCost + design;
+      const subtotal = logistics + processing + design;
       const tax = subtotal * rates.tax;
       const taxed = subtotal + tax;
       const displayTotal = document.getElementById("taxMode").value === "taxed" ? taxed : subtotal;
@@ -1088,11 +954,13 @@
       setText("freshPercentLabel", `${freshPercent}%`);
       setText("giftPercentLabel", `禮盒 ${giftPercent}%`);
       setText("freshUnits", `${freshUnits.toLocaleString("zh-TW")} 份`);
-      setText("giftUnits", `${giftBoxQty.toLocaleString("zh-TW")} 盒`);
+      setText("giftUnits", `${giftGram.toLocaleString("zh-TW")} g`);
       setText("logisticsPreview", format(logistics));
-      setText("availableGiftBoxes", `${giftBoxQty.toLocaleString("zh-TW")} 盒`);
-      setText("boxDemand", `${jamQty.toLocaleString("zh-TW")} 瓶`);
-      setText("giftShippingPreview", `${teaBottleQty.toLocaleString("zh-TW")} 瓶`);
+      setText("availableGiftBoxes", `${maxJamQty.toLocaleString("zh-TW")} 瓶`);
+      setText("boxDemand", `${boxQty.toLocaleString("zh-TW")} 個`);
+      setText("giftShippingPreview", `${maxTeaBottleQty.toLocaleString("zh-TW")} 瓶`);
+      setText("jamPercentLabel", `${jamPercent}%`);
+      setText("teaPercentLabel", `果茶 ${teaPercent}%`);
       setText("jamQtyLabel", `${jamQty.toLocaleString("zh-TW")} 瓶`);
       setText("teaQtyLabel", `${teaBottleQty.toLocaleString("zh-TW")} 瓶`);
       setText("processingPreview", format(processing));
@@ -1103,7 +971,6 @@
       setText("quoteDesignPlan", selectedDesign);
       setText("logisticsTotal", format(logistics));
       setText("processingTotal", format(processing));
-      setText("boxCostTotal", format(boxCost));
       setText("designTotal", format(design));
       setText("subtotal", format(subtotal));
       setText("tax", format(tax));
@@ -1113,7 +980,6 @@
       setText("heroTotal", format(taxed));
       setText("heroLogistics", format(logistics));
       setText("heroProcessing", format(processing));
-      setText("heroBoxCost", format(boxCost));
       setText("heroDesign", format(design));
     }
 
@@ -1155,11 +1021,12 @@
 
     document.getElementById("printBtn").addEventListener("click", () => window.print());
     document.getElementById("resetBtn").addEventListener("click", () => {
-      document.getElementById("adoptionUnits").value = 1;
+      document.getElementById("adoptionUnits").value = 30;
       document.getElementById("freshPercent").value = 40;
       document.getElementById("fruitMix").value = "mixed";
+      document.getElementById("jamPercent").value = 60;
       document.getElementById("bulkTeaQty").value = 0;
-      document.getElementById("designPlan").value = 8000;
+      document.getElementById("designPlan").value = 25000;
       document.getElementById("taxMode").value = "taxed";
       activateStep(1);
       calculate();
