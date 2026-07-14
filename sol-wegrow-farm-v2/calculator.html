@@ -710,7 +710,7 @@
             <div class="grid">
               <div class="field">
                 <label for="adoptionUnits">認養單位</label>
-                <input id="adoptionUnits" type="number" min="1" step="1" value="30" inputmode="numeric">
+                <input id="adoptionUnits" type="number" min="1" step="1" value="1" inputmode="numeric">
               </div>
               <div class="field">
                 <label for="monthlyRent">每單位月費</label>
@@ -1021,7 +1021,7 @@
 
     document.getElementById("printBtn").addEventListener("click", () => window.print());
     document.getElementById("resetBtn").addEventListener("click", () => {
-      document.getElementById("adoptionUnits").value = 30;
+      document.getElementById("adoptionUnits").value = 1;
       document.getElementById("freshPercent").value = 40;
       document.getElementById("fruitMix").value = "mixed";
       document.getElementById("jamPercent").value = 60;
