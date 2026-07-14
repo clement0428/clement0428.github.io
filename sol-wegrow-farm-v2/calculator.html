@@ -926,7 +926,8 @@
       const maxJamQty = Math.floor(giftGram / rates.jamGramPerBottle);
       const maxTeaBottleQty = Math.floor(giftGram / rates.teaGramPerBottle);
       const bulkTeaQty = Math.round(number("bulkTeaQty"));
-      const boxQty = jamQty + teaBottleQty + bulkTeaQty;
+      const productQty = jamQty + teaBottleQty + bulkTeaQty;
+      const boxQty = Math.ceil(productQty / 2);
       const design = number("designPlan");
 
       const logistics =
