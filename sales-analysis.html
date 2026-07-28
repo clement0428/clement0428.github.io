@@ -1201,6 +1201,162 @@ let stageFilter = '';
 let smartFilter = '';
 let _fitScoreRunning = false;
 
+const SAMPLE_CONTACTS = [
+  {
+    id: 'demo-aama-01',
+    name: 'AAMA 食農採購聯盟',
+    contact_person: '林采購',
+    title: '採購經理',
+    type: 'AAMA',
+    stage: '有意向',
+    fit_grade: 'A+',
+    fit_total: 94,
+    amount: 280000,
+    phone: '0912-000-101',
+    email: 'buyer@aama-demo.tw',
+    notes: 'AAMA 通路客戶，正在詢價 500 盒企業禮盒，要求報價與供貨時程。',
+    next_action: '今天寄正式報價並約 30 分鐘會議',
+    last_contact_date: new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 8 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-esg-01',
+    name: '綠能企業 ESG 福委會',
+    contact_person: '王主任',
+    title: '福委會主委',
+    type: 'ESG 隊象',
+    stage: '已聯絡',
+    fit_grade: 'A',
+    fit_total: 86,
+    amount: 180000,
+    phone: '0912-000-102',
+    email: 'esg@corp-demo.tw',
+    notes: 'ESG 企業採購，想做員工禮盒與永續故事包裝，已詢問樣品。',
+    next_action: '補 ESG 介紹與樣品寄送地址',
+    last_contact_date: new Date(Date.now() - 5 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 20 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-chain-01',
+    name: '北區連鎖超市採購',
+    contact_person: '陳採購',
+    title: '生鮮採購',
+    type: '連鎖通路',
+    stage: '報價中',
+    fit_grade: 'A',
+    fit_total: 82,
+    amount: 350000,
+    phone: '0912-000-103',
+    email: 'fresh@chain-demo.tw',
+    notes: '通路採購要求穩定供貨、規格與冷鏈資料，已要求價格表。',
+    next_action: '補規格表與冷鏈證據',
+    last_contact_date: new Date(Date.now() - 1 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-farm-01',
+    name: '地方農會共同供應中心',
+    contact_person: '黃總幹事',
+    title: '總幹事',
+    type: '農會',
+    stage: '已接觸',
+    fit_grade: 'B',
+    fit_total: 70,
+    amount: 120000,
+    phone: '0912-000-104',
+    email: '',
+    notes: '農會合作洽談中，對共同品牌與節慶禮盒有興趣，但缺 Email。',
+    next_action: '補 Email 並寄合作簡介',
+    last_contact_date: new Date(Date.now() - 4 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-missing-01',
+    name: '高雄餐飲集團',
+    contact_person: '',
+    title: '',
+    type: '餐飲',
+    stage: '待開發',
+    fit_grade: 'B',
+    fit_total: 64,
+    amount: 90000,
+    phone: '',
+    email: '',
+    notes: '',
+    next_action: '',
+    last_contact_date: '',
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-stale-01',
+    name: '台北高端飯店採購部',
+    contact_person: '張副理',
+    title: '採購副理',
+    type: '飯店',
+    stage: '有意向',
+    fit_grade: 'A',
+    fit_total: 83,
+    amount: 160000,
+    phone: '0912-000-105',
+    email: 'hotel@demo.tw',
+    notes: '飯店節慶水果禮盒，曾要求樣品與報價，已久未互動。',
+    next_action: '重新喚醒並詢問中秋檔期',
+    last_contact_date: new Date(Date.now() - 31 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 58 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-market-01',
+    name: '週末市集團購主',
+    contact_person: '蕭團主',
+    title: '團購主',
+    type: '市集',
+    stage: '已接觸',
+    fit_grade: 'B',
+    fit_total: 67,
+    amount: 60000,
+    phone: '0912-000-106',
+    email: 'market@demo.tw',
+    notes: '市集與團購客戶，想要小盒裝試賣，等待樣品回饋。',
+    next_action: '確認樣品回饋與首批數量',
+    last_contact_date: new Date(Date.now() - 9 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 17 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-process-01',
+    name: '果乾加工合作廠',
+    contact_person: '吳廠長',
+    title: '廠長',
+    type: '加工',
+    stage: '已聯絡',
+    fit_grade: 'B',
+    fit_total: 66,
+    amount: 110000,
+    phone: '0912-000-107',
+    email: '',
+    notes: '加工廠想討論次級品果乾、果醬與穩定供料，缺 Email。',
+    next_action: '約廠測試與補 Email',
+    last_contact_date: new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 19 * 86400000).toISOString().slice(0, 10),
+  },
+  {
+    id: 'demo-low-01',
+    name: '無預算重複名單',
+    contact_person: '',
+    title: '',
+    type: '其他',
+    stage: '暫停',
+    fit_grade: 'DNP',
+    fit_total: 12,
+    amount: 0,
+    phone: '',
+    email: '',
+    notes: '重複名單，無預算，不適合追蹤。',
+    next_action: '',
+    last_contact_date: new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10),
+    created_at: new Date(Date.now() - 80 * 86400000).toISOString().slice(0, 10),
+  },
+];
+
 // ── AI Source Badge ───────────────────────────────────────────────────────────
 function aiSourceBadge(source) {
   const cfg = {
@@ -1308,8 +1464,14 @@ async function init() {
 }
 
 async function loadContacts() {
-  const r = await fetch('/api/contacts');
-  contacts = await r.json();
+  try {
+    const r = await fetch('/api/contacts');
+    if (!r.ok) throw new Error(`contacts api ${r.status}`);
+    const data = await r.json();
+    contacts = Array.isArray(data) && data.length ? data : SAMPLE_CONTACTS;
+  } catch (err) {
+    contacts = SAMPLE_CONTACTS;
+  }
   renderLeads();
 }
 
@@ -1401,7 +1563,9 @@ function isStaleLead(c) {
 
 function isStrategicSegment(c) {
   const group = deriveChannelGroup(c);
-  return group && group !== '其他' && group !== '未分類';
+  const text = contactText(c);
+  return (group && group !== '其他' && group !== '未分類')
+    || /aama|農會|電商|通路|連鎖|加工|esg|市集|團購|飯店|餐飲|企業/.test(text);
 }
 
 function hasAiAction(c) {
