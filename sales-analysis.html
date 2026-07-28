@@ -1,0 +1,2834 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeGrow AI Sales Intelligence</title>
+<style>
+/* ── Orbit Color Tokens ──────────────────────────────────────────
+   Header / Footer : #5d5d5d  Sidebar : #E2CF35  Main : #f5f5f5
+   Text-dark : #333  Text-mid : #5d5d5d  Text-muted : #888
+   Border : #e0ddd4  Card-bg : #fff
+──────────────────────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0ede4;color:#333;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Top Bar (Orbit #5d5d5d header) ── */
+#topbar{height:52px;background:#5d5d5d;box-shadow:0 2px 6px rgba(0,0,0,.2);display:flex;align-items:center;gap:12px;padding:0 16px;flex-shrink:0;z-index:100}
+#topbar .logo{font-size:17px;font-weight:900;color:#fff;white-space:nowrap;letter-spacing:.3px;user-select:none}
+#topbar .logo .accent{color:#E2CF35}
+#cmd-wrap{flex:1;max-width:640px;margin:0 16px;position:relative}
+#cmd-input{width:100%;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:7px 36px 7px 14px;color:#fff;font-size:13px;outline:none;transition:.15s}
+#cmd-input::placeholder{color:rgba(255,255,255,.5)}
+#cmd-input:focus{border-color:#E2CF35;background:rgba(255,255,255,.18)}
+#cmd-wrap svg{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.45);pointer-events:none}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.btn-hunt{background:#E2CF35;color:#333;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;transition:.12s}
+.btn-hunt:hover{background:#d4be2a}
+.btn-sm-ghost{background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;transition:.12s}
+.btn-sm-ghost:hover{border-color:#E2CF35;color:#E2CF35}
+.topbar-user{display:flex;align-items:center;gap:8px;margin-left:6px;padding-left:12px;border-left:1px solid rgba(255,255,255,.18)}
+.topbar-user-name{font-size:12px;font-weight:600;color:rgba(255,255,255,.85);white-space:nowrap}
+.btn-logout{background:none;border:1px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;transition:.12s;text-decoration:none;display:inline-block}
+.btn-logout:hover{border-color:#f85149;color:#f85149}
+
+/* ── Layout ── */
+#layout{flex:1;display:flex;overflow:hidden}
+
+/* ── Left Panel (Orbit yellow sidebar) ── */
+#left{width:280px;background:#E2CF35;display:flex;flex-direction:column;flex-shrink:0;box-shadow:2px 0 6px rgba(0,0,0,.08)}
+#left-head{padding:10px 12px 8px;border-bottom:1px solid rgba(0,0,0,.1)}
+#left-head-top{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+#left-head-top h3{font-size:10px;font-weight:700;color:#5a5020;text-transform:uppercase;letter-spacing:.8px;flex-shrink:0}
+#left-stats{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.ls-pill{font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.12);color:#4a3c0e;white-space:nowrap}
+.ls-pill.alert{background:rgba(198,40,40,.15);color:#b71c1c}
+#stage-grade-filters{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px}
+.sf{padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid rgba(0,0,0,.15);color:#5d4e1a;background:rgba(255,255,255,.3);transition:.12s;white-space:nowrap}
+.sf:hover,.sf.active{background:rgba(0,0,0,.12);border-color:rgba(0,0,0,.3)}
+.sf-intent.active{background:#1b5e20;color:#fff;border-color:#1b5e20}
+.sf-touched.active{background:#1565c0;color:#fff;border-color:#1565c0}
+.sf-contacted.active{background:#4a148c;color:#fff;border-color:#4a148c}
+.sf-dev.active{background:#5d4e1a;color:#E2CF35;border-color:#5d4e1a}
+.sf-pause.active{background:#607d8b;color:#fff;border-color:#607d8b}
+.sf-grade-a.active{background:#e65100;color:#fff;border-color:#e65100}
+.sf-grade-b.active{background:#6d4c41;color:#fff;border-color:#6d4c41}
+.sf-grade-c.active{background:#9e9e9e;color:#fff;border-color:#9e9e9e}
+
+/* ── Collapsible filter popover ── */
+#left-head-top{position:relative}
+.btn-filter-toggle{background:rgba(0,0,0,.1);border:1px solid rgba(0,0,0,.15);color:#4a3c0e;border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.btn-filter-toggle:hover{background:rgba(0,0,0,.16)}
+.btn-filter-toggle svg{flex-shrink:0}
+.filter-badge{background:#5d5d5d;color:#E2CF35;border-radius:8px;padding:0 5px;font-size:9px;font-weight:800;line-height:15px;min-width:15px;text-align:center}
+#filter-summary{font-size:10px;color:#5d4e1a;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+#filter-popover{background:rgba(255,255,255,.35);border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:8px 8px 4px;margin-bottom:6px}
+.cf-icon,.sf-icon{display:inline-flex;vertical-align:-2px;margin-right:3px}
+#left-search{width:100%;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:5px 10px;color:#333;font-size:12px;outline:none;transition:.15s;margin-top:2px}
+#left-search:focus{background:rgba(255,255,255,.85);border-color:rgba(0,0,0,.3)}
+#left-search::placeholder{color:#8a7a3a}
+.left-menu-title{font-size:12px;font-weight:900;color:#4a3c0e;letter-spacing:.6px;margin:8px 0 5px}
+.left-action-row{display:flex;gap:8px;margin:8px 0 6px}
+.left-action-row .cta-btn{flex:1;text-align:center;height:32px;padding:0 8px;font-size:12px;font-weight:800;line-height:32px}
+.left-action-row .hunt-icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1}
+.left-action-row .hunt-icon-btn svg{width:14px;height:14px;stroke-width:2.4px}
+#lead-list{flex:1;overflow-y:auto;padding:6px}
+.lead-card{padding:9px 10px;border-radius:7px;cursor:pointer;border:1px solid transparent;margin-bottom:4px;background:rgba(255,255,255,.55);transition:.15s;position:relative}
+.lead-card:hover{background:rgba(255,255,255,.75);border-color:rgba(0,0,0,.08)}
+.lead-card.active{background:#fff;border-color:rgba(0,0,0,.18);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.lead-del{position:absolute;right:6px;top:6px;background:none;border:none;color:transparent;cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;border-radius:4px;transition:.15s}
+.lead-card:hover .lead-del{color:#ccc}
+.lead-del:hover{color:#f85149 !important;background:rgba(248,81,73,.1)}
+.lc-top{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.grade-badge{font-size:10px;font-weight:800;padding:1px 6px;border-radius:4px;flex-shrink:0}
+.lc-company{font-size:13px;font-weight:600;color:#333;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-meta{font-size:11px;color:#6a5c2a;display:flex;gap:8px}
+.lc-days.urgent{color:#c62828}
+.lc-days.warm{color:#e65100}
+
+/* ── Channel filters ── */
+#channel-filters{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px}
+.cf{padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid rgba(0,0,0,.15);color:#5d4e1a;background:rgba(255,255,255,.3);transition:.12s;white-space:nowrap}
+.cf:hover,.cf.active{background:rgba(0,0,0,.12);border-color:rgba(0,0,0,.3)}
+.cf-aama.active{background:#7b1fa2;color:#fff;border-color:#7b1fa2}
+.cf-farm.active{background:#2e7d32;color:#fff;border-color:#2e7d32}
+.cf-ec.active{background:#1565c0;color:#fff;border-color:#1565c0}
+.cf-chain.active{background:#37474f;color:#fff;border-color:#37474f}
+.cf-process.active{background:#5d4037;color:#fff;border-color:#5d4037}
+.cf-esg.active{background:#00695c;color:#fff;border-color:#00695c}
+.cf-market.active{background:#558b2f;color:#fff;border-color:#558b2f}
+.filter-section-label{font-size:9px;font-weight:900;color:#6a5c2a;letter-spacing:.4px;margin:5px 0 3px}
+#smart-filters{display:flex;gap:3px;flex-wrap:wrap;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.1)}
+.smart-chip{padding:2px 6px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:1px solid rgba(0,0,0,.15);color:#5d4e1a;background:rgba(255,255,255,.42);transition:.12s;white-space:nowrap}
+.smart-chip:hover,.smart-chip.active{background:#5d5d5d;color:#E2CF35;border-color:#5d5d5d}
+
+/* ── Redesigned lead card ── */
+.lead-card{padding:8px 10px;border-radius:7px;cursor:pointer;border:1px solid transparent;margin-bottom:4px;background:rgba(255,255,255,.55);transition:.15s;position:relative}
+.lead-card:hover{background:rgba(255,255,255,.78);border-color:rgba(0,0,0,.09)}
+.lead-card.active{background:#fff;border-color:rgba(0,0,0,.18);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.lc-row1{display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.lc-company{font-size:12px;font-weight:700;color:#222;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-row2{display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap}
+.lc-person{font-size:11px;color:#6a5c2a;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-row3{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.lc-ch-tag{font-size:9px;font-weight:800;padding:1px 6px;border-radius:6px;letter-spacing:.3px;flex-shrink:0}
+.lc-stage-tag{font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;flex-shrink:0}
+.lc-action{font-size:10px;color:#555;line-height:1.3;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-smart-reason{font-size:10px;color:#7a5a00;line-height:1.3;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-missing{font-size:9px;color:#c62828;font-weight:700;margin-left:2px;opacity:.8}
+
+#left-footer{padding:10px;border-top:1px solid rgba(0,0,0,.1);display:flex;gap:6px}
+.btn-add-lead{flex:1;background:#5d5d5d;color:#fff;border:none;border-radius:6px;padding:7px;font-size:12px;font-weight:600;cursor:pointer;transition:.12s}
+.btn-add-lead:hover{background:#444}
+
+/* ── Center Panel ── */
+#center{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+#center-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#ccc;text-align:center;gap:12px}
+#center-empty svg{opacity:.2;color:#bbb}
+#center-empty p{font-size:14px;color:#aaa}
+#center-empty small{font-size:12px;color:#ccc}
+#center-content{flex:1;display:none;flex-direction:column;overflow:hidden}
+#center-header{padding:16px 20px 12px;border-bottom:1px solid #e8e5da;display:flex;align-items:center;gap:12px;flex-shrink:0;background:#fff}
+#center-company-name{font-size:18px;font-weight:700;color:#333;flex:1}
+#center-grade-badge{font-size:14px;font-weight:800;padding:3px 12px;border-radius:6px}
+.cta-btn{background:#f5f3ee;border:1px solid #e0ddd4;color:#5d5d5d;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;transition:.15s}
+.cta-btn:hover{border-color:#5d5d5d;color:#333;background:#edeae0}
+.cta-btn.primary{background:#5d5d5d;border-color:#5d5d5d;color:#fff}
+.cta-btn.primary:hover{background:#444}
+
+/* Center Tabs */
+#center-tabs{display:flex;padding:0 20px;border-bottom:1px solid #e8e5da;gap:0;flex-shrink:0;background:#fff}
+.ctab{padding:10px 16px;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
+.ctab.active{color:#5d4e1a;border-bottom-color:#E2CF35;font-weight:600}
+.ctab:hover{color:#333}
+#center-body{flex:1;overflow-y:auto;padding:20px;background:#f8f7f2}
+
+/* Profile sections */
+.section-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.profile-section{margin-bottom:20px}
+.one-line{font-size:14px;color:#555;line-height:1.6;background:#fff;border-left:3px solid #E2CF35;padding:10px 14px;border-radius:0 6px 6px 0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.badge-list{display:flex;flex-wrap:wrap;gap:6px}
+.badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500}
+.badge-pain{background:#fdecea;color:#c62828;border:1px solid #f5c6c6}
+.badge-green{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+.badge-obj{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.badge-proof{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb}
+.decision-map{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dm-card{background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:10px;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.dm-role{color:#888;font-size:10px;text-transform:uppercase;margin-bottom:4px}
+.dm-name{color:#333;font-weight:600}
+.why-wegrow{background:#f0faf0;border:1px solid #c8e6c9;border-radius:8px;padding:12px 14px;font-size:13px;color:#2e7d32;line-height:1.6}
+
+/* Fit Score */
+.fit-overview{display:flex;align-items:center;gap:20px;background:#fff;border:1px solid #e8e5da;border-radius:10px;padding:16px 20px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.05);position:relative}
+.fit-grade-big{font-size:48px;font-weight:900;line-height:1}
+.fit-stats{flex:1}
+.fit-total{font-size:22px;font-weight:700;color:#333}
+.fit-label{font-size:11px;color:#888}
+.fit-reason{font-size:13px;color:#666;margin-top:6px;line-height:1.5}
+.win-prob{text-align:right}
+.win-pct{font-size:28px;font-weight:700}
+.dim-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.dim-name{width:120px;font-size:12px;color:#666;flex-shrink:0}
+.dim-bar-wrap{flex:1;background:#e8e5da;border-radius:4px;height:6px;overflow:hidden}
+.dim-bar{height:100%;border-radius:4px;transition:width .4s}
+.bar-strong{background:#2e7d32}
+.bar-ok{background:#c8a800}
+.bar-weak{background:#c62828}
+.dim-score{width:40px;text-align:right;font-size:12px;font-weight:600;color:#555}
+.dim-evidence{font-size:11px;color:#999;margin-top:2px;margin-left:130px;margin-bottom:4px}
+
+/* ── Right Panel ── */
+#right{width:360px;background:#f8f7f0;border-left:1px solid #e8e5da;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+#right-empty{flex:1;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:13px}
+#right-content{display:none;padding:16px;flex-direction:column;gap:16px}
+
+.r-section-head{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.r-gen-btn{background:#E2CF35;color:#333;border:none;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;transition:.12s}
+.r-gen-btn:hover{background:#d4be2a}
+.r-gen-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Next Action card */
+.nba-card{background:#fff;border:1px solid #E2CF35;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.nba-action-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.nba-action-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px}
+.priority-high{background:#fdecea;color:#c62828;border:1px solid #f5c6c6}
+.priority-medium{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.priority-low{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb}
+.nba-timing{font-size:11px;color:#888}
+.nba-why{font-size:12px;color:#666;line-height:1.6;margin-bottom:10px}
+.nba-what{background:#f8f7f2;border:1px solid #e8e5da;border-radius:6px;padding:10px;font-size:12px;color:#333;margin-bottom:8px;line-height:1.5}
+.nba-avoid{background:#fdecea;border:1px solid #f5c6c6;border-radius:6px;padding:8px 10px;font-size:11px;color:#c62828}
+
+/* Memory cards */
+.mem-card{background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:10px 12px;margin-bottom:6px;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.mem-card:hover .mem-del{opacity:1}
+.mem-cat{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;display:inline-block;margin-bottom:5px}
+.cat-motivation{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+.cat-objection{background:#fdecea;color:#c62828;border:1px solid #f5c6c6}
+.cat-preference{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb}
+.cat-winning{background:#fffde7;color:#856a00;border:1px solid #ffe082}
+.cat-avoid{background:#fdecea;color:#c62828;border:1px solid #f5c6c6}
+.cat-timing{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.cat-relationship{background:#f3e5f5;color:#6a1b9a;border:1px solid #e1bee7}
+.cat-decision{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+.cat-general{background:#f5f5f5;color:#666;border:1px solid #e0e0e0}
+.cat-budget{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.cat-deal_status{background:#fdecea;color:#c62828;border:1px solid #f5c6c6}
+.cat-decision_maker{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb}
+.cat-playbook{background:#e8f5e9;color:#1b5e20;border:1px solid #c8e6c9}
+.mem-fact{font-size:12px;color:#333;line-height:1.5}
+.mem-conf{font-size:10px;color:#999;margin-top:4px}
+.conf-high{color:#2e7d32;font-weight:600}
+.conf-medium{color:#c8a800;font-weight:600}
+.conf-low{color:#888}
+.mem-del{position:absolute;right:8px;top:8px;background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;opacity:0;transition:.15s}
+.mem-del:hover{color:#c62828}
+.mem-actions{display:flex;gap:6px;margin-top:8px}
+.btn-mem-add{flex:1;background:#f5f3ee;border:1px solid #e0ddd4;color:#666;border-radius:6px;padding:6px;font-size:11px;cursor:pointer;transition:.15s}
+.btn-mem-add:hover{border-color:#E2CF35;color:#5d4e1a;background:#fffde7}
+.meeting-ingest-card{background:#fff;border:1px solid #e8e5da;border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.meeting-ingest-title{font-size:13px;font-weight:800;color:#333;margin-bottom:4px}
+.meeting-ingest-copy{font-size:11px;color:#777;line-height:1.55;margin-bottom:10px}
+.meeting-upload-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.meeting-file-note{font-size:10px;color:#8a7a3a;background:#fffbea;border:1px solid #E2CF3555;border-radius:6px;padding:7px 9px;line-height:1.45;margin-top:6px}
+.record-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.record-step{background:#fff;border:1px solid #e8e5da;border-radius:9px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.record-step b{display:block;font-size:12px;color:#333;margin-bottom:4px}
+.record-step span{font-size:11px;color:#777;line-height:1.5}
+.record-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.record-chip{border:1px solid #e0ddd4;background:#fff;border-radius:16px;padding:5px 10px;font-size:11px;font-weight:700;color:#666}
+.record-follow-list{display:flex;flex-direction:column;gap:7px}
+.record-follow-item{display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:9px 10px;font-size:12px}
+.record-follow-date{font-weight:800;color:#5d4e1a}
+.record-follow-title{color:#333;font-weight:700}
+.record-follow-meta{font-size:11px;color:#888;margin-top:2px}
+.record-empty{font-size:12px;color:#888;background:#fff;border:1px dashed #ddd6b8;border-radius:8px;padding:12px;text-align:center}
+
+/* Daily Learning Tab */
+.ctab-learning{border-left:1px solid #e8e5da;margin-left:4px;padding-left:12px}
+#learning-toolbar{display:flex;align-items:center;gap:10px;padding:14px 20px 10px;border-bottom:1px solid #f0ede6;flex-shrink:0}
+.btn-run-learning{background:#E2CF35;border:none;border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;color:#333;cursor:pointer;transition:.12s}
+.btn-run-learning:hover{background:#c8a800}
+.btn-run-learning:disabled{opacity:.5;cursor:not-allowed}
+.learning-empty{color:#6e7681;font-size:13px;padding:40px 20px;text-align:center;line-height:1.7}
+#learning-content{padding:16px 20px;overflow-y:auto}
+.lr-section{margin-bottom:20px}
+.lr-head{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.lr-summary-card{background:#fffde7;border:1px solid #E2CF3555;border-radius:10px;padding:14px 16px;font-size:13px;color:#5d4e1a;line-height:1.7;margin-bottom:16px}
+.lr-rate-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px}
+.lr-rate-cell{background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:10px 12px;text-align:center}
+.lr-rate-val{font-size:18px;font-weight:700;color:#333}
+.lr-rate-label{font-size:10px;color:#888;margin-top:2px}
+.lr-seg-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.lr-seg-name{font-size:11px;color:#555;width:70px;flex-shrink:0}
+.lr-seg-bar{flex:1;height:8px;background:#f0ede6;border-radius:4px;overflow:hidden}
+.lr-seg-fill{height:100%;border-radius:4px;background:#E2CF35;transition:.4s}
+.lr-seg-pct{font-size:11px;color:#888;width:30px;text-align:right;flex-shrink:0}
+.lr-pattern-list{list-style:none;padding:0;margin:0}
+.lr-pattern-list li{font-size:12px;color:#555;line-height:1.6;padding:5px 0 5px 16px;position:relative;border-bottom:1px solid #f5f3ee}
+.lr-pattern-list li:last-child{border-bottom:none}
+.lr-pattern-list li::before{content:'';position:absolute;left:4px;top:12px;width:5px;height:5px;border-radius:50%}
+.lr-win li::before{background:#3fb950}
+.lr-lose li::before{background:#f85149}
+.lr-strategy-list{list-style:none;padding:0;margin:0;counter-reset:strategy}
+.lr-strategy-list li{counter-increment:strategy;font-size:12px;color:#333;line-height:1.6;padding:6px 0 6px 28px;position:relative;border-bottom:1px solid #f5f3ee;font-weight:500}
+.lr-strategy-list li:last-child{border-bottom:none}
+.lr-strategy-list li::before{content:counter(strategy);position:absolute;left:0;top:5px;background:#E2CF35;color:#333;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;line-height:18px;text-align:center}
+.lr-seg-priority{display:flex;flex-direction:column;gap:6px}
+.lr-seg-prio-row{background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:9px 12px;display:flex;align-items:flex-start;gap:10px}
+.lr-prio-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;flex-shrink:0;margin-top:1px}
+.lr-prio-high{background:#fde8e8;color:#c62828}
+.lr-prio-medium{background:#fff3e0;color:#e65100}
+.lr-prio-low{background:#f5f5f5;color:#888}
+.lr-prio-seg{font-size:12px;font-weight:700;color:#333}
+.lr-prio-why{font-size:11px;color:#666;margin-top:2px}
+.lr-ab-card{background:#fff;border:1px solid #79c0ff44;border-radius:8px;padding:12px;margin-bottom:8px}
+.lr-ab-hyp{font-size:12px;font-weight:700;color:#333;margin-bottom:8px}
+.lr-ab-variants{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.lr-ab-v{background:#f5f3ee;border-radius:6px;padding:8px 10px}
+.lr-ab-vlabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#888;margin-bottom:3px}
+.lr-ab-vtext{font-size:11px;color:#444;line-height:1.4}
+.lr-ab-metric{font-size:11px;color:#79c0ff}
+.lr-fail-list{display:flex;flex-wrap:wrap;gap:6px}
+.lr-fail-tag{background:#fdecea;border:1px solid #f5c6c6;border-radius:8px;padding:3px 10px;font-size:11px;color:#c62828}
+.lr-lists-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lr-mini-list{background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:10px 12px}
+.lr-mini-title{font-size:10px;font-weight:700;text-transform:uppercase;color:#888;letter-spacing:.6px;margin-bottom:6px}
+.lr-mini-item{font-size:11px;color:#555;padding:3px 0;border-bottom:1px solid #f5f3ee;line-height:1.4}
+.lr-mini-item:last-child{border-bottom:none}
+
+/* Strategic Insight */
+.si-block{background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:11px 13px;margin-bottom:8px}
+.si-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.si-loss-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.si-loss-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px}
+.si-conf-tag{font-size:10px;color:#888;margin-left:auto}
+.si-explanation{font-size:12px;color:#555;line-height:1.5;margin-top:4px}
+.si-reopen-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.si-date-badge{background:#E2CF3522;color:#856a00;border:1px solid #E2CF3566;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700}
+.si-trigger{font-size:11px;color:#666}
+.si-playbook-head{font-size:12px;font-weight:700;color:#333;margin-bottom:7px;line-height:1.4}
+.si-sub-label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.6px;margin-top:6px;margin-bottom:3px}
+.si-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px}
+.si-tag{font-size:10px;padding:2px 7px;border-radius:8px}
+.si-tag-green{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9}
+.si-tag-red{background:#fdecea;color:#c62828;border:1px solid #f5c6c6}
+.si-questions{margin:0;padding-left:16px;font-size:12px;color:#555;line-height:1.7}
+.si-insight-block{border-color:#E2CF3544;background:#fffde7}
+.si-insight-text{font-size:12px;color:#5d4e1a;line-height:1.6;font-style:italic}
+
+/* Loading */
+.ai-loading{display:flex;align-items:center;gap:8px;color:#888;font-size:12px;padding:12px 0}
+.ai-spinner{width:14px;height:14px;border:2px solid #e0ddd4;border-top-color:#5d5d5d;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Modals */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.modal-box{background:#fff;border:1px solid #e0ddd4;border-radius:12px;padding:24px 28px;width:520px;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal-box.wide{width:660px}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:16px;font-weight:700;color:#333}
+.modal-close{background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;line-height:1}
+.modal-close:hover{color:#333}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:11px;color:#666;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.form-row input,.form-row select,.form-row textarea{width:100%;background:#faf9f6;border:1px solid #e0ddd4;border-radius:6px;padding:8px 10px;color:#333;font-size:13px;outline:none;transition:.15s}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:#E2CF35;background:#fff;box-shadow:0 0 0 3px rgba(226,207,53,.15)}
+.form-row textarea{resize:vertical;min-height:80px;font-family:inherit}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.type-row{display:flex;gap:6px;align-items:center}
+.type-row select{flex:1}
+.btn-ai-classify{background:#fff;border:1px solid #E2CF35;color:#856a00;border-radius:6px;padding:7px 11px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.12s;flex-shrink:0}
+.btn-ai-classify:hover{background:#fffde7;border-color:#c8a800}
+.btn-ai-classify:disabled{opacity:.5;cursor:not-allowed}
+.classify-hint{margin-top:7px;background:#fffde7;border:1px solid #E2CF3555;border-radius:8px;padding:9px 12px;font-size:12px;color:#5d4e1a}
+.classify-hint .ch-type{font-weight:700;font-size:13px;color:#333}
+.classify-hint .ch-conf{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:6px}
+.classify-hint .ch-conf-high{background:#e8f5e9;color:#2e7d32}
+.classify-hint .ch-conf-medium{background:#fff3e0;color:#e65100}
+.classify-hint .ch-conf-low{background:#f5f5f5;color:#888}
+.classify-hint .ch-signals{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}
+.classify-hint .ch-signal{background:#E2CF3522;color:#856a00;border:1px solid #E2CF3544;border-radius:6px;padding:1px 7px;font-size:10px}
+.classify-hint .ch-adopt{margin-top:8px;background:#E2CF35;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;color:#333;cursor:pointer;transition:.12s}
+.classify-hint .ch-adopt:hover{background:#c8a800}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.btn-cancel{background:#f5f3ee;border:1px solid #e0ddd4;color:#666;border-radius:6px;padding:8px 18px;font-size:13px;cursor:pointer;transition:.12s}
+.btn-cancel:hover{background:#edeae0;color:#333}
+.btn-primary{background:#E2CF35;color:#333;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer;transition:.12s}
+.btn-primary:hover{background:#d4be2a}
+
+/* Prospect hunt */
+/* Hunt segment bar */
+.hunt-seg-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0 10px}
+.hunt-seg-label{font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0}
+.hsb{background:#f5f3ee;border:1px solid #e0ddd4;color:#666;border-radius:12px;padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer;transition:.12s}
+.hsb:hover{border-color:#E2CF35;color:#5d4e1a}
+.hsb.active{background:#E2CF35;border-color:#c8a800;color:#333}
+/* Buyer cards v2 */
+.buyer-card{background:#fff;border:1px solid #e8e5da;border-radius:10px;padding:13px 15px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.bc-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+.bc-name{font-size:13px;font-weight:700;color:#222;flex:1;line-height:1.3}
+.bc-score{font-size:16px;font-weight:800;flex-shrink:0}
+.bc-seg-badge{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700;border:1px solid;flex-shrink:0}
+.bc-products{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.bc-prod-best{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700}
+.bc-prod-sec{background:#f5f3ee;color:#777;border:1px solid #e0ddd4;border-radius:6px;padding:2px 8px;font-size:10px}
+.bc-signals{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.bc-signal{background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb;border-radius:6px;padding:2px 7px;font-size:10px}
+.bc-action{font-size:12px;color:#333;font-weight:600;margin-bottom:4px;line-height:1.4}
+.bc-reason{font-size:11px;color:#888;line-height:1.4;margin-bottom:4px}
+.bc-risks{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.bc-risk{background:#fdecea;color:#c62828;border:1px solid #f5c6c6;border-radius:6px;padding:1px 7px;font-size:10px}
+.bc-footer{display:flex;align-items:center;gap:8px;margin-top:6px;padding-top:6px;border-top:1px solid #f0ede6}
+.bc-playbook{font-size:10px;background:#E2CF3522;color:#856a00;border:1px solid #E2CF3544;border-radius:8px;padding:2px 8px;font-weight:600}
+.bc-conf{font-size:10px;color:#888}
+.bc-add-btn{margin-left:auto;background:#5d5d5d;border:none;color:#fff;border-radius:6px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:.12s}
+.bc-add-btn:hover{background:#E2CF35;color:#333}
+.bc-add-btn:disabled{opacity:.5;cursor:not-allowed}
+/* ── Execution Cards (Prospect Execution Engine v3) ── */
+.exec-card{background:#fff;border:1px solid #e8e5da;border-radius:10px;padding:0;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.ec-head{display:flex;align-items:flex-start;gap:8px;padding:12px 14px 10px;border-bottom:1px solid #f0ede6}
+.ec-name{font-size:14px;font-weight:800;color:#222;flex:1;line-height:1.3}
+.ec-score{font-size:16px;font-weight:900;flex-shrink:0;min-width:28px;text-align:right}
+.ec-body{padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.ec-row{display:flex;gap:6px;align-items:flex-start}
+.ec-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;min-width:52px;padding-top:1px}
+.ec-val{font-size:12px;color:#333;flex:1;line-height:1.5}
+.ec-contact-row{display:flex;flex-wrap:wrap;gap:5px}
+.ec-ch{display:flex;align-items:center;gap:4px;background:#f5f3ee;border:1px solid #e0ddd4;border-radius:6px;padding:3px 8px;font-size:11px;color:#444;cursor:pointer;transition:.12s}
+.ec-ch:hover{background:#e8e5da;border-color:#ccc}
+.ec-ch .ch-copy{font-size:10px;color:#aaa;margin-left:2px}
+.ec-ch-hint{font-size:11px;color:#888;background:#fffbea;border:1px solid #E2CF3555;border-radius:6px;padding:3px 8px;font-style:italic}
+.ec-products{display:flex;flex-wrap:wrap;gap:4px}
+.ec-prod-best{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:6px;padding:2px 8px;font-size:10px;font-weight:700}
+.ec-prod-sec{background:#f5f3ee;color:#777;border:1px solid #e0ddd4;border-radius:6px;padding:2px 8px;font-size:10px}
+.ec-why{font-size:12px;color:#555;line-height:1.5}
+.ec-action{font-size:12px;font-weight:700;color:#1b5e20;background:#e8f5e920;border-left:3px solid #4caf50;padding:6px 10px;border-radius:0 6px 6px 0;line-height:1.4}
+.ec-draft{background:#f5f3ee;border:1px solid #e0ddd4;border-radius:8px;padding:10px 12px;font-size:12px;color:#333;line-height:1.6;position:relative;white-space:pre-wrap}
+.ec-draft-copy{position:absolute;top:6px;right:8px;background:#5d5d5d;border:none;color:#fff;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;transition:.12s}
+.ec-draft-copy:hover{background:#E2CF35;color:#333}
+.ec-followup{display:flex;flex-direction:column;gap:4px}
+.ec-fu-day{display:flex;align-items:flex-start;gap:8px}
+.ec-fu-dot{width:20px;height:20px;border-radius:50%;background:#E2CF35;color:#5a4e00;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ec-fu-text{font-size:11px;color:#555;line-height:1.4}
+.ec-risks{display:flex;flex-wrap:wrap;gap:4px}
+.ec-risk{background:#fdecea;color:#c62828;border:1px solid #f5c6c6;border-radius:6px;padding:2px 7px;font-size:10px}
+.ec-footer{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid #f0ede6;background:#fafaf8}
+.ec-verify{font-size:10px;font-weight:700;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2;border-radius:8px;padding:2px 8px}
+.ec-conf{font-size:10px;color:#888}
+.ec-add-btn{margin-left:auto;background:#5d5d5d;border:none;color:#fff;border-radius:7px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:.12s;white-space:nowrap}
+.ec-add-btn:hover{background:#E2CF35;color:#333}
+.ec-add-btn:disabled{opacity:.5;cursor:not-allowed}
+.ec-expand-toggle{background:none;border:none;color:#888;font-size:11px;cursor:pointer;padding:0;text-decoration:underline}
+.ec-expand-toggle:hover{color:#333}
+.ec-section{border-top:1px solid #f0ede6;padding:10px 14px}
+.ec-section-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+/* ── Sales V0 Board ───────────────────────────────────────────── */
+#salesv0-board{flex:1;display:none;flex-direction:column;overflow:hidden;background:#f8f7f2}
+#salesv0-head{min-height:64px;padding:12px 20px;background:#fff;border-bottom:1px solid #e8e5da;display:flex;align-items:center;gap:12px;flex-shrink:0}
+#salesv0-title{font-size:16px;font-weight:800;color:#333;line-height:1.2;flex:1}
+.salesv0-subtitle{font-size:11px;color:#888;line-height:1.35;margin-top:3px}
+#salesv0-body{flex:1;overflow-y:auto;padding:12px 20px 18px}
+.salesv0-ticker{height:34px;display:flex;align-items:center;overflow:hidden;background:#fff;border:1px solid #e8e5da;border-left:4px solid #E2CF35;border-radius:8px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.salesv0-ticker-track{display:flex;align-items:center;gap:12px;white-space:nowrap;animation:salesv0-marquee 28s linear infinite}
+.salesv0-ticker:hover .salesv0-ticker-track{animation-play-state:paused}
+.salesv0-ticker-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#666;padding:0 4px}
+.salesv0-ticker-item strong{font-size:13px;color:#333}
+.salesv0-ticker-item b{font-size:12px;color:#5d4e1a}
+.salesv0-ticker-item.warn b{color:#c62828}
+@keyframes salesv0-marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.salesv0-ticker-track{animation:none}}
+.salesv0-tabs{margin-bottom:14px}
+.salesv0-main-tabs{display:flex;align-items:center;gap:0;background:#fff;border:1px solid #e8e5da;border-radius:10px 10px 0 0;padding:0 12px;min-height:45px}
+.salesv0-main-tab{background:transparent;border:none;border-bottom:3px solid transparent;color:#666;padding:13px 18px 11px;font-size:13px;font-weight:900;cursor:pointer;transition:.15s}
+.salesv0-main-tab:hover{color:#333;background:#fffde7}
+.salesv0-main-tab.active{color:#333;border-bottom-color:#E2CF35;background:#fff}
+.salesv0-subtabs{background:#f7f6ef;border:1px solid #e8e5da;border-top:none;border-radius:0 0 10px 10px;padding:12px}
+.salesv0-subtab-row{display:none;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+.salesv0-subtab-row.active{display:grid}
+.salesv0-tab{background:#fff;border:1.5px solid #e0ddd4;color:#5d4e1a;border-radius:8px;padding:10px 12px;font-size:12px;font-weight:900;cursor:pointer;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04);min-height:42px;transition:.15s}
+.salesv0-tab:hover{border-color:#d8c91f;background:#fffde7}
+.salesv0-tab.active{background:#5d5d5d;color:#E2CF35;border-color:#5d5d5d;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+.salesv0-panel{display:none}
+.salesv0-panel.active{display:block}
+.salesv0-note{background:#fffde7;border-left:3px solid #E2CF35;border-radius:0 8px 8px 0;padding:10px 12px;font-size:13px;color:#5d4e1a;line-height:1.7;margin-bottom:12px}
+.salesv0-section{background:#fff;border:1px solid #e8e5da;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.05);margin-bottom:12px}
+.salesv0-section h3{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px}
+.salesv0-table{width:100%;border-collapse:collapse;font-size:12px}
+.salesv0-table th{background:#fdf9d0;color:#5d4e1a;text-align:left;padding:8px 10px;font-size:11px}
+.salesv0-table td{border-bottom:1px solid #f0ede6;padding:9px 10px;vertical-align:top;line-height:1.55}
+.salesv0-table tr:last-child td{border-bottom:none}
+.salesv0-cardgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.salesv0-card{background:#fff;border:1px solid #e8e5da;border-radius:9px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.salesv0-card h4{font-size:13px;color:#333;margin-bottom:6px}
+.salesv0-card p{font-size:12px;color:#666;line-height:1.6}
+.booking-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:12px}
+.booking-card{background:#fff;border:1px solid #e8e5da;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.booking-card h4{font-size:14px;color:#333;margin-bottom:6px}
+.booking-card p{font-size:12px;color:#666;line-height:1.6;margin-bottom:10px}
+.booking-input-row{display:flex;gap:8px;align-items:center;margin:10px 0}
+.booking-input{flex:1;min-width:0;border:1px solid #d8d4c8;border-radius:7px;padding:9px 10px;font-size:12px;background:#fff;color:#333}
+.booking-input:focus{outline:none;border-color:#d8c91f;box-shadow:0 0 0 3px rgba(226,207,53,.18)}
+.booking-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.booking-status{font-size:11px;color:#888;margin-left:auto}
+.booking-setup{background:#f7f6ef;border:1px solid #e8e5da;border-radius:10px;padding:12px 14px}
+.booking-setup ol{margin:8px 0 0 18px;color:#666;font-size:12px;line-height:1.75}
+.booking-setup strong{color:#333}
+.gate-pill{display:inline-block;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:800;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.gate-pill.block{background:#fdecea;color:#c62828;border-color:#f5c6c6}
+.gate-pill.ok{background:#e8f5e9;color:#2e7d32;border-color:#c8e6c9}
+#salesv0-right{display:none;padding:10px 12px;flex-direction:column;gap:8px}
+.salesv0-video-home-head{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.salesv0-video-home-title{font-size:16px;font-weight:800;color:#333;line-height:1.2}
+.salesv0-video-home-sub{font-size:11px;color:#888;line-height:1.35;margin-top:3px}
+.salesv0-video-home-head .r-gen-btn{height:32px;padding:0 12px;font-size:12px;font-weight:800;line-height:32px;flex-shrink:0}
+.salesv0-video-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.salesv0-ep-card{background:rgba(255,255,255,.72);border:1px solid #e8e5da;border-radius:8px;padding:10px 11px;box-shadow:0 1px 3px rgba(0,0,0,.04);cursor:pointer;transition:.15s}
+.salesv0-ep-card:hover{background:#fff;border-color:#d8c91f;box-shadow:0 2px 7px rgba(0,0,0,.08)}
+.salesv0-ep-top{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.salesv0-ep-id{font-size:12px;font-weight:900;color:#333;min-width:34px}
+.salesv0-ep-status{font-size:10px;font-weight:800;border-radius:999px;padding:2px 7px;background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.salesv0-ep-status.ready{background:#e8f5e9;color:#2e7d32;border-color:#c8e6c9}
+.salesv0-ep-status.block{background:#fdecea;color:#c62828;border-color:#f5c6c6}
+.salesv0-ep-title{font-size:12px;font-weight:800;color:#333;line-height:1.35;margin-bottom:5px}
+.salesv0-ep-desc{font-size:11px;color:#666;line-height:1.55;margin-bottom:7px}
+.salesv0-ep-meta{display:flex;flex-wrap:wrap;gap:5px}
+.salesv0-ep-chip{font-size:10px;color:#5d4e1a;background:#fffde7;border:1px solid #eee4a0;border-radius:5px;padding:2px 6px}
+/* Legacy prospect-card kept for fallback display */
+.prospect-card{background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.pc-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pc-company{font-size:14px;font-weight:600;color:#333;flex:1}
+.pc-fit{font-size:12px;color:#666;margin-bottom:4px}
+.pc-angle{font-size:12px;color:#5d4e1a;font-style:italic}
+.pc-add-btn{background:#5d5d5d;border:none;color:#fff;border-radius:5px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:.12s}
+.pc-add-btn:hover{background:#333}
+.pc-add-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#d4d0c6;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#aaa}
+</style>
+</head>
+<body>
+
+<!-- ── Top Command Bar ── -->
+<div id="topbar">
+  <div class="logo">WeGrow<span class="accent">_Sales</span></div>
+  <div class="cmd-wrap" id="cmd-wrap" style="flex:1;max-width:600px;margin:0 16px;position:relative">
+    <input id="cmd-input" type="text" placeholder="貼上公司官網連結或會議記錄，AI 自動建檔 · 輸入公司名稱讓 AI 判斷值不值得追..." autocomplete="off">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  </div>
+  <div class="topbar-actions">
+    <div class="topbar-user">
+      <span class="topbar-user-name">Clement Lee</span>
+      <a class="btn-logout" href="/logout">登出</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── 3-Panel Layout ── -->
+<div id="layout">
+
+  <!-- Left: Lead List -->
+  <div id="left">
+    <div id="left-head">
+      <div id="left-head-top">
+        <h3>名單 <span id="lead-count" style="color:#6e7681;font-weight:400"></span></h3>
+        <div id="left-stats">
+          <span class="ls-pill" id="stat-intent">有意向:–</span>
+          <span class="ls-pill" id="stat-touched">已接觸:–</span>
+          <span class="ls-pill alert" id="stat-nophone">缺電話:–</span>
+        </div>
+        <button class="btn-filter-toggle" id="filter-toggle-btn" onclick="toggleFilterPanel()" type="button">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+          篩選<span class="filter-badge" id="filter-active-badge" style="display:none">0</span>
+        </button>
+      </div>
+      <div id="filter-popover" style="display:none">
+        <div id="channel-filters">
+          <span class="cf cf-all active" onclick="setChannelFilter('',this)">全部</span>
+          <span class="cf cf-aama" onclick="setChannelFilter('AAMA',this)"><svg class="cf-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>AAMA</span>
+          <span class="cf cf-farm" onclick="setChannelFilter('農會',this)"><svg class="cf-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 10 12 4l9 6v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 20v-6h6v6"/></svg>農會</span>
+          <span class="cf cf-ec" onclick="setChannelFilter('電商',this)"><svg class="cf-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M2 4h2l2.4 12.2a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 8H6"/></svg>電商</span>
+          <span class="cf cf-chain" onclick="setChannelFilter('大通路',this)"><svg class="cf-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 21v-4h6v4M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/></svg>大通路</span>
+          <span class="cf cf-process" onclick="setChannelFilter('加工',this)"><svg class="cf-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 21V10l5 4v-4l5 4v-4l5 4v-3h3v10z"/></svg>加工</span>
+          <span class="cf cf-esg" onclick="setChannelFilter('ESG',this)"><svg class="cf-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 21c-4-2-7-6-7-11a7 7 0 0 1 14 0c0 5-3 9-7 11z"/><path d="M12 17V9"/></svg>ESG</span>
+          <span class="cf cf-market" onclick="setChannelFilter('市集',this)"><svg class="cf-icon" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4h16l-1.5 6h-13z"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/></svg>市集</span>
+        </div>
+        <div id="stage-grade-filters">
+          <span class="sf sf-all active" onclick="setStageFilter('',this)">全部</span>
+          <span class="sf sf-intent" onclick="setStageFilter('有意向',this)">有意向</span>
+          <span class="sf sf-touched" onclick="setStageFilter('已接觸',this)">已接觸</span>
+          <span class="sf sf-contacted" onclick="setStageFilter('已聯絡',this)">已聯絡</span>
+          <span class="sf sf-dev" onclick="setStageFilter('待開發',this)">待開發</span>
+          <span class="sf sf-pause" onclick="setStageFilter('暫停',this)">暫停</span>
+          <span class="sf sf-grade-a" onclick="setFilter('A',this)">A</span>
+          <span class="sf sf-grade-b" onclick="setFilter('B',this)">B</span>
+          <span class="sf sf-grade-c" onclick="setFilter('C',this)">C</span>
+        </div>
+        <div class="filter-section-label">AI 智能篩選</div>
+        <div id="smart-filters">
+          <span class="smart-chip active" onclick="setSmartFilter('',this)">全部</span>
+          <span class="smart-chip" title="今天最值得先追的名單" onclick="setSmartFilter('today',this)">今日優先</span>
+          <span class="smart-chip" title="分數與等級較高，且排除低品質" onclick="setSmartFilter('high_close',this)">高成交</span>
+          <span class="smart-chip" title="備註、階段或需求中有採購/報價/合作訊號" onclick="setSmartFilter('intent',this)">高意圖</span>
+          <span class="smart-chip" title="缺電話、Email、聯絡人、需求或下一步" onclick="setSmartFilter('missing',this)">缺資料</span>
+          <span class="smart-chip" title="已有明確下一步可執行" onclick="setSmartFilter('next_action',this)">下一步</span>
+          <span class="smart-chip" title="近期沒互動但仍有價值" onclick="setSmartFilter('stale',this)">冷掉喚醒</span>
+          <span class="smart-chip" title="AAMA、農會、電商、通路、加工、ESG、市集等策略分群" onclick="setSmartFilter('segment',this)">策略分群</span>
+          <span class="smart-chip" title="系統可直接給出建議動作" onclick="setSmartFilter('ai_action',this)">AI動作</span>
+          <span class="smart-chip" title="排除暫停、流失、DNP、明顯低品質名單" onclick="setSmartFilter('exclude_negative',this)">排除低質</span>
+        </div>
+      </div>
+      <div class="left-menu-title">客戶選單</div>
+      <div class="left-action-row">
+        <button class="cta-btn primary hunt-icon-btn" onclick="openHuntModal()">
+          <svg aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.2-4.2"/></svg>
+          <span>AI Hunt</span>
+        </button>
+        <button class="cta-btn" onclick="openAddModal()">新增客戶</button>
+      </div>
+      <input id="left-search" placeholder="搜尋公司/聯絡人/備注..." oninput="renderLeads()" style="margin-top:4px">
+    </div>
+    <div id="lead-list"></div>
+    <div id="left-footer">
+      <button class="btn-add-lead" onclick="openAddModal()">＋ 新增潛在客戶</button>
+    </div>
+  </div>
+
+  <!-- Center: Intelligence Profile -->
+  <div id="center">
+    <div id="center-empty">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4"/><polyline points="15 3 21 3 21 15"/><line x1="9" y1="12" x2="21" y2="12"/></svg>
+      <p>從左側選擇一個潛在客戶</p>
+      <small>AI 將自動建立情報檔案與 Fit Score</small>
+    </div>
+    <div id="salesv0-board">
+      <div id="salesv0-head">
+        <div>
+          <div id="salesv0-title">WeGrow Sales</div>
+          <div class="salesv0-subtitle">每天先看這裡：紀錄、直接動作、商譯建議、認養農場</div>
+        </div>
+      </div>
+      <div id="salesv0-body">
+        <div class="salesv0-ticker" aria-label="Sales V0 重點提示">
+          <div class="salesv0-ticker-track">
+            <span class="salesv0-ticker-item"><b>今日3件事</b><strong>0 / 3</strong><span>先把可成交動作做完</span></span>
+            <span class="salesv0-ticker-item"><b>待回留言</b><strong>0</strong><span>EP1 尚未導入真實留言</span></span>
+            <span class="salesv0-ticker-item"><b>B2B Gate</b><strong>G0</strong><span>Carrefour / City'Super / Isetan 查證中</span></span>
+            <span class="salesv0-ticker-item"><b>影片佇列</b><strong>EP1-EP5</strong><span>腳本 → Kling → CapCut → 發布</span></span>
+            <span class="salesv0-ticker-item warn"><b>缺證據</b><strong>5</strong><span>缺資料不對外承諾</span></span>
+            <span class="salesv0-ticker-item"><b>今日3件事</b><strong>0 / 3</strong><span>先把可成交動作做完</span></span>
+            <span class="salesv0-ticker-item"><b>待回留言</b><strong>0</strong><span>EP1 尚未導入真實留言</span></span>
+            <span class="salesv0-ticker-item"><b>B2B Gate</b><strong>G0</strong><span>Carrefour / City'Super / Isetan 查證中</span></span>
+            <span class="salesv0-ticker-item"><b>影片佇列</b><strong>EP1-EP5</strong><span>腳本 → Kling → CapCut → 發布</span></span>
+            <span class="salesv0-ticker-item warn"><b>缺證據</b><strong>5</strong><span>缺資料不對外承諾</span></span>
+          </div>
+        </div>
+        <div class="salesv0-tabs">
+          <div class="salesv0-main-tabs" role="tablist" aria-label="Sales V0 主分類">
+            <button class="salesv0-main-tab active" data-salesv0-group="ops" onclick="showSalesV0Group('ops')">作業</button>
+            <button class="salesv0-main-tab" data-salesv0-group="content" onclick="showSalesV0Group('content')">內容</button>
+            <button class="salesv0-main-tab" data-salesv0-group="buyer" onclick="showSalesV0Group('buyer')">買家</button>
+            <button class="salesv0-main-tab" data-salesv0-group="analysis" onclick="showSalesV0Group('analysis')">分析</button>
+          </div>
+          <div class="salesv0-subtabs">
+            <div class="salesv0-subtab-row active" data-salesv0-subtabs="ops">
+              <button class="salesv0-tab active" data-salesv0-group="ops" onclick="showSalesV0Panel('sv0-today',this)">今日作業</button>
+              <button class="salesv0-tab" data-salesv0-group="ops" onclick="showSalesV0Panel('sv0-records',this)">紀錄</button>
+              <button class="salesv0-tab" data-salesv0-group="ops" onclick="showSalesV0Panel('sv0-actions',this)">直接動作</button>
+            </div>
+            <div class="salesv0-subtab-row" data-salesv0-subtabs="content">
+              <button class="salesv0-tab" data-salesv0-group="content" onclick="showSalesV0Panel('sv0-video-assets',this)">影片素材</button>
+              <button class="salesv0-tab" data-salesv0-group="content" onclick="showSalesV0Panel('sv0-video-outline',this)">腳本大綱</button>
+              <button class="salesv0-tab" data-salesv0-group="content" onclick="showSalesV0Panel('sv0-kling',this)">Kling 分鏡</button>
+              <button class="salesv0-tab" data-salesv0-group="content" onclick="showSalesV0Panel('sv0-publish',this)">發布排程</button>
+              <button class="salesv0-tab" data-salesv0-group="content" onclick="showSalesV0Panel('sv0-video-metrics',this)">成效回收</button>
+            </div>
+            <div class="salesv0-subtab-row" data-salesv0-subtabs="buyer">
+              <button class="salesv0-tab" data-salesv0-group="buyer" onclick="showSalesV0Panel('sv0-buyers',this)">買家 Gate</button>
+              <button class="salesv0-tab" data-salesv0-group="buyer" onclick="showSalesV0Panel('sv0-evidence',this)">證據包</button>
+              <button class="salesv0-tab" data-salesv0-group="buyer" onclick="showSalesV0Panel('sv0-booking',this)">預約會議</button>
+              <button class="salesv0-tab" data-salesv0-group="buyer" onclick="showSalesV0Panel('sv0-adoption',this)">認養農場</button>
+            </div>
+            <div class="salesv0-subtab-row" data-salesv0-subtabs="analysis">
+              <button class="salesv0-tab" data-salesv0-group="analysis" onclick="showSalesV0Panel('sv0-shangyi',this)">商譯</button>
+              <button class="salesv0-tab" data-salesv0-group="analysis" onclick="showSalesV0Panel('sv0-video-metrics',this)">成效回收</button>
+              <button class="salesv0-tab" data-salesv0-group="analysis" onclick="showSalesV0Panel('sv0-sales-funnel',this)">銷售漏斗</button>
+              <button class="salesv0-tab" data-salesv0-group="analysis" onclick="showSalesV0Panel('sv0-gap-analysis',this)">缺口判讀</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="sv0-today" class="salesv0-panel active">
+          <div class="salesv0-note">指北針：台灣先賣得動。今天只做能換到留言、名單、會議、預購意向、企業認養洽談的事。</div>
+          <div class="salesv0-section">
+            <h3>今日作業</h3>
+            <table class="salesv0-table"><thead><tr><th>順序</th><th>要做的事</th><th>為什麼重要</th><th>按鈕</th></tr></thead><tbody>
+              <tr><td>1</td><td>建立等待名單入口</td><td>EP1 / EP2 有留言也要能承接，不然流量會散掉。</td><td><button class="cta-btn primary" onclick="openAddModal()">新增名單</button></td></tr>
+              <tr><td>2</td><td>查證台灣通路窗口</td><td>Carrefour 台灣、City'Super、Isetan 先過 G0/G1。</td><td><button class="cta-btn" onclick="openHuntModal()">AI Hunt</button></td></tr>
+              <tr><td>3</td><td>補產季量、週可售盒數、單盒成本</td><td>沒有這三個數字，不正式預購、不正式寄 B2B 信。</td><td><button class="cta-btn" onclick="showSalesV0Panel('sv0-evidence')">看缺口</button></td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div id="sv0-records" class="salesv0-panel">
+          <div class="salesv0-note">客戶卡片貼上會議紀錄後，AI 先分類成對話、接觸結果、樣品/試吃、品質證據，再依追蹤日期回到這裡提醒。</div>
+          <div class="record-flow">
+            <div class="record-step"><b>1. 客戶卡片輸入</b><span>選客戶後貼會議文字，或讀取 .txt 檔。錄音先轉文字再貼。</span></div>
+            <div class="record-step"><b>2. AI 分類</b><span>萃取動機、疑慮、有效話術、不能說的話與證據缺口。</span></div>
+            <div class="record-step"><b>3. 建立追蹤</b><span>有設定日期就自動新增待辦，時間到回今日作業。</span></div>
+            <div class="record-step"><b>4. 商譯使用</b><span>每日建議只引用有紀錄的事，不編分數、不編成交率。</span></div>
+          </div>
+          <div class="salesv0-section">
+            <h3>到期追蹤</h3>
+            <div class="record-filter-row">
+              <span class="record-chip">今天要追</span>
+              <span class="record-chip">樣品後追蹤</span>
+              <span class="record-chip">缺證據</span>
+              <span class="record-chip">可約會議</span>
+            </div>
+            <div id="sv0-record-followups" class="record-follow-list">
+              <div class="record-empty">讀取追蹤任務中…</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="sv0-actions" class="salesv0-panel">
+          <div class="salesv0-note">直接動作分五類：開發名單、影片內容與發布、產生接觸信、推進認養農場、推進戰略合作。每個動作都要回到名單、留言、會議、預購意向或企業洽談。</div>
+          <div class="salesv0-cardgrid">
+            <div class="salesv0-card"><h4>開發名單</h4><p>用 AI Hunt 產生名單，人工驗證後才加入 CRM。</p><button class="cta-btn primary" onclick="openHuntModal()">AI Hunt</button></div>
+            <div class="salesv0-card"><h4>影片內容</h4><p>先把草莓 AI 農業講清楚，再把留言與名單導回 CRM。</p><button class="cta-btn" onclick="showSalesV0Panel('sv0-video-outline')">看腳本</button></div>
+            <div class="salesv0-card"><h4>接觸信</h4><p>選定客戶後產生草稿，對外寄送仍要人工核准。</p><button class="cta-btn" onclick="openAddModal()">先建檔</button></div>
+            <div class="salesv0-card"><h4>企業認養</h4><p>把家庭體驗、企業 ESG、通路合作分流，不混成一張表。</p><button class="cta-btn" onclick="showSalesV0Panel('sv0-adoption')">看 Offer</button></div>
+          </div>
+        </div>
+
+        <div id="sv0-video-assets" class="salesv0-panel">
+          <div class="salesv0-note">影片素材先防呆：只用草莓、威果自有農場、科技產品、教材與驗證資料。不要混進哈密瓜、美濃瓜、番茄、手機浮水印或看不懂的 AI 感素材。</div>
+          <div class="salesv0-section">
+            <h3>影片素材盤點</h3>
+            <table class="salesv0-table"><thead><tr><th>素材類型</th><th>用途</th><th>目前規則</th><th>缺口</th></tr></thead><tbody>
+              <tr><td>自有草莓農場照片</td><td>真實溫室、草莓植株、花、果、病害判斷畫面。</td><td>只能挑草莓相關照片；照片要先編號，Kling 一列只對一張主圖。</td><td>需要整理「可用照片 ID / 檔名 / 用途」清單。</td></tr>
+              <tr><td>科技產品與感測設備</td><td>呈現 AI 農業不是口號，而是資料、流程、判斷。</td><td>用威果自己的設備或控制畫面，不放不明品牌 Logo。</td><td>需要挑出可露出的 iSii / Orbit / 感測器素材。</td></tr>
+              <tr><td>FARMS 與 AI 耕譯流程卡片</td><td>把種苗、土壤、水、陽光、溫度、病害機率講成小學生也懂的流程。</td><td>影片先不用 DLI / VPD 等術語，用「水、光、熱、病害機率」講清楚。</td><td>每集濃縮成 60 秒一張表。</td></tr>
+              <tr><td>專利、荷蘭驗證、媒體報導、Pitch Deck</td><td>支撐買家與企業認養的可信度。</td><td>只做證據包，不在短影音塞滿文字。</td><td>需要一頁式證據摘要，對外 claim 需人工核准。</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div id="sv0-video-outline" class="salesv0-panel">
+          <div class="salesv0-note">固定開場 Slogan：用一顆麻豆的草莓，為您解密 AI 農業。每集只講一個可記住的問題，最後導回留言、等待名單或企業洽談。</div>
+          <div class="salesv0-section">
+            <h3>EP1-EP5 主題大綱</h3>
+            <table class="salesv0-table"><thead><tr><th>集數</th><th>一句 Hook</th><th>核心畫面</th><th>CTA</th></tr></thead><tbody>
+              <tr><td>EP1</td><td>草莓突然死，不是玄學，是機率。</td><td>種苗 → 土壤成分 → 水 → 陽光 → 溫度 → 病害機率；用 AR 半透明機率疊在真實草莓園。</td><td>留言你的草莓症狀，下一集用科學拆解。</td></tr>
+              <tr><td>EP2</td><td>乾淨草莓不是洗出來的。</td><td>乾淨流程、環境管理、採收前判斷，讓孩子安心吃。</td><td>加入等待名單，收到本季乾淨草莓通知。</td></tr>
+              <tr><td>EP3</td><td>本季首批草莓，先開放等待名單。</td><td>台灣先驗證 B2C 是否願意下單；證據包未齊前不誇大承諾。</td><td>留下姓名、電話、想買盒數。</td></tr>
+              <tr><td>EP4</td><td>水、肥、光、熱，不是口訣，是草莓健康條件。</td><td>用一站一站的判斷流程講種植，而不是丟專業術語。</td><td>追蹤下一集看採收品質管理。</td></tr>
+              <tr><td>EP5</td><td>採收不是摘下來，是品質管理。</td><td>成熟度、外觀、冷鏈、分級、客戶收到時的狀態。</td><td>導向預購、企業認養、通路洽談。</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div id="sv0-kling" class="salesv0-panel">
+          <div class="salesv0-note">Kling 格式固定用一張表，Clement 不需要上下找。每列都要有時間、ID、照片來源、可貼 Prompt、防錯規則、狀態。</div>
+          <div class="salesv0-section">
+            <h3>EP1 Kling Ready 分鏡表</h3>
+            <table class="salesv0-table"><thead><tr><th>時間</th><th>ID</th><th>照片</th><th>Kling Prompt 摘要</th><th>防錯規則</th></tr></thead><tbody>
+              <tr><td>0-6s</td><td>EP1_01_Hook</td><td>草莓紅果近拍</td><td>Vertical 9:16, real large red strawberry in a clean greenhouse, gentle push-in, premium Taiwanese farm realism, no text.</td><td>禁 VIVO、浮水印、Logo、人物臉、瓜類、番茄。</td></tr>
+              <tr><td>6-14s</td><td>EP1_02_Flow</td><td>草莓植株整排</td><td>Real strawberry row, translucent AR checklist passes one station at a time: seedling, soil, water, sunlight, temperature, disease risk.</td><td>畫面可以有半透明圖示；不要可讀文字。</td></tr>
+              <tr><td>14-25s</td><td>EP1_03_Probability</td><td>健康草莓植株</td><td>AR-style soft probability rings over different strawberry plants, survival chance and disease risk shown as abstract gauges, calm educational mood.</td><td>不要 AlphaGo 棋盤、不要科幻控制室。</td></tr>
+              <tr><td>25-40s</td><td>EP1_04_Disease</td><td>可疑病葉或萎凋株</td><td>Real strawberry disease inspection feeling, three subtle risk markers for anthracnose, soft rot, leaf blight, scientific but simple.</td><td>若照片不是真草莓病害，先標缺素材，不生成。</td></tr>
+              <tr><td>40-55s</td><td>EP1_05_AI</td><td>感測器 / 控制設備 + 草莓</td><td>Translucent AR silhouette observing strawberry plants, clean sensor data glow, AI agriculture as step-by-step judgment, not sci-fi.</td><td>用威果素材；不露第三方品牌。</td></tr>
+              <tr><td>55-60s</td><td>EP1_06_CTA</td><td>大顆紅草莓收尾</td><td>Large red strawberry in hand-free greenhouse close-up, warm light, calm premium ending, no readable text.</td><td>旁白放 CTA，畫面不要文字。</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div id="sv0-publish" class="salesv0-panel">
+          <div class="salesv0-note">發布不是按出去就結束。流程是 Codex 腳本與素材整理 → Kling 補 B-roll → CapCut 套模板 → 人工核准 → 多平台發布 → 留言回 CRM。</div>
+          <div class="salesv0-section">
+            <h3>發布排程與平台</h3>
+            <table class="salesv0-table"><thead><tr><th>平台</th><th>內容用途</th><th>發布方式</th><th>回收資料</th></tr></thead><tbody>
+              <tr><td>YouTube Shorts</td><td>長期搜尋與知識留存。</td><td>CapCut 匯出後上傳；標題放草莓問題。</td><td>留言問題、訂閱、觀看完成率。</td></tr>
+              <tr><td>IG Reels</td><td>家庭客群、品牌感、農場生活信任。</td><td>人工核准後發布；限動導等待名單。</td><td>私訊、收藏、分享、等待名單。</td></tr>
+              <tr><td>TikTok</td><td>測 Hook、測流量、快速找痛點。</td><td>同素材不同 Hook A/B。</td><td>留言關鍵字、完播率、追蹤。</td></tr>
+              <tr><td>Threads / Facebook</td><td>延伸文字討論與在地社群。</td><td>短片 + 一段小學生語言解釋。</td><td>提問、團購、企業窗口。</td></tr>
+              <tr><td>LinkedIn</td><td>B2B、ESG、通路與企業認養。</td><td>每週整理成 AI 農業觀點文。</td><td>採購、HR、ESG、合作私訊。</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div id="sv0-video-metrics" class="salesv0-panel">
+          <div class="salesv0-note">成效回收要餵回商譯：哪些問題最多、誰想買、誰適合企業認養、哪個 Hook 讓人記住「麻豆草莓 + AI 農業」。</div>
+          <div class="salesv0-cardgrid">
+            <div class="salesv0-card"><h4>留言問題</h4><p>草莓為什麼死、為什麼不開花、為什麼不結果，依難度分三級變成後續集數。</p></div>
+            <div class="salesv0-card"><h4>購買意圖</h4><p>想買、想預購、想帶孩子體驗、想企業認養，全部回 CRM，不靠截圖記憶。</p></div>
+            <div class="salesv0-card"><h4>Hook 測試</h4><p>記錄每集開頭、完播、留言率，不編分數；等真資料進來再做 AI 判斷。</p></div>
+            <div class="salesv0-card"><h4>商譯回饋</h4><p>每週把影片留言、買家 Gate、證據包缺口、現場耕譯狀況合併成下一週 3 件事。</p></div>
+          </div>
+        </div>
+
+        <div id="sv0-buyers" class="salesv0-panel">
+          <div class="salesv0-note">Gate 規則：G2 具名窗口 + G3 證據包齊，才寄正式信。現在不從美國高端通路空打，台灣先驗證。</div>
+          <div class="salesv0-section">
+            <h3>B2B 買家 Gate</h3>
+            <table class="salesv0-table"><thead><tr><th>買家</th><th>市場</th><th>Gate</th><th>下一步</th></tr></thead><tbody>
+              <tr><td>Carrefour 台灣</td><td>台灣</td><td><span class="gate-pill block">G0 查證</span></td><td>查官方供應商、生鮮採購或 ESG 聯絡路徑。</td></tr>
+              <tr><td>City'Super</td><td>香港 / 台灣</td><td><span class="gate-pill block">G0 查證</span></td><td>查台灣 / 香港供應商洽談窗口。</td></tr>
+              <tr><td>Isetan Mitsukoshi</td><td>日本</td><td><span class="gate-pill block">G0 查證</span></td><td>找 depachika 水果採購窗口或 warm intro。</td></tr>
+              <tr><td>Whole Foods / Oishii / Erewhon</td><td>美國</td><td><span class="gate-pill">Benchmark</span></td><td>只做品牌、規格、包裝與社群語感對標。</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div id="sv0-evidence" class="salesv0-panel">
+          <div class="salesv0-note">證據包是對外放行閘門。缺資料就是缺，不能用漂亮話補。</div>
+          <div class="salesv0-cardgrid">
+            <div class="salesv0-card"><h4>產季量 / 週產量 <span class="gate-pill block">缺</span></h4><p>卡住預購、企業報價、B2B 寄信。</p></div>
+            <div class="salesv0-card"><h4>單盒規格 / 等級 <span class="gate-pill block">待補</span></h4><p>重量、顆數、尺寸、包裝與分級。</p></div>
+            <div class="salesv0-card"><h4>檢驗 / claim 證據 <span class="gate-pill block">缺</span></h4><p>無毒、child-safe、驗證、專利都要有文件。</p></div>
+            <div class="salesv0-card"><h4>冷鏈 SOP <span class="gate-pill block">待補</span></h4><p>高價草莓靠交付品質守住信任。</p></div>
+            <div class="salesv0-card"><h4>價格 / 成本表 <span class="gate-pill block">缺</span></h4><p>沒有成本就不能判斷毛利與促銷空間。</p></div>
+            <div class="salesv0-card"><h4>專利 / 荷蘭驗證 <span class="gate-pill">整理中</span></h4><p>整理成買家可讀的一頁證據包。</p></div>
+          </div>
+        </div>
+
+        <div id="sv0-booking" class="salesv0-panel">
+          <div class="salesv0-note">先用 Google Calendar 預約頁落地，不等 API。買家到可約階段時，直接複製對應邀請文，讓對方自己選農場參訪或線上會議時段。</div>
+          <div class="booking-grid">
+            <div class="booking-card">
+              <h4>農場參訪</h4>
+              <p>給高意向買家、企業認養、家庭體驗客戶預約麻豆農場參訪。適合 G2 具名窗口後使用。</p>
+              <div class="booking-input-row">
+                <input id="booking-farm-url" class="booking-input" type="url" placeholder="貼上農場參訪 Google Calendar 預約頁連結">
+                <button class="cta-btn primary" onclick="saveBookingUrl('farm')">儲存</button>
+              </div>
+              <div class="booking-actions">
+                <button class="cta-btn" onclick="openBookingUrl('farm')">開啟預約頁</button>
+                <button class="cta-btn" onclick="copyBookingInvite('farm',this)">複製邀請文</button>
+                <span id="booking-farm-status" class="booking-status">本機設定</span>
+              </div>
+            </div>
+            <div class="booking-card">
+              <h4>線上會議</h4>
+              <p>給採購、ESG、HR、策略合作窗口先約 30 分鐘。Google Calendar 會自動帶出 Meet 連結。</p>
+              <div class="booking-input-row">
+                <input id="booking-online-url" class="booking-input" type="url" placeholder="貼上線上會議 Google Calendar 預約頁連結">
+                <button class="cta-btn primary" onclick="saveBookingUrl('online')">儲存</button>
+              </div>
+              <div class="booking-actions">
+                <button class="cta-btn" onclick="openBookingUrl('online')">開啟預約頁</button>
+                <button class="cta-btn" onclick="copyBookingInvite('online',this)">複製邀請文</button>
+                <span id="booking-online-status" class="booking-status">本機設定</span>
+              </div>
+            </div>
+          </div>
+          <div class="booking-setup">
+            <strong>一次設定，之後每天直接用</strong>
+            <ol>
+              <li>到 Google Calendar 建兩個 appointment schedule：農場參訪、線上會議。</li>
+              <li>指定 WeGrow 要使用的行事曆；線上會議請開啟 Google Meet。</li>
+              <li>把兩個預約頁連結貼回這裡並儲存。</li>
+              <li>買家未達 Gate 或證據包未齊時，只能約探索會議，不正式承諾價格、產量或出貨。</li>
+            </ol>
+            <div style="margin-top:10px">
+              <button class="cta-btn primary" onclick="window.open('https://calendar.google.com/calendar/u/0/appointments/schedules','_blank','noopener')">開啟 Google Calendar 預約設定</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="sv0-shangyi" class="salesv0-panel">
+          <div class="salesv0-note">商譯 = AI 每天把市場、留言、買家、證據包、現場耕譯狀況翻成下一個商業動作。</div>
+          <div class="salesv0-cardgrid">
+            <div class="salesv0-card"><h4>觀察</h4><p>抓草莓行情、留言疑慮、競品內容、買家查證、現場狀況。</p></div>
+            <div class="salesv0-card"><h4>判斷</h4><p>用 GROW / SMART 判斷今天該推 B2C、B2B、企業認養，或先補證據。</p></div>
+            <div class="salesv0-card"><h4>行動</h4><p>產生任務、草稿、發布排程、名單查證；對外承諾人工核准。</p></div>
+          </div>
+        </div>
+
+        <div id="sv0-sales-funnel" class="salesv0-panel">
+          <div class="salesv0-note">銷售漏斗只看真實紀錄。每個內容、留言、會議、樣品、報價都要能回到客戶卡片，才能被商譯拿來判斷。</div>
+          <div class="salesv0-section">
+            <h3>漏斗判讀</h3>
+            <table class="salesv0-table"><thead><tr><th>階段</th><th>資料來源</th><th>AI 要判斷</th><th>下一步</th></tr></thead><tbody>
+              <tr><td>內容觸發</td><td>影片留言、私訊、等待名單</td><td>對方是在問種植、購買、體驗，還是企業認養。</td><td>回客戶卡片建檔。</td></tr>
+              <tr><td>接觸推進</td><td>電話、LINE、Email、會議紀錄</td><td>是否有採購權限、預算、檔期、樣品需求。</td><td>建立追蹤日期。</td></tr>
+              <tr><td>證據放行</td><td>檢驗、冷鏈、產量、規格、成本</td><td>能不能報價、預購、寄正式 B2B 信。</td><td>缺資料先補，不硬寄。</td></tr>
+              <tr><td>成交回收</td><td>訂單、會議、樣品回饋</td><td>哪個話術有效、哪個客群值得複製。</td><td>更新商譯打法。</td></tr>
+            </tbody></table>
+          </div>
+        </div>
+
+        <div id="sv0-gap-analysis" class="salesv0-panel">
+          <div class="salesv0-note">缺口判讀的原則：缺資料就是缺，不用故事補。AI 只能提醒與產草稿，對外承諾要人工核准。</div>
+          <div class="salesv0-cardgrid">
+            <div class="salesv0-card"><h4>產量缺口</h4><p>還需要產季量、週可售盒數、可供應週期，才能正式預購或接企業量。</p></div>
+            <div class="salesv0-card"><h4>規格缺口</h4><p>盒重、顆數、等級、包裝、冷鏈交付方式，要和價格一起確認。</p></div>
+            <div class="salesv0-card"><h4>證據缺口</h4><p>無毒、child-safe、專利、荷蘭驗證、檢驗報告，要有文件才能對外 claim。</p></div>
+            <div class="salesv0-card"><h4>市場缺口</h4><p>每週回收草莓價格、競品禮盒、留言痛點，再決定拍片與開發名單。</p></div>
+          </div>
+        </div>
+
+        <div id="sv0-adoption" class="salesv0-panel">
+          <div class="salesv0-note">農業黑客松 / 認養農場要從客戶能理解的 Offer 開始，不要一開始講太抽象。</div>
+          <div class="salesv0-cardgrid">
+            <div class="salesv0-card"><h4>家庭體驗</h4><p>先收等待名單，不急著收款；主打孩子看得懂 AI 農業。</p></div>
+            <div class="salesv0-card"><h4>企業 ESG 認養</h4><p>年度 ESG、員工家庭日、教育體驗、共同報告。</p></div>
+            <div class="salesv0-card"><h4>通路合作</h4><p>等 G2/G3 才正式寄信，避免故事信被採購擋掉。</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="center-content">
+      <div id="center-header">
+        <div>
+          <div id="center-company-name">—</div>
+          <div id="center-contact-sub" style="font-size:12px;color:#6e7681;margin-top:2px"></div>
+        </div>
+        <span id="center-grade-badge" class="grade-badge" style="font-size:15px;padding:4px 14px;border-radius:7px">?</span>
+        <button class="cta-btn" onclick="runFullAnalysis()">⚡ AI 分析</button>
+        <button class="cta-btn" onclick="openEditModal()">✏️ 編輯</button>
+        <button class="cta-btn" id="stage-btn" onclick="openStageModal()">移動階段</button>
+      </div>
+      <div id="center-tabs">
+        <div class="ctab active" onclick="showCenterTab('profile',this)">情報 Profile</div>
+        <div class="ctab" onclick="showCenterTab('fitscore',this)">Fit Score</div>
+        <div class="ctab ctab-learning" onclick="showCenterTab('learning',this)">📊 Daily Learning</div>
+      </div>
+      <div id="center-body">
+        <!-- Profile tab -->
+        <div id="tab-profile">
+          <div id="profile-loading" class="ai-loading" style="display:none"><div class="ai-spinner"></div><span id="profile-loading-msg">分析客戶情況…</span></div>
+          <div id="profile-content"></div>
+        </div>
+        <!-- Fit Score tab -->
+        <div id="tab-fitscore" style="display:none">
+          <div id="fitscore-loading" class="ai-loading" style="display:none"><div class="ai-spinner"></div><span>計算 WeGrow Fit Score…</span></div>
+          <div id="fitscore-content"></div>
+        </div>
+        <!-- Daily Learning tab -->
+        <div id="tab-learning" style="display:none">
+          <div id="learning-toolbar">
+            <button class="btn-run-learning" id="learning-run-btn" onclick="runDailyLearning()">▶ 生成今日報告</button>
+            <span id="learning-gen-time" style="font-size:11px;color:#888"></span>
+            <span id="learning-source-badge"></span>
+          </div>
+          <div id="learning-loading" class="ai-loading" style="display:none"><div class="ai-spinner"></div><span>AI 分析所有銷售數據…（需 60-120 秒）</span></div>
+          <div id="learning-content"><div class="learning-empty">點擊「生成今日報告」讓 AI 回顧所有客戶記錄，輸出可執行策略。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: AI Strategy -->
+  <div id="right">
+    <div id="right-empty">選擇客戶後顯示 AI 策略</div>
+    <div id="salesv0-right">
+      <div class="salesv0-video-home" data-testid="salesv0-video-home">
+        <div class="salesv0-video-home-head">
+          <div>
+            <div class="salesv0-video-home-title">影片主頁</div>
+            <div class="salesv0-video-home-sub">EP 內容隊列 / 素材 / Kling / 發布</div>
+          </div>
+          <button class="r-gen-btn" onclick="showSalesV0Panel('sv0-video-outline')">看大綱</button>
+        </div>
+        <div class="salesv0-video-list">
+          <div class="salesv0-ep-card" onclick="showSalesV0Panel('sv0-kling')" data-episode="EP1">
+            <div class="salesv0-ep-top"><span class="salesv0-ep-id">EP1</span><span class="salesv0-ep-status ready">Kling 準備</span></div>
+            <div class="salesv0-ep-title">草莓突然死，不是玄學，是機率。</div>
+            <div class="salesv0-ep-desc">種苗、土壤、水、陽光、溫度一路判斷，最後連到病害發生機率。</div>
+            <div class="salesv0-ep-meta"><span class="salesv0-ep-chip">AR 機率</span><span class="salesv0-ep-chip">真實草莓園</span><span class="salesv0-ep-chip">禁止瓜類</span></div>
+          </div>
+          <div class="salesv0-ep-card" onclick="showSalesV0Panel('sv0-video-outline')" data-episode="EP2">
+            <div class="salesv0-ep-top"><span class="salesv0-ep-id">EP2</span><span class="salesv0-ep-status">腳本中</span></div>
+            <div class="salesv0-ep-title">乾淨草莓不是洗出來的。</div>
+            <div class="salesv0-ep-desc">用孩子聽得懂的方式，講乾淨流程、環境管理、採收前判斷。</div>
+            <div class="salesv0-ep-meta"><span class="salesv0-ep-chip">乾淨</span><span class="salesv0-ep-chip">安心</span><span class="salesv0-ep-chip">親子 TA</span></div>
+          </div>
+          <div class="salesv0-ep-card" onclick="showSalesV0Panel('sv0-publish')" data-episode="EP3">
+            <div class="salesv0-ep-top"><span class="salesv0-ep-id">EP3</span><span class="salesv0-ep-status block">缺收單</span></div>
+            <div class="salesv0-ep-title">本季首批草莓，先開放等待名單。</div>
+            <div class="salesv0-ep-desc">驗證 B2C 是否願意留下姓名、電話、想買盒數，不先亂開預購。</div>
+            <div class="salesv0-ep-meta"><span class="salesv0-ep-chip">等待名單</span><span class="salesv0-ep-chip">B2C 驗證</span></div>
+          </div>
+          <div class="salesv0-ep-card" onclick="showSalesV0Panel('sv0-video-assets')" data-episode="EP4">
+            <div class="salesv0-ep-top"><span class="salesv0-ep-id">EP4</span><span class="salesv0-ep-status">素材待補</span></div>
+            <div class="salesv0-ep-title">水、肥、光、熱，是草莓健康條件。</div>
+            <div class="salesv0-ep-desc">不用專業術語，用一站一站的判斷流程講種植，也能套用到其他植物。</div>
+            <div class="salesv0-ep-meta"><span class="salesv0-ep-chip">小學生語言</span><span class="salesv0-ep-chip">流程圖</span></div>
+          </div>
+          <div class="salesv0-ep-card" onclick="showSalesV0Panel('sv0-video-metrics')" data-episode="EP5">
+            <div class="salesv0-ep-top"><span class="salesv0-ep-id">EP5</span><span class="salesv0-ep-status">待排程</span></div>
+            <div class="salesv0-ep-title">採收不是摘下來，是品質管理。</div>
+            <div class="salesv0-ep-desc">成熟度、分級、冷鏈、收到時狀態，最後導向預購、企業認養、通路洽談。</div>
+            <div class="salesv0-ep-meta"><span class="salesv0-ep-chip">品質</span><span class="salesv0-ep-chip">冷鏈</span><span class="salesv0-ep-chip">轉換</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="right-content">
+
+      <!-- Next Best Action -->
+      <div>
+        <div class="r-section-head">
+          🎯 Next Best Action
+          <button class="r-gen-btn" id="nba-btn" onclick="runNextAction()">重新生成</button>
+        </div>
+        <div id="nba-loading" class="ai-loading" style="display:none"><div class="ai-spinner"></div><span>生成行動建議…</span></div>
+        <div id="nba-content"></div>
+      </div>
+
+      <!-- Strategic Sales Learning Layer -->
+      <div>
+        <div class="r-section-head">
+          🧩 戰略銷售學習層
+          <button class="r-gen-btn" id="strategic-btn" onclick="runStrategicInsight()">分析</button>
+        </div>
+        <div id="strategic-loading" class="ai-loading" style="display:none"><div class="ai-spinner"></div><span>深度戰略分析中…</span></div>
+        <div id="strategic-content"><div style="color:#6e7681;font-size:12px;padding:8px 0">點擊「分析」生成戰略洞察</div></div>
+      </div>
+
+      <!-- AI Memory -->
+      <div>
+        <div class="r-section-head">
+          🧠 AI 記憶
+          <button class="r-gen-btn" onclick="openExtractModal()">會議紀錄</button>
+        </div>
+        <div class="meeting-ingest-card">
+          <div class="meeting-ingest-title">上傳 / 貼上會議紀錄</div>
+          <div class="meeting-ingest-copy">把通話、LINE、會議逐字稿放進來，AI 會分類成紀錄卡；若設定追蹤日期，會自動進入紀錄 tab。</div>
+          <button class="btn-mem-add" onclick="openExtractModal()">＋ 新增會議紀錄</button>
+        </div>
+        <div id="memory-content"></div>
+        <div class="mem-actions">
+          <button class="btn-mem-add" onclick="openAddMemModal()">＋ 手動記錄</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Add Contact ── -->
+<div class="overlay" id="add-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">新增潛在客戶</span><button class="modal-close" onclick="closeModal('add-modal')">×</button></div>
+    <div class="form-grid">
+      <div class="form-row"><label>公司 / 機構名稱 *</label><input id="af-name" placeholder="台積電福委會"></div>
+      <div class="form-row"><label>聯絡人姓名</label><input id="af-person" placeholder="王大明"></div>
+      <div class="form-row"><label>職稱</label><input id="af-title" placeholder="福委主委"></div>
+      <div class="form-row">
+        <label>類型</label>
+        <div class="type-row">
+          <select id="af-type">
+            <option>投資人</option><option>福委會</option><option>中小企業老闆</option><option>C 消費者</option><option>大型通路</option><option>農場</option><option>太陽能/地主</option>
+          </select>
+          <button class="btn-ai-classify" id="af-classify-btn" onclick="classifyContact('af')" type="button">🤖 AI 判斷</button>
+        </div>
+        <div id="af-classify-hint" class="classify-hint" style="display:none"></div>
+      </div>
+      <div class="form-row"><label>電話</label><input id="af-phone"></div>
+      <div class="form-row"><label>Email</label><input id="af-email"></div>
+      <div class="form-row"><label>預估金額 (NT$ 萬)</label><input id="af-amount" type="number" placeholder="0"></div>
+      <div class="form-row"><label>階段</label>
+        <select id="af-stage">
+          <option>未聯繫</option><option>首次接觸</option><option>Pitched</option><option>跟進中</option><option>DD審查</option><option>口頭承諾</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label>會議記錄 / 備注（AI 將從這裡提取情報）<span id="af-notes-hint" style="display:none;color:#E2CF35;font-size:10px;margin-left:6px;cursor:pointer" onclick="classifyContact('af')">← 填完後點 AI 判斷類型</span></label><textarea id="af-notes" rows="4" placeholder="貼入會議記錄、公司介紹、任何背景資料..." oninput="document.getElementById('af-notes-hint').style.display=this.value.length>10?'inline':'none'"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('add-modal')">取消</button>
+      <button class="btn-primary" onclick="saveNewContact()">建檔 → AI 分析</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Edit Contact ── -->
+<div class="overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">編輯</span><button class="modal-close" onclick="closeModal('edit-modal')">×</button></div>
+    <input type="hidden" id="ef-id">
+    <div class="form-grid">
+      <div class="form-row"><label>公司名稱</label><input id="ef-name"></div>
+      <div class="form-row"><label>聯絡人</label><input id="ef-person"></div>
+      <div class="form-row"><label>職稱</label><input id="ef-title"></div>
+      <div class="form-row">
+        <label>類型</label>
+        <div class="type-row">
+          <select id="ef-type"><option>投資人</option><option>福委會</option><option>中小企業老闆</option><option>C 消費者</option><option>大型通路</option><option>農場</option><option>太陽能/地主</option></select>
+          <button class="btn-ai-classify" id="ef-classify-btn" onclick="classifyContact('ef')" type="button">🤖 AI 判斷</button>
+        </div>
+        <div id="ef-classify-hint" class="classify-hint" style="display:none"></div>
+      </div>
+      <div class="form-row"><label>電話</label><input id="ef-phone"></div>
+      <div class="form-row"><label>Email</label><input id="ef-email"></div>
+      <div class="form-row"><label>金額 (NT$ 萬)</label><input id="ef-amount" type="number"></div>
+      <div class="form-row"><label>上次聯繫</label><input id="ef-last" type="date"></div>
+    </div>
+    <div class="form-row"><label>備注</label><textarea id="ef-notes" rows="4"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">取消</button>
+      <button class="btn-primary" onclick="saveEdit()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Stage Move ── -->
+<div class="overlay" id="stage-modal">
+  <div class="modal-box" style="width:360px">
+    <div class="modal-head"><span class="modal-title">移動階段</span><button class="modal-close" onclick="closeModal('stage-modal')">×</button></div>
+    <div id="stage-buttons" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- ── Modal: AI Prospect Hunt ── -->
+<div class="overlay" id="hunt-modal">
+  <div class="modal-box wide" style="max-width:780px;max-height:92vh;display:flex;flex-direction:column">
+    <div class="modal-head" style="flex-shrink:0">
+      <span class="modal-title">⚡ Prospect Execution Engine</span>
+      <button class="modal-close" onclick="closeModal('hunt-modal')">×</button>
+    </div>
+    <div id="hunt-input-section" style="flex-shrink:0">
+      <div class="hunt-seg-bar">
+        <span class="hunt-seg-label">鎖定市場：</span>
+        <button class="hsb active" data-seg="" onclick="setHuntSeg(this)">全部</button>
+        <button class="hsb" data-seg="福委會" onclick="setHuntSeg(this)">福委會</button>
+        <button class="hsb" data-seg="大型通路" onclick="setHuntSeg(this)">大型通路</button>
+        <button class="hsb" data-seg="市集通路" onclick="setHuntSeg(this)">市集</button>
+        <button class="hsb" data-seg="ESG 企業" onclick="setHuntSeg(this)">ESG 企業</button>
+        <button class="hsb" data-seg="餐飲加工" onclick="setHuntSeg(this)">餐飲加工</button>
+        <button class="hsb" data-seg="團購主" onclick="setHuntSeg(this)">團購主</button>
+        <button class="hsb" data-seg="投資人" onclick="setHuntSeg(this)">投資人</button>
+      </div>
+      <div class="form-row" style="margin-top:6px">
+        <textarea id="hi-desc" rows="2" placeholder="補充說明（選填）：例如鎖定台南/台中地區、中秋禮盒需求、需客製包裝..."></textarea>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px;margin-bottom:4px">
+        <button class="btn-primary" id="hunt-run-btn" onclick="runProspectHunt()" style="flex:1">⚡ 產生可執行名單</button>
+        <button class="btn-cancel" onclick="closeModal('hunt-modal')">取消</button>
+      </div>
+      <div style="font-size:10px;color:#aaa;padding:2px 0 6px">AI 將產生真實可聯繫名單，含話術草稿與追蹤計畫。聯絡資料為 AI 推測，需人工驗證後使用。</div>
+    </div>
+    <div id="hunt-loading" class="ai-loading" style="display:none;flex-shrink:0"><div class="ai-spinner"></div><span>AI 分析可聯繫名單中…（60-120秒）</span></div>
+    <div id="hunt-results" style="flex:1;overflow-y:auto;padding-bottom:8px"></div>
+  </div>
+</div>
+
+<!-- ── Modal: Add Memory ── -->
+<div class="overlay" id="mem-modal">
+  <div class="modal-box" style="width:480px">
+    <div class="modal-head"><span class="modal-title">＋ 記錄學習卡</span><button class="modal-close" onclick="closeModal('mem-modal')">×</button></div>
+    <div class="form-row"><label>學到了什麼</label><input id="mm-fact" placeholder="例：他比較在乎 ROI，不在乎技術細節"></div>
+    <div class="form-row"><label>來源（讓 AI 下次引用時知道從哪來）</label>
+      <input id="mm-source" placeholder="例：2026-06-07 電話通話、LinkedIn 文章、會議記錄第三頁">
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>來源類型</label>
+        <select id="mm-source-type">
+          <option value="meeting">📝 會議 / 通話</option>
+          <option value="user_confirmed">✅ 已確認事實</option>
+          <option value="ai_inference">🤖 AI 推斷</option>
+          <option value="external">🌐 外部資料</option>
+        </select>
+      </div>
+      <div class="form-row"><label>可信度</label>
+        <select id="mm-conf">
+          <option value="high">高 — 已確認</option>
+          <option value="medium" selected>中 — 推測</option>
+          <option value="low">低 — 待驗證</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row"><label>類別</label>
+      <select id="mm-cat">
+        <option value="motivation">motivation — 動機 / 在乎什麼</option>
+        <option value="objection">objection — 反對理由</option>
+        <option value="preference">preference — 偏好</option>
+        <option value="winning">winning — 有效話術</option>
+        <option value="avoid">avoid — 不能說的</option>
+        <option value="decision">decision — 決策者資訊</option>
+        <option value="timing">timing — 時機資訊</option>
+        <option value="general">general — 其他</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('mem-modal')">取消</button>
+      <button class="btn-primary" onclick="saveManualMemory()">儲存學習卡</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: AI Extract Memory ── -->
+<div class="overlay" id="extract-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">AI 會議紀錄分類</span><button class="modal-close" onclick="closeModal('extract-modal')">×</button></div>
+    <div class="form-grid">
+      <div class="form-row"><label>紀錄類型</label>
+        <select id="em-kind">
+          <option value="meeting">客戶對話 / 會議</option>
+          <option value="contact_result">接觸結果</option>
+          <option value="sample_feedback">樣品 / 試吃回饋</option>
+          <option value="evidence_gap">品質證據缺口</option>
+        </select>
+      </div>
+      <div class="form-row"><label>追蹤日期</label><input id="em-follow-date" type="date"></div>
+    </div>
+    <div class="form-row"><label>讀取文字檔或放入錄音備註</label><input id="em-file" type="file" accept=".txt,.md,.vtt,.srt,audio/*"></div>
+    <div class="meeting-file-note">目前 V0 可直接讀取 .txt/.md/.vtt/.srt。錄音檔請先用手機或剪輯工具轉成文字後貼上；正式語音轉文字會在下一版接 API。</div>
+    <div class="form-row" style="margin-top:10px"><label>貼入會議記錄、通話紀錄、互動備注…</label><textarea id="em-text" rows="7" placeholder="例：今天和 City'Super 採購窗口通話，對方在意供貨穩定、冷鏈證明、盒裝規格；希望下週收到樣品與檢驗資料..."></textarea></div>
+    <div id="extract-loading" class="ai-loading" style="display:none"><div class="ai-spinner"></div><span>AI 正在提取學習要點…</span></div>
+    <div id="extract-results" style="margin-top:12px"></div>
+    <div class="modal-actions" id="extract-actions">
+      <button class="btn-cancel" onclick="closeModal('extract-modal')">取消</button>
+      <button class="btn-primary" id="extract-run-btn" onclick="runExtractMemory()">AI 分類＋建立追蹤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let contacts = [];
+let activeCid = null;
+let gradeFilter = 'all';
+let channelFilter = '';
+let stageFilter = '';
+let smartFilter = '';
+let _fitScoreRunning = false;
+
+// ── AI Source Badge ───────────────────────────────────────────────────────────
+function aiSourceBadge(source) {
+  const cfg = {
+    claude:   { bg:'#e8f5e9', color:'#2e7d32', label:'● Claude' },
+    fallback: { bg:'#fff8e1', color:'#f57f17', label:'⚠ Fallback' },
+    timeout:  { bg:'#fdecea', color:'#c62828', label:'⏱ Timeout' },
+    error:    { bg:'#fdecea', color:'#c62828', label:'✕ Error' },
+  };
+  const c = cfg[source] || cfg.fallback;
+  return `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${c.bg};color:${c.color};border:1px solid ${c.color}40;margin-left:8px">${c.label}</span>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
+const STAGES = ['未聯繫','首次接觸','Pitched','跟進中','DD審查','口頭承諾','成交','Lost'];
+const GRADE_ORDER = {'A+':0,'A':1,'B':2,'C':3,'Do Not Pursue':4,'DNP':4,'?':5};
+
+const STAGE_PRIORITY = {
+  '有意向':0,'報價中':1,'已聯絡':2,'已接觸':3,'待開發':4,'暫停':5,'流失':6,'未聯繫':4
+};
+
+const STAGE_STYLE = {
+  '有意向': {bg:'#e6f4ea',color:'#2e7d32',border:'#c8e6c9'},
+  '報價中': {bg:'#ede7f6',color:'#6a1b9a',border:'#d1c4e9'},
+  '已聯絡': {bg:'#e3f2fd',color:'#1565c0',border:'#bbdefb'},
+  '已接觸': {bg:'#e8f5e9',color:'#1b5e20',border:'#c8e6c9'},
+  '待開發': {bg:'#f5f5f5',color:'#666',border:'#e0e0e0'},
+  '暫停':   {bg:'#fff3e0',color:'#e65100',border:'#ffe0b2'},
+  '流失':   {bg:'#fdecea',color:'#c62828',border:'#f5c6c6'},
+};
+
+const CH_STYLE = {
+  'AAMA':  {bg:'#f3e5f5',color:'#7b1fa2'},
+  '農會':  {bg:'#e8f5e9',color:'#2e7d32'},
+  '電商':  {bg:'#e3f2fd',color:'#1565c0'},
+  '大通路':{bg:'#eceff1',color:'#37474f'},
+  '加工':  {bg:'#efebe9',color:'#5d4037'},
+  'ESG':   {bg:'#e0f2f1',color:'#00695c'},
+  '太陽能/地主': {bg:'#fff8e1',color:'#8a5a00'},
+  '市集':  {bg:'#f1f8e9',color:'#558b2f'},
+  '其他':  {bg:'#f5f5f5',color:'#888'},
+};
+
+function deriveChannelGroup(c) {
+  const notes = (c.notes || '').toLowerCase();
+  const type = c.type || '';
+  const name = (c.name || '').toLowerCase();
+  if (c.channel_group) return c.channel_group; // use server-computed if available
+  if (type === '太陽能/地主') return '太陽能/地主';
+  if (notes.includes('aama')) return 'AAMA';
+  if (type === '農場/合作夥伴') return '農會';
+  if (type === '大型通路') return '大通路';
+  if (type === '餐飲加工') return '加工';
+  if (type === 'ESG 企業' || type === 'ESG企業') return 'ESG';
+  if (type === '福委會') return 'ESG';
+  if (type === '市集通路') {
+    const onlineKw = ['網路','momo','i3','購物','郵購','行動','賣貨便','販奇','鮮拾','菜霸',
+                      'fresh','superbuy','hug','好農','無毒農','悠活','食安','農頭家','山守現',
+                      '棉花田','無毒的家','健康食彩','大農網'];
+    if (onlineKw.some(k => name.includes(k))) return '電商';
+    return '市集';
+  }
+  return '其他';
+}
+
+function stageSortKey(c) { return STAGE_PRIORITY[c.stage] ?? 4; }
+function gradeSortKey(c) { return GRADE_ORDER[normGrade(c.fit_grade || c.grade)] ?? 5; }
+function recencySortKey(c) {
+  const d = c.last_contact_date || c.updated_at || c.created_at || '';
+  return d ? -new Date(d).getTime() : 0; // newer = smaller (negative)
+}
+
+function chTag(group) {
+  const s = CH_STYLE[group] || CH_STYLE['其他'];
+  return `<span class="lc-ch-tag" style="background:${s.bg};color:${s.color}">${group}</span>`;
+}
+
+function stageTag(stage) {
+  const s = STAGE_STYLE[stage] || {bg:'#f5f5f5',color:'#888',border:'#e0e0e0'};
+  return `<span class="lc-stage-tag" style="background:${s.bg};color:${s.color};border:1px solid ${s.border}">${stage||'未聯繫'}</span>`;
+}
+
+function nextActionHint(c) {
+  if (c.next_action) return c.next_action;
+  const map = {
+    '有意向':'確認採購細節','報價中':'跟進報價回覆','已聯絡':'安排下次聯絡',
+    '已接觸':'發送 follow-up','待開發':'安排初次聯絡','暫停':'—','流失':'—'
+  };
+  return map[c.stage] || '初次聯絡';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  await loadContacts();
+  initBookingUrls();
+  document.getElementById('em-file')?.addEventListener('change', handleMeetingFile);
+  document.getElementById('cmd-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runCommand(e.target.value.trim());
+  });
+  showSalesV0Board();
+}
+
+async function loadContacts() {
+  const r = await fetch('/api/contacts');
+  contacts = await r.json();
+  renderLeads();
+}
+
+// ── Leads Panel ───────────────────────────────────────────────────────────────
+function normGrade(g) {
+  if (!g) return '?';
+  if (g === 'Do Not Pursue' || g === 'do_not_pursue') return 'DNP';
+  return g;
+}
+
+function gradeClass(g) {
+  const n = normGrade(g);
+  return 'grade-' + n.replace('+','\\+').replace(/ /g,'.');
+}
+
+function gradeColor(g) {
+  const n = normGrade(g);
+  const map = {'A+':'#3fb950','A':'#58a6ff','B':'#E2CF35','C':'#ff9800','DNP':'#f85149','?':'#6e7681'};
+  return map[n] || '#6e7681';
+}
+
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  } catch { return null; }
+}
+
+function contactText(c) {
+  return [c.name, c.contact_person, c.type, c.stage, c.notes, c.next_action, c.email, c.phone, deriveChannelGroup(c)]
+    .filter(Boolean).join(' ').toLowerCase();
+}
+
+function hasContactInfo(c) {
+  return !!((c.phone || '').trim() || (c.email || '').trim());
+}
+
+function fitScore(c) {
+  const direct = Number(c.fit_total ?? c.fit_score ?? c.score ?? c.ai_score ?? c.total_score);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const grade = normGrade(c.fit_grade || c.grade);
+  return {'A+':96,'A':84,'B':68,'C':46,'DNP':12,'?':52}[grade] ?? 52;
+}
+
+function leadAmount(c) {
+  return Number(String(c.amount ?? c.expected_amount ?? c.value ?? '').replace(/[^\d.-]/g, '')) || 0;
+}
+
+function isClosedOrPaused(c) {
+  const s = c.stage || '';
+  const text = contactText(c);
+  return ['暫停','流失','Lost','成交'].includes(s) || /暫停|流失|不要追|不追|不適合|無預算|重複|已成交/.test(text);
+}
+
+function isLowQualityLead(c) {
+  const grade = normGrade(c.fit_grade || c.grade);
+  const missingCore = !hasContactInfo(c) && !(c.contact_person || '').trim();
+  return grade === 'DNP' || isClosedOrPaused(c) || (grade === 'C' && missingCore);
+}
+
+function hasIntentSignal(c) {
+  const text = contactText(c);
+  return ['有意向','報價中','已聯絡','已接觸','Pitched'].includes(c.stage || '')
+    || /採購|詢價|報價|價格|預約|合作|大量|訂購|樣品|試吃|企業|通路|供貨|會議|需求|esg/.test(text);
+}
+
+function dataGaps(c) {
+  const gaps = [];
+  if (!(c.phone || '').trim()) gaps.push('缺電話');
+  if (!(c.email || '').trim()) gaps.push('缺Email');
+  if (!(c.contact_person || '').trim()) gaps.push('缺聯絡人');
+  if (!(c.notes || '').trim()) gaps.push('缺需求');
+  if (!nextActionHint(c)) gaps.push('缺下一步');
+  return gaps;
+}
+
+function hasClearNextAction(c) {
+  const action = nextActionHint(c);
+  if (!action || isClosedOrPaused(c)) return false;
+  return !!(c.next_action || /報價|寄信|電話|會議|預約|追蹤|補資料|樣品|拜訪|follow/.test(contactText(c)) || c.stage);
+}
+
+function isStaleLead(c) {
+  if (isClosedOrPaused(c)) return false;
+  const days = daysSince(c.last_contact_date || c.updated_at || c.created_at);
+  return days !== null && days >= 14 && (hasIntentSignal(c) || fitScore(c) >= 68);
+}
+
+function isStrategicSegment(c) {
+  const group = deriveChannelGroup(c);
+  return group && group !== '其他' && group !== '未分類';
+}
+
+function hasAiAction(c) {
+  return !isClosedOrPaused(c) && !!nextActionHint(c);
+}
+
+function smartSortScore(c) {
+  let score = fitScore(c);
+  if (hasIntentSignal(c)) score += 20;
+  if (hasClearNextAction(c)) score += 12;
+  if (hasContactInfo(c)) score += 8;
+  if ((c.contact_person || '').trim()) score += 6;
+  if (leadAmount(c) > 0) score += Math.min(18, Math.log10(leadAmount(c) + 1) * 3);
+  if (isStaleLead(c)) score -= 6;
+  if (isLowQualityLead(c)) score -= 45;
+  return score;
+}
+
+function matchesSmartFilter(c) {
+  if (!smartFilter) return true;
+  if (smartFilter === 'today') return !isLowQualityLead(c) && hasContactInfo(c) && (smartSortScore(c) >= 88 || (hasIntentSignal(c) && hasClearNextAction(c)));
+  if (smartFilter === 'high_close') return !isLowQualityLead(c) && fitScore(c) >= 80;
+  if (smartFilter === 'intent') return hasIntentSignal(c);
+  if (smartFilter === 'missing') return dataGaps(c).length > 0;
+  if (smartFilter === 'next_action') return hasClearNextAction(c);
+  if (smartFilter === 'stale') return isStaleLead(c);
+  if (smartFilter === 'segment') return isStrategicSegment(c);
+  if (smartFilter === 'ai_action') return hasAiAction(c);
+  if (smartFilter === 'exclude_negative') return !isLowQualityLead(c);
+  return true;
+}
+
+function smartReason(c) {
+  if (!smartFilter) return '';
+  if (smartFilter === 'today') return '今天先追';
+  if (smartFilter === 'high_close') return `成交分 ${Math.round(fitScore(c))}`;
+  if (smartFilter === 'intent') return '有採購/報價訊號';
+  if (smartFilter === 'missing') return dataGaps(c).slice(0, 2).join('、');
+  if (smartFilter === 'next_action') return nextActionHint(c);
+  if (smartFilter === 'stale') return `${daysSince(c.last_contact_date || c.updated_at || c.created_at)}天未互動`;
+  if (smartFilter === 'segment') return deriveChannelGroup(c);
+  if (smartFilter === 'ai_action') return nextActionHint(c);
+  if (smartFilter === 'exclude_negative') return '已排除低質';
+  return '';
+}
+
+function renderLeads() {
+  const q = (document.getElementById('left-search').value || '').toLowerCase();
+
+  // Update stats bar from full contacts list (unfiltered)
+  const intentCount = contacts.filter(c => c.stage === '有意向').length;
+  const touchedCount = contacts.filter(c => c.stage === '已接觸').length;
+  const noPhoneCount = contacts.filter(c => !(c.phone || '').trim()).length;
+  document.getElementById('stat-intent').textContent = `有意向:${intentCount}`;
+  document.getElementById('stat-touched').textContent = `已接觸:${touchedCount}`;
+  document.getElementById('stat-nophone').textContent = `缺電話:${noPhoneCount}`;
+
+  let list = contacts.filter(c => {
+    const grade = normGrade(c.fit_grade || c.grade);
+    const ch = deriveChannelGroup(c);
+    // gradeFilter can be set by both old .gf buttons and new .sf grade buttons
+    if (gradeFilter !== 'all' && grade !== gradeFilter) return false;
+    if (channelFilter && ch !== channelFilter) return false;
+    if (stageFilter && c.stage !== stageFilter) return false;
+    if (!matchesSmartFilter(c)) return false;
+    if (q) {
+      const haystack = [c.name, c.contact_person, c.type, c.stage, c.notes, c.phone, c.email, ch]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort: stage priority → amount desc → has_phone → has_contact_person
+  list.sort((a, b) => {
+    if (smartFilter) {
+      const ss = smartSortScore(b) - smartSortScore(a);
+      if (ss !== 0) return ss;
+    }
+    const sd = stageSortKey(a) - stageSortKey(b);
+    if (sd !== 0) return sd;
+    const amtA = parseFloat(a.amount) || 0, amtB = parseFloat(b.amount) || 0;
+    if (amtA !== amtB) return amtB - amtA; // higher amount first
+    const phoneA = (a.phone || '').trim() ? 0 : 1;
+    const phoneB = (b.phone || '').trim() ? 0 : 1;
+    if (phoneA !== phoneB) return phoneA - phoneB; // has phone first
+    const personA = (a.contact_person || '').trim() ? 0 : 1;
+    const personB = (b.contact_person || '').trim() ? 0 : 1;
+    return personA - personB; // has person first
+  });
+
+  document.getElementById('lead-count').textContent = `(${list.length})`;
+  const container = document.getElementById('lead-list');
+  container.innerHTML = list.map(c => {
+    const grade = normGrade(c.fit_grade || c.grade);
+    const ch = deriveChannelGroup(c);
+    const action = nextActionHint(c);
+    const reason = smartReason(c);
+    const safeName = c.name.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const hasPhone = (c.phone || '').trim();
+    const hasEmail = (c.email || '').trim();
+    const missingBadges = (!hasPhone ? '<span class="lc-missing" title="缺電話">📵</span>' : '')
+                        + (!hasEmail ? '<span class="lc-missing" title="缺Email">✉</span>' : '');
+    return `<div class="lead-card${c.id === activeCid ? ' active' : ''}" onclick="selectContact('${c.id}')">
+      <button class="lead-del" onclick="deleteContact(event,'${c.id}','${safeName}')" title="刪除">×</button>
+      <div class="lc-row1">
+        <span class="grade-badge" style="background:${gradeColor(grade)}22;color:${gradeColor(grade)};border:1px solid ${gradeColor(grade)}44;font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;flex-shrink:0">${grade}</span>
+        <span class="lc-company">${c.name}</span>${missingBadges}
+      </div>
+      ${c.contact_person ? `<div class="lc-row2"><span class="lc-person">👤 ${c.contact_person}</span></div>` : ''}
+      <div class="lc-row3">${chTag(ch)}${stageTag(c.stage || '未聯繫')}</div>
+      ${action && c.stage !== '暫停' && c.stage !== '流失' ? `<div class="lc-action">→ ${action}</div>` : ''}
+      ${reason ? `<div class="lc-smart-reason">AI：${escapeHtml(reason)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function deleteContact(event, cid, name) {
+  event.stopPropagation();
+  if (!confirm(`刪除「${name}」？此操作無法復原。`)) return;
+  await fetch(`/api/contacts/${cid}`, {method: 'DELETE'});
+  contacts = contacts.filter(c => c.id !== cid);
+  if (activeCid === cid) {
+    activeCid = null;
+    document.getElementById('right-empty').style.display = 'block';
+    document.getElementById('right-content').style.display = 'none';
+    document.getElementById('center-body').style.opacity = '0.3';
+    document.getElementById('center-empty')?.style && (document.getElementById('center-empty').style.display = 'block');
+  }
+  renderLeads();
+}
+
+function setFilter(grade, el) {
+  gradeFilter = grade === 'all' ? 'all' : grade;
+  // deactivate stage pills when a grade pill is clicked (they are separate axes)
+  // clear stageFilter so grade-only filter works
+  // but keep stageFilter if the user already set it
+  document.querySelectorAll('.gf').forEach(e => e.classList.remove('active'));
+  // sync sf grade buttons: deactivate grade sf buttons, activate the clicked one
+  document.querySelectorAll('.sf-grade-a,.sf-grade-b,.sf-grade-c,.sf-all').forEach(e => e.classList.remove('active'));
+  if (grade === 'all') {
+    stageFilter = '';
+    document.querySelectorAll('.sf.sf-all').forEach(e => e.classList.add('active'));
+  }
+  el.classList.add('active');
+  renderLeads();
+  updateFilterBadge();
+}
+
+function setStageFilter(stage, el) {
+  stageFilter = stage;
+  // reset grade filter when switching stage
+  gradeFilter = 'all';
+  document.querySelectorAll('.sf').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  renderLeads();
+  updateFilterBadge();
+}
+
+function setChannelFilter(ch, el) {
+  channelFilter = ch;
+  document.querySelectorAll('.cf').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  renderLeads();
+  updateFilterBadge();
+}
+
+function setSmartFilter(key, el) {
+  smartFilter = key;
+  document.querySelectorAll('.smart-chip').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  renderLeads();
+  updateFilterBadge();
+}
+
+// ── Collapsible filter popover (left panel) ─────────────────────────────────────
+function toggleFilterPanel() {
+  const el = document.getElementById('filter-popover');
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateFilterBadge() {
+  const badge = document.getElementById('filter-active-badge');
+  if (!badge) return;
+  let count = 0;
+  if (channelFilter) count++;
+  if (stageFilter) count++;
+  if (gradeFilter && gradeFilter !== 'all') count++;
+  if (smartFilter) count++;
+  badge.textContent = String(count);
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+// ── Select Contact ─────────────────────────────────────────────────────────────
+async function selectContact(cid) {
+  activeCid = cid;
+  renderLeads();
+  const c = contacts.find(x => x.id === cid);
+  if (!c) return;
+
+  hideSalesV0Board();
+  document.getElementById('center-empty').style.display = 'none';
+  document.getElementById('center-content').style.display = 'flex';
+  document.getElementById('right-empty').style.display = 'none';
+  document.getElementById('right-content').style.display = 'flex';
+
+  document.getElementById('center-company-name').textContent = c.name;
+  document.getElementById('center-contact-sub').textContent =
+    [c.contact_person, c.title, c.type].filter(Boolean).join(' · ');
+  document.getElementById('stage-btn').textContent = `📍 ${c.stage || '未聯繫'}`;
+
+  const grade = normGrade(c.fit_grade || c.grade);
+  const badge = document.getElementById('center-grade-badge');
+  badge.textContent = grade;
+  badge.style.background = gradeColor(grade) + '20';
+  badge.style.color = gradeColor(grade);
+  badge.style.border = '1px solid ' + gradeColor(grade) + '40';
+
+  // Load cached data or show empty
+  showCenterTab('profile', document.querySelector('.ctab'));
+  loadProfileCache(cid);
+  loadFitScoreCache(cid);
+  loadMemory(cid);
+  loadNextAction(cid);
+}
+
+function showSalesV0Board() {
+  activeCid = null;
+  renderLeads();
+  document.getElementById('center-empty').style.display = 'none';
+  document.getElementById('center-content').style.display = 'none';
+  document.getElementById('salesv0-board').style.display = 'flex';
+  document.getElementById('right-empty').style.display = 'none';
+  document.getElementById('right-content').style.display = 'none';
+  document.getElementById('salesv0-right').style.display = 'flex';
+}
+
+function hideSalesV0Board() {
+  document.getElementById('salesv0-board').style.display = 'none';
+  document.getElementById('salesv0-right').style.display = 'none';
+}
+
+function showSalesV0Group(group) {
+  document.querySelectorAll('.salesv0-main-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.salesv0Group === group);
+  });
+  document.querySelectorAll('.salesv0-subtab-row').forEach(row => {
+    row.classList.toggle('active', row.dataset.salesv0Subtabs === group);
+  });
+  const activeRow = document.querySelector(`.salesv0-subtab-row[data-salesv0-subtabs="${group}"]`);
+  const targetBtn = activeRow?.querySelector('.salesv0-tab');
+  if (targetBtn) {
+    const targetId = targetBtn.getAttribute('onclick')?.match(/'([^']+)'/)?.[1];
+    if (targetId) showSalesV0Panel(targetId, targetBtn);
+  }
+}
+
+function showSalesV0Panel(id, btn) {
+  document.querySelectorAll('.salesv0-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.salesv0-tab').forEach(b => b.classList.remove('active'));
+  const panel = document.getElementById(id);
+  if (panel) panel.classList.add('active');
+  const targetBtn = btn || Array.from(document.querySelectorAll('.salesv0-tab')).find(b => b.getAttribute('onclick')?.includes(id));
+  if (targetBtn) {
+    const group = targetBtn.dataset.salesv0Group;
+    if (group) {
+      document.querySelectorAll('.salesv0-main-tab').forEach(b => b.classList.toggle('active', b.dataset.salesv0Group === group));
+      document.querySelectorAll('.salesv0-subtab-row').forEach(row => row.classList.toggle('active', row.dataset.salesv0Subtabs === group));
+    }
+    targetBtn.classList.add('active');
+  }
+  if (id === 'sv0-records') renderSalesV0Records();
+}
+
+async function renderSalesV0Records() {
+  const el = document.getElementById('sv0-record-followups');
+  if (!el) return;
+  el.innerHTML = '<div class="record-empty">讀取追蹤任務中…</div>';
+  try {
+    const r = await fetch('/api/tasks?status=待辦');
+    const tasks = await r.json();
+    const rows = (tasks || [])
+      .filter(t => {
+        const txt = `${t.title || ''} ${t.notes || ''} ${t.type || ''}`;
+        return txt.includes('會議') || txt.includes('追蹤') || txt.includes('樣品') || txt.includes('證據') || txt.includes('紀錄');
+      })
+      .slice(0, 8);
+    if (!rows.length) {
+      el.innerHTML = '<div class="record-empty">目前沒有會議紀錄追蹤。選左側客戶 → 右側「新增會議紀錄」→ 設追蹤日期，就會出現在這裡。</div>';
+      return;
+    }
+    el.innerHTML = rows.map(t => `
+      <div class="record-follow-item">
+        <div class="record-follow-date">${escapeHtml(t.due_date || '未排定')}</div>
+        <div>
+          <div class="record-follow-title">${escapeHtml(t.title || '追蹤任務')}</div>
+          <div class="record-follow-meta">${escapeHtml(t.contact_name || '未指定客戶')} · ${escapeHtml(t.type || '追蹤')} · ${escapeHtml(t.priority || '中')}</div>
+        </div>
+        <button class="cta-btn" onclick="selectContact('${escapeHtml(t.contact_id || '')}')">看客戶</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="record-empty">追蹤任務讀取失敗，請稍後重試。</div>';
+  }
+}
+
+// ── Full Analysis ──────────────────────────────────────────────────────────────
+async function runFullAnalysis() {
+  if (!activeCid) return;
+  await runProfile();
+  await runFitScore();
+  await runNextAction();
+}
+
+// ── Profile ───────────────────────────────────────────────────────────────────
+async function loadProfileCache(cid) {
+  // Try to show whatever we have from the contact notes first
+  const c = contacts.find(x => x.id === cid);
+  if (c && !c._profile) {
+    document.getElementById('profile-content').innerHTML =
+      `<div style="color:#6e7681;font-size:13px;padding:20px 0;text-align:center">點擊「⚡ AI 分析」生成情報檔案</div>`;
+  } else if (c && c._profile) {
+    renderProfile(c._profile);
+  }
+}
+
+async function runProfile() {
+  if (!activeCid) return;
+  const loading = document.getElementById('profile-loading');
+  loading.style.display = 'flex';
+  const msgs = ['分析公司背景…','評估痛點…','尋找決策者…','計算切入角度…'];
+  let mi = 0;
+  const t = setInterval(() => {
+    document.getElementById('profile-loading-msg').textContent = msgs[mi++ % msgs.length];
+  }, 1500);
+  try {
+    const r = await fetch(`/api/ai/customer-profile/${activeCid}`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d = await r.json();
+    clearInterval(t);
+    loading.style.display = 'none';
+    const profile = d.profile || d;
+    const c = contacts.find(x => x.id === activeCid);
+    if (c) c._profile = profile;
+    renderProfile(profile);
+  } catch(e) {
+    clearInterval(t);
+    loading.style.display = 'none';
+    document.getElementById('profile-content').innerHTML = `<div style="color:#f85149;font-size:13px">分析失敗：${e.message}</div>`;
+  }
+}
+
+function renderProfile(p) {
+  if (!p) return;
+  const el = document.getElementById('profile-content');
+  el.innerHTML = `
+    <div style="margin-bottom:16px">${aiSourceBadge(p._ai_source)}</div>
+    ${p.one_line ? `<div class="profile-section"><div class="section-label">Company Snapshot</div><div class="one-line">${p.one_line}</div></div>` : ''}
+    ${p.likely_pain?.length ? `<div class="profile-section"><div class="section-label">Pain Points</div><div class="badge-list">${p.likely_pain.map(x=>`<span class="badge badge-pain">⚡ ${x}</span>`).join('')}</div></div>` : ''}
+    ${p.timing_catalyst ? `<div class="profile-section">
+      <div class="section-label">⚡ Timing Catalyst — 為什麼是現在？</div>
+      <div style="background:#1f6feb15;border:1px solid #1f6feb50;border-left:3px solid #58a6ff;border-radius:0 8px 8px 0;padding:12px 14px;font-size:13px;color:#79c0ff;line-height:1.7">${p.timing_catalyst}</div>
+    </div>` : ''}
+    ${p.best_angle ? `<div class="profile-section"><div class="section-label">為什麼需要 WeGrow</div><div class="why-wegrow">✅ ${p.best_angle}</div></div>` : ''}
+    ${p.decision_map ? `<div class="profile-section"><div class="section-label">Decision Map</div><div class="decision-map">
+      <div class="dm-card"><div class="dm-role">經濟買家</div><div class="dm-name">${p.decision_map.economic_buyer || '未知'}</div></div>
+      <div class="dm-card"><div class="dm-role">技術評估者</div><div class="dm-name">${p.decision_map.technical_buyer || '未知'}</div></div>
+      <div class="dm-card"><div class="dm-role">使用者</div><div class="dm-name">${p.decision_map.user || '未知'}</div></div>
+    </div></div>` : ''}
+    ${p.objections?.length ? `<div class="profile-section"><div class="section-label">可能反對理由</div><div class="badge-list">${p.objections.map(x=>`<span class="badge badge-obj">⚠️ ${x}</span>`).join('')}</div></div>` : ''}
+    ${p.proof_needed?.length ? `<div class="profile-section"><div class="section-label">需要提供的證明</div><div class="badge-list">${p.proof_needed.map(x=>`<span class="badge badge-proof">📎 ${x}</span>`).join('')}</div></div>` : ''}
+  `;
+}
+
+// ── Fit Score ─────────────────────────────────────────────────────────────────
+async function loadFitScoreCache(cid) {
+  const c = contacts.find(x => x.id === cid);
+  if (c && c._fitScore) renderFitScore(c._fitScore);
+  else document.getElementById('fitscore-content').innerHTML =
+    `<div style="color:#6e7681;font-size:13px;padding:20px 0;text-align:center">切換到 Fit Score 頁籤 → 點擊「⚡ AI 分析」</div>`;
+}
+
+async function runFitScore() {
+  if (!activeCid || _fitScoreRunning) return;
+  _fitScoreRunning = true;
+  // Switch tab directly — avoid recursive showCenterTab → runFitScore loop
+  document.getElementById('tab-profile').style.display = 'none';
+  document.getElementById('tab-fitscore').style.display = 'block';
+  document.querySelectorAll('.ctab').forEach(e => e.classList.remove('active'));
+  const fitTabEl = document.querySelectorAll('.ctab')[1];
+  if (fitTabEl) fitTabEl.classList.add('active');
+
+  document.getElementById('fitscore-loading').style.display = 'flex';
+  try {
+    const r = await fetch(`/api/ai/fit-score/${activeCid}`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d = await r.json();
+    document.getElementById('fitscore-loading').style.display = 'none';
+    const c = contacts.find(x => x.id === activeCid);
+    if (c) { c._fitScore = d; c.fit_grade = d.grade; c.grade = d.grade; }
+    renderFitScore(d);
+    renderLeads();
+    const badge = document.getElementById('center-grade-badge');
+    const grade = normGrade(d.grade);
+    badge.textContent = grade;
+    badge.style.background = gradeColor(grade) + '20';
+    badge.style.color = gradeColor(grade);
+    badge.style.border = '1px solid ' + gradeColor(grade) + '40';
+  } catch(e) {
+    document.getElementById('fitscore-loading').style.display = 'none';
+    document.getElementById('fitscore-content').innerHTML = `<div style="color:#c62828;font-size:13px;padding:16px 0">分析失敗，請重試</div>`;
+  } finally {
+    _fitScoreRunning = false;
+  }
+}
+
+function renderFitScore(d) {
+  if (!d || !d.grade) return;
+  const grade = normGrade(d.grade);
+  const scores = d.scores || {};
+  const evidence = d.dim_evidence || {};
+  const dims = [
+    {key:'problem_fit', label:'Problem Fit', max:15},
+    {key:'solution_fit', label:'Solution Fit', max:15},
+    {key:'budget_fit', label:'Budget Fit', max:15},
+    {key:'timing_fit', label:'Timing Fit', max:15},
+    {key:'decision_access', label:'Decision Access', max:15},
+    {key:'strategic_value', label:'Strategic Value', max:25},
+  ];
+  const winPct = d.win_probability || Math.round((d.total||0) * 0.85);
+  const dimIcon = pct => pct >= 70 ? '✅' : pct >= 40 ? '⚠️' : '❌';
+  document.getElementById('fitscore-content').innerHTML = `
+    <div class="fit-overview">
+      <div class="fit-grade-big" style="color:${gradeColor(grade)}">${grade}</div>
+      <div style="position:absolute;top:12px;right:16px">${aiSourceBadge(d._ai_source)}</div>
+      <div class="fit-stats">
+        <div class="fit-total">${d.total || 0} <span class="fit-label">/ 100</span></div>
+        <div class="fit-reason">${d.reason || ''}</div>
+      </div>
+      <div class="win-prob">
+        <div class="win-pct" style="color:${gradeColor(grade)}">${winPct}%</div>
+        <div class="fit-label">成交機率</div>
+      </div>
+    </div>
+    <div style="margin-bottom:20px">${dims.map(dim => {
+      const score = scores[dim.key] || 0;
+      const pct = Math.round(score / dim.max * 100);
+      const cls = pct >= 70 ? 'bar-strong' : pct >= 40 ? 'bar-ok' : 'bar-weak';
+      const ev = evidence[dim.key] || '';
+      return `<div style="margin-bottom:10px">
+        <div class="dim-row">
+          <div class="dim-name">${dim.label}</div>
+          <div class="dim-bar-wrap"><div class="dim-bar ${cls}" style="width:${pct}%"></div></div>
+          <div class="dim-score" style="color:${pct>=70?'#3fb950':pct>=40?'#E2CF35':'#f85149'}">${dimIcon(pct)} ${score}</div>
+        </div>
+        ${ev ? `<div class="dim-evidence">${ev}</div>` : ''}
+      </div>`;
+    }).join('')}</div>
+    ${d.recommendation ? `<div style="background:#23863618;border:1px solid #23863650;border-radius:8px;padding:12px 14px">
+      <div style="font-size:10px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">建議行動</div>
+      <div style="font-size:13px;color:#3fb950;line-height:1.7">→ ${d.recommendation}</div>
+    </div>` : ''}
+  `;
+}
+
+// ── Next Action ───────────────────────────────────────────────────────────────
+async function loadNextAction(cid) {
+  const c = contacts.find(x => x.id === cid);
+  if (c && c._nextAction) renderNextAction(c._nextAction);
+  else await runNextAction();
+}
+
+async function runNextAction() {
+  if (!activeCid) return;
+  document.getElementById('nba-loading').style.display = 'flex';
+  document.getElementById('nba-btn').disabled = true;
+  document.getElementById('nba-content').innerHTML = '';
+  try {
+    const r = await fetch(`/api/ai/next-action/${activeCid}`, {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const d = await r.json();
+    document.getElementById('nba-loading').style.display = 'none';
+    document.getElementById('nba-btn').disabled = false;
+    const c = contacts.find(x => x.id === activeCid);
+    if (c) c._nextAction = d;
+    renderNextAction(d);
+  } catch(e) {
+    document.getElementById('nba-loading').style.display = 'none';
+    document.getElementById('nba-btn').disabled = false;
+  }
+}
+
+function renderNextAction(d) {
+  if (!d) return;
+  const priorityClass = d.priority === 'high' ? 'priority-high' : d.priority === 'low' ? 'priority-low' : 'priority-medium';
+  document.getElementById('nba-content').innerHTML = `
+    <div class="nba-card">
+      <div class="nba-action-row">
+        <span class="nba-action-badge ${priorityClass}">${d.action || '—'}</span>
+        <span class="nba-timing">${d.timing || ''}</span>
+        ${aiSourceBadge(d._ai_source)}
+      </div>
+      ${d.why ? `<div class="nba-why">${d.why}</div>` : ''}
+      ${d.message_draft ? `<div class="nba-what">💬 ${d.message_draft}</div>` : ''}
+      ${d.risk_if_wait ? `<div class="nba-avoid">⚠️ 若不行動：${d.risk_if_wait}</div>` : ''}
+    </div>
+  `;
+}
+
+// ── Daily Sales Learning Loop ─────────────────────────────────────────────────
+let _latestLearning = null;
+
+async function loadLatestLearning() {
+  try {
+    const r = await fetch('/api/daily/sales-learning');
+    const reports = await r.json();
+    if (reports && reports.length > 0) {
+      _latestLearning = reports[0];
+      renderLearning(_latestLearning);
+    }
+  } catch(e) {}
+}
+
+async function runDailyLearning() {
+  const btn = document.getElementById('learning-run-btn');
+  btn.disabled = true;
+  btn.textContent = '分析中…';
+  document.getElementById('learning-loading').style.display = 'flex';
+  document.getElementById('learning-content').innerHTML = '';
+  document.getElementById('learning-gen-time').textContent = '';
+  try {
+    const r = await fetch('/api/daily/sales-learning', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'});
+    const d = await r.json();
+    document.getElementById('learning-loading').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = '▶ 生成今日報告';
+    _latestLearning = d;
+    renderLearning(d);
+  } catch(e) {
+    document.getElementById('learning-loading').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = '▶ 生成今日報告';
+    document.getElementById('learning-content').innerHTML = '<div style="color:#f85149;padding:20px;font-size:12px">生成失敗，請重試</div>';
+  }
+}
+
+function renderLearning(d) {
+  if (!d) return;
+  const el = document.getElementById('learning-content');
+  const ts = d.generated_at ? d.generated_at.slice(0,16).replace('T',' ') : '';
+  document.getElementById('learning-gen-time').textContent = ts ? `生成於 ${ts}` : '';
+  document.getElementById('learning-source-badge').innerHTML = aiSourceBadge(d._ai_source);
+
+  // Reply rates
+  const rr = d.reply_rate || {};
+  const byCh = rr.by_channel || {};
+  const bySeg = rr.by_segment || {};
+  const segEntries = Object.entries(bySeg);
+
+  // Segment priority
+  const segPrio = (d.segment_priority || []).map(s => {
+    const pc = s.priority === 'high' ? 'lr-prio-high' : s.priority === 'low' ? 'lr-prio-low' : 'lr-prio-medium';
+    const pl = s.priority === 'high' ? '優先' : s.priority === 'low' ? '暫緩' : '維持';
+    return `<div class="lr-seg-prio-row">
+      <span class="lr-prio-badge ${pc}">${pl}</span>
+      <div><div class="lr-prio-seg">${s.segment}</div><div class="lr-prio-why">${s.why||''}</div></div>
+    </div>`;
+  }).join('');
+
+  // Failure reasons
+  const fails = (d.failure_reasons || []).map(f =>
+    `<span class="lr-fail-tag">${f.reason}${f.count>1?` ×${f.count}`:''}</span>`
+  ).join('');
+
+  // A/B tests
+  const abTests = (d.ab_tests || []).map(t => `
+    <div class="lr-ab-card">
+      <div class="lr-ab-hyp">💡 ${t.hypothesis||''}</div>
+      <div class="lr-ab-variants">
+        <div class="lr-ab-v"><div class="lr-ab-vlabel">方案 A</div><div class="lr-ab-vtext">${t.variant_a||''}</div></div>
+        <div class="lr-ab-v"><div class="lr-ab-vlabel">方案 B</div><div class="lr-ab-vtext">${t.variant_b||''}</div></div>
+      </div>
+      <div class="lr-ab-metric">📏 判斷標準：${t.success_metric||''}</div>
+    </div>`).join('');
+
+  // Pause / accelerate lists
+  const pauseItems = (d.pause_list || []).map(x => `<div class="lr-mini-item">${x}</div>`).join('') || '<div class="lr-mini-item" style="color:#aaa">無</div>';
+  const accItems = (d.accelerate_list || []).map(x => `<div class="lr-mini-item">${x}</div>`).join('') || '<div class="lr-mini-item" style="color:#aaa">無</div>';
+
+  el.innerHTML = `
+    <!-- Summary -->
+    <div class="lr-summary-card">
+      <strong>${d.date || ''} 銷售學習摘要</strong><br>${d.summary || '—'}
+    </div>
+
+    <!-- Reply Rate -->
+    <div class="lr-section">
+      <div class="lr-head">📬 回覆率</div>
+      <div class="lr-rate-grid">
+        <div class="lr-rate-cell"><div class="lr-rate-val">${rr.overall||'—'}</div><div class="lr-rate-label">整體</div></div>
+        <div class="lr-rate-cell"><div class="lr-rate-val">${byCh.LINE||'—'}</div><div class="lr-rate-label">LINE</div></div>
+        <div class="lr-rate-cell"><div class="lr-rate-val">${byCh.Email||'—'}</div><div class="lr-rate-label">Email</div></div>
+      </div>
+      ${segEntries.length ? `<div style="margin-top:10px">${segEntries.map(([seg,pct]) => {
+        const num = parseInt(pct) || 0;
+        return `<div class="lr-seg-row">
+          <span class="lr-seg-name">${seg}</span>
+          <div class="lr-seg-bar"><div class="lr-seg-fill" style="width:${Math.min(num,100)}%"></div></div>
+          <span class="lr-seg-pct">${pct}</span>
+        </div>`;
+      }).join('')}</div>` : ''}
+    </div>
+
+    <!-- Positive Intent -->
+    ${d.positive_intent ? `<div class="lr-section">
+      <div class="lr-head">✅ 正向意圖最強</div>
+      <div style="background:#e8f5e9;border:1px solid #c8e6c9;border-radius:8px;padding:10px 12px">
+        <span style="font-size:13px;font-weight:700;color:#2e7d32">${d.positive_intent.top_segment||'—'}</span>
+        ${d.positive_intent.evidence ? `<div style="font-size:11px;color:#555;margin-top:4px">${d.positive_intent.evidence}</div>` : ''}
+        ${(d.positive_intent.categories||[]).length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${(d.positive_intent.categories||[]).map(c=>`<span class="si-tag si-tag-green">${c}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>` : ''}
+
+    <!-- Product Interest -->
+    ${d.product_interest ? `<div class="lr-section">
+      <div class="lr-head">🍓 產品熱度</div>
+      <div style="background:#fff;border:1px solid #e8e5da;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px;font-weight:700;color:#E2CF35">${d.product_interest.top||'—'}</span>
+        <div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.5px">排名</div>
+          <div style="font-size:12px;color:#555">${(d.product_interest.ranking||[]).join(' → ')}</div>
+          ${d.product_interest.rationale ? `<div style="font-size:11px;color:#888;margin-top:3px">${d.product_interest.rationale}</div>` : ''}
+        </div>
+      </div>
+    </div>` : ''}
+
+    <!-- Winning / Losing Patterns -->
+    <div class="lr-section">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <div class="lr-head">✅ 有效打法</div>
+          <ul class="lr-pattern-list lr-win">${(d.winning_patterns||[]).map(p=>`<li>${p}</li>`).join('')}</ul>
+        </div>
+        <div>
+          <div class="lr-head">❌ 無效打法</div>
+          <ul class="lr-pattern-list lr-lose">${(d.losing_patterns||[]).map(p=>`<li>${p}</li>`).join('')}</ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Failure Reasons -->
+    ${fails ? `<div class="lr-section">
+      <div class="lr-head">⚠️ 失敗原因分類</div>
+      <div class="lr-fail-list">${fails}</div>
+    </div>` : ''}
+
+    <!-- Segment Priority -->
+    ${segPrio ? `<div class="lr-section">
+      <div class="lr-head">🎯 明日細分市場優先級</div>
+      <div class="lr-seg-priority">${segPrio}</div>
+    </div>` : ''}
+
+    <!-- Tomorrow Strategy -->
+    <div class="lr-section">
+      <div class="lr-head">🚀 明日執行策略</div>
+      <ol class="lr-strategy-list">${(d.tomorrow_strategy||[]).map(s=>`<li>${s}</li>`).join('')}</ol>
+    </div>
+
+    <!-- Pause / Accelerate -->
+    <div class="lr-section">
+      <div class="lr-lists-row">
+        <div class="lr-mini-list">
+          <div class="lr-mini-title">⏸ 暫停追蹤</div>
+          ${pauseItems}
+        </div>
+        <div class="lr-mini-list">
+          <div class="lr-mini-title">⚡ 加速追蹤</div>
+          ${accItems}
+        </div>
+      </div>
+    </div>
+
+    <!-- A/B Tests -->
+    ${abTests ? `<div class="lr-section">
+      <div class="lr-head">🧪 A/B Test 建議</div>
+      ${abTests}
+    </div>` : ''}
+  `;
+}
+
+// ── Strategic Insight ─────────────────────────────────────────────────────────
+async function runStrategicInsight() {
+  if (!activeCid) return;
+  document.getElementById('strategic-loading').style.display = 'flex';
+  document.getElementById('strategic-btn').disabled = true;
+  document.getElementById('strategic-content').innerHTML = '';
+  try {
+    const r = await fetch(`/api/ai/strategic-insight/${activeCid}`);
+    const d = await r.json();
+    document.getElementById('strategic-loading').style.display = 'none';
+    document.getElementById('strategic-btn').disabled = false;
+    renderStrategicInsight(d);
+  } catch(e) {
+    document.getElementById('strategic-loading').style.display = 'none';
+    document.getElementById('strategic-btn').disabled = false;
+    document.getElementById('strategic-content').innerHTML = '<div style="color:#f85149;font-size:12px">分析失敗，請重試</div>';
+  }
+}
+
+const LOSS_CLASS_COLOR = {
+  'Timing': '#E2CF35', 'Budget': '#f85149', 'Packaging': '#d29922',
+  'Decision-maker': '#a371f7', 'Product': '#ff7b72', 'Trust': '#79c0ff', 'None': '#484f58'
+};
+
+function renderStrategicInsight(d) {
+  if (!d) return;
+  const el = document.getElementById('strategic-content');
+  const lc = d.deal_loss_class || {};
+  const sp = d.segment_playbook || {};
+  const nr = d.next_reopen || {};
+  const qs = d.strategic_questions || [];
+  const pri = lc.primary || '—';
+  const sec = lc.secondary || '';
+
+  el.innerHTML = `
+    <!-- Deal Loss Classification -->
+    <div class="si-block">
+      <div class="si-label">📊 失單分類 ${aiSourceBadge(d._ai_source)}</div>
+      <div class="si-loss-row">
+        <span class="si-loss-badge" style="background:${LOSS_CLASS_COLOR[pri]||'#484f58'}22;color:${LOSS_CLASS_COLOR[pri]||'#ccc'};border:1px solid ${LOSS_CLASS_COLOR[pri]||'#484f58'}55">${pri}</span>
+        ${sec && sec !== 'None' ? `<span style="color:#484f58;font-size:11px">+</span><span class="si-loss-badge" style="background:${LOSS_CLASS_COLOR[sec]||'#484f58'}15;color:${LOSS_CLASS_COLOR[sec]||'#888'};border:1px solid ${LOSS_CLASS_COLOR[sec]||'#484f58'}40">${sec}</span>` : ''}
+        <span class="si-conf-tag">${lc.confidence === 'high' ? '高確信' : lc.confidence === 'low' ? '推測' : '中等確信'}</span>
+      </div>
+      ${lc.explanation ? `<div class="si-explanation">${lc.explanation}</div>` : ''}
+    </div>
+
+    <!-- Next Reopen -->
+    <div class="si-block">
+      <div class="si-label">📅 重開機會</div>
+      <div class="si-reopen-row">
+        <span class="si-date-badge">${nr.suggested_date || '—'}</span>
+        <span class="si-trigger">${nr.trigger || ''}</span>
+      </div>
+      ${nr.message_angle ? `<div class="si-explanation" style="color:#E2CF35">💡 ${nr.message_angle}</div>` : ''}
+    </div>
+
+    <!-- Segment Playbook -->
+    <div class="si-block">
+      <div class="si-label">🎯 細分市場打法 · <span style="color:#E2CF35">${sp.segment || ''}</span></div>
+      <div class="si-playbook-head">${sp.headline || ''}</div>
+      <div class="si-sub-label">切入時機</div>
+      <div class="si-explanation">${sp.entry_timing || ''}</div>
+      ${sp.key_messages && sp.key_messages.length ? `
+        <div class="si-sub-label">核心訊息</div>
+        <div class="si-tags">${sp.key_messages.map(m => `<span class="si-tag si-tag-green">${m}</span>`).join('')}</div>
+      ` : ''}
+      ${sp.common_objections && sp.common_objections.length ? `
+        <div class="si-sub-label">常見拒絕</div>
+        <div class="si-tags">${sp.common_objections.map(o => `<span class="si-tag si-tag-red">${o}</span>`).join('')}</div>
+      ` : ''}
+      ${sp.replicable_to ? `<div class="si-explanation" style="color:#79c0ff">📋 可複製到：${sp.replicable_to}</div>` : ''}
+    </div>
+
+    <!-- Strategic Questions -->
+    ${qs.length ? `
+    <div class="si-block">
+      <div class="si-label">❓ 再聯繫前必問</div>
+      <ol class="si-questions">${qs.map(q => `<li>${q}</li>`).join('')}</ol>
+    </div>` : ''}
+
+    <!-- Segment Insight -->
+    ${d.segment_insight ? `
+    <div class="si-block si-insight-block">
+      <div class="si-label">💡 可複製戰略洞察</div>
+      <div class="si-insight-text">${d.segment_insight}</div>
+    </div>` : ''}
+  `;
+}
+
+// ── Memory ────────────────────────────────────────────────────────────────────
+async function loadMemory(cid) {
+  try {
+    const r = await fetch(`/api/ai/customer-memory/${cid}`);
+    const d = await r.json();
+    renderMemory(d, cid);
+  } catch(e) {}
+}
+
+function renderMemory(d, cid) {
+  const container = document.getElementById('memory-content');
+  if (!d) { container.innerHTML = '<div style="color:#6e7681;font-size:12px">無記憶</div>'; return; }
+  const cards = d.cards || [];
+  if (!cards.length) {
+    container.innerHTML = '<div style="color:#6e7681;font-size:12px;padding:8px 0">尚無 AI 記憶<br><small>點擊「AI 擷取」從備注中提取，或手動記錄</small></div>';
+    return;
+  }
+  container.innerHTML = cards.map((m, i) => {
+    const conf = m.confidence || 'medium';
+    const confLabel = conf === 'high' ? '高可信度' : conf === 'low' ? '待驗證' : '推測';
+    const confClass = conf === 'high' ? 'conf-high' : conf === 'low' ? 'conf-low' : 'conf-medium';
+    const srcIcon = m.source_type === 'user_confirmed' ? '✅' : m.source_type === 'meeting' ? '📝' : m.source_type === 'external' ? '🌐' : '🤖';
+    const cat = m.category || m.cat || 'general';
+    return `<div class="mem-card">
+      <button class="mem-del" onclick="deleteMemCard(${i},'${cid}')">×</button>
+      <span class="mem-cat cat-${cat}">${cat}</span>
+      <div class="mem-fact">${m.fact}</div>
+      <div class="mem-conf">
+        <span class="${confClass}">${confLabel}</span>
+        <span style="color:#21262d"> · </span>
+        <span style="color:#6e7681">${srcIcon} ${m.source || 'AI分析'}</span>
+        ${m.created_at ? `<span style="color:#21262d"> · </span><span style="color:#484f58">${m.created_at}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function deleteMemCard(idx, cid) {
+  const r = await fetch(`/api/ai/customer-memory/${cid}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({delete_card_index: idx})
+  });
+  const d = await r.json();
+  renderMemory(d, cid);
+}
+
+async function saveManualMemory() {
+  const fact = document.getElementById('mm-fact').value.trim();
+  if (!fact || !activeCid) return;
+  const card = {
+    fact,
+    category: document.getElementById('mm-cat').value,
+    confidence: document.getElementById('mm-conf').value,
+    source: document.getElementById('mm-source').value.trim() || '手動記錄',
+    source_type: document.getElementById('mm-source-type').value,
+    created_at: new Date().toISOString().slice(0, 10),
+  };
+  await fetch(`/api/ai/customer-memory/${activeCid}`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({card})
+  });
+  document.getElementById('mm-fact').value = '';
+  document.getElementById('mm-source').value = '';
+  closeModal('mem-modal');
+  loadMemory(activeCid);
+}
+
+async function runExtractMemory() {
+  const text = document.getElementById('em-text').value.trim();
+  if (!text || !activeCid) return;
+  const kind = document.getElementById('em-kind').value;
+  const followDate = document.getElementById('em-follow-date').value;
+  const c = contacts.find(x => x.id === activeCid);
+  const kindLabel = {
+    meeting: '客戶對話 / 會議',
+    contact_result: '接觸結果',
+    sample_feedback: '樣品 / 試吃回饋',
+    evidence_gap: '品質證據缺口',
+  }[kind] || '客戶對話 / 會議';
+  document.getElementById('extract-loading').style.display = 'flex';
+  document.getElementById('extract-run-btn').disabled = true;
+  document.getElementById('extract-results').innerHTML = '';
+  try {
+    await fetch(`/api/contacts/${activeCid}/conversations`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        channel: kind === 'contact_result' ? 'phone' : 'meeting',
+        direction: 'inbound',
+        content: `[${kindLabel}]\n${text}`,
+        summary: text.slice(0, 180),
+      })
+    });
+    const r = await fetch(`/api/ai/customer-memory/${activeCid}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({interaction: `紀錄類型：${kindLabel}\n${text}`})
+    });
+    const d = await r.json();
+    let taskCreated = null;
+    if (followDate) {
+      const tr = await fetch('/api/tasks', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contact_id: activeCid,
+          title: `會議紀錄追蹤 — ${(c && c.name) || '客戶'}`,
+          type: '追蹤',
+          priority: kind === 'evidence_gap' ? '高' : '中',
+          due_date: followDate,
+          notes: `${kindLabel}｜AI 已分類。下一步：依會議紀錄補資料、追樣品回饋或約會議。`,
+        })
+      });
+      taskCreated = await tr.json();
+    }
+    await fetch(`/api/contacts/${activeCid}`, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({last_contact_date: new Date().toISOString().slice(0,10)})
+    });
+    document.getElementById('extract-loading').style.display = 'none';
+    document.getElementById('extract-run-btn').disabled = false;
+    // Show what was saved
+    document.getElementById('extract-results').innerHTML = `
+      <div style="background:#23863620;border:1px solid #238636;border-radius:8px;padding:12px;font-size:12px;color:#3fb950">
+        ✅ 已完成：原文存入對話紀錄，AI 已分類成記憶卡。${taskCreated ? '<br>✅ 已建立追蹤任務：' + escapeHtml(taskCreated.due_date || '') : ''}<br><br>
+        ${[...(d.learned_preferences||[]),...(d.known_objections||[]),...(d.winning_messages||[]),...(d.avoid||[])].slice(0,6).map(f=>`• ${escapeHtml(f)}`).join('<br>')}
+      </div>
+      <div class="modal-actions" style="margin-top:12px">
+        <button class="btn-primary" onclick="closeModal('extract-modal');loadMemory('${activeCid}');renderSalesV0Records()">完成</button>
+      </div>
+    `;
+    document.getElementById('extract-actions').style.display = 'none';
+    await loadContacts();
+    activeCid && selectContact(activeCid);
+  } catch(e) {
+    document.getElementById('extract-loading').style.display = 'none';
+    document.getElementById('extract-run-btn').disabled = false;
+  }
+}
+
+// ── Prospect Hunter ───────────────────────────────────────────────────────────
+let _huntSegment = '';
+
+function setHuntSeg(el) {
+  _huntSegment = el.dataset.seg || '';
+  document.querySelectorAll('.hsb').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+const SEG_COLORS = {
+  '福委會': '#9c27b0', '大型通路': '#1565c0', '市集通路': '#2e7d32',
+  'C 消費者': '#e65100', '餐飲加工': '#5d4037', 'ESG 企業': '#1b5e20',
+  '禮贈品公司': '#880e4f', '團購主': '#f57f17', '農場/合作夥伴': '#33691e',
+  '投資人': '#37474f', '太陽能/地主': '#8a5a00',
+};
+
+function buyerSegBadge(seg) {
+  const col = SEG_COLORS[seg] || '#666';
+  return `<span class="bc-seg-badge" style="color:${col};border-color:${col}40;background:${col}12">${seg}</span>`;
+}
+
+function buyerScoreColor(score) {
+  if (score >= 80) return '#3fb950';
+  if (score >= 60) return '#E2CF35';
+  return '#f85149';
+}
+
+async function runProspectHunt() {
+  const desc = document.getElementById('hi-desc').value;
+  document.getElementById('hunt-loading').style.display = 'flex';
+  document.getElementById('hunt-run-btn').disabled = true;
+  document.getElementById('hunt-results').innerHTML = '';
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 150000);
+
+  try {
+    const r = await fetch('/api/ai/prospect-hunter', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({target_segment: _huntSegment, desc}),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    const d = await r.json();
+    document.getElementById('hunt-loading').style.display = 'none';
+    document.getElementById('hunt-run-btn').disabled = false;
+    const buyers = d.targets || d.buyers || d.prospects || [];
+    window._huntBuyers = buyers;
+    renderHuntResults(buyers, d._ai_source);
+  } catch(e) {
+    clearTimeout(timeoutId);
+    document.getElementById('hunt-loading').style.display = 'none';
+    document.getElementById('hunt-run-btn').disabled = false;
+    const isTimeout = e.name === 'AbortError';
+    document.getElementById('hunt-results').innerHTML = `
+      <div style="background:#fdecea;border:1px solid #f5c6c6;border-radius:8px;padding:16px;text-align:center">
+        <div style="font-size:13px;color:#c62828;font-weight:600;margin-bottom:6px">${isTimeout ? '⏱ 分析超過 150 秒' : '✕ 搜尋失敗'}</div>
+        <div style="font-size:12px;color:#666;margin-bottom:12px">${isTimeout ? '請稍後重試，或先用手動建檔' : (e.message||'未知錯誤')}</div>
+        <button class="btn-primary" onclick="runProspectHunt()" style="padding:6px 16px;font-size:12px">重試</button>
+      </div>`;
+  }
+}
+
+function renderHuntResults(buyers, aiSource) {
+  const isFallback = aiSource === 'fallback' || aiSource === 'timeout' || aiSource === 'error';
+  const srcBadge = aiSourceBadge(aiSource);
+
+  if (!buyers.length) {
+    document.getElementById('hunt-results').innerHTML = `<div style="color:#888;font-size:13px;padding:16px 0">沒有找到可執行名單 ${srcBadge}</div>`;
+    return;
+  }
+
+  let warningBanner = '';
+  if (aiSource === 'fallback') {
+    warningBanner = `<div style="background:#fff3e0;border:1px solid #ffcc02;border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:16px;flex-shrink:0">⚠️</span>
+      <div>
+        <div style="font-size:12px;font-weight:800;color:#e65100;margin-bottom:3px">這是預設範例，不是 AI 搜尋結果</div>
+        <div style="font-size:11px;color:#666;line-height:1.5">Claude 本次未成功生成名單（可能逾時或指令解析失敗）。以下為系統預設範例，供格式參考用。<br><strong>請勿直接加入 CRM</strong> — 重新搜尋或手動核實後再使用。</div>
+        <button style="margin-top:8px;background:#e65100;border:none;color:#fff;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer" onclick="runProspectHunt()">重新搜尋</button>
+      </div>
+    </div>`;
+  } else if (aiSource === 'timeout') {
+    warningBanner = `<div style="background:#fdecea;border:1px solid #f5c6c6;border-radius:8px;padding:12px 14px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:800;color:#c62828;margin-bottom:3px">⏱ 搜尋逾時 — 顯示預設範例</div>
+      <div style="font-size:11px;color:#666">AI 搜尋超過時限，以下為系統預設範例。請重試或縮小搜尋範圍。</div>
+      <button style="margin-top:8px;background:#c62828;border:none;color:#fff;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer" onclick="runProspectHunt()">重試</button>
+    </div>`;
+  }
+
+  const header = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <span style="font-size:12px;color:#666">${isFallback ? '📋 預設範例' : '✅ AI 生成'} — <strong>${buyers.length}</strong> 個目標</span>
+    ${srcBadge}
+    ${!isFallback ? `<button style="margin-left:auto;background:#5d5d5d;border:none;color:#fff;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer" onclick="addAllBuyers()">全部加入 CRM</button>` : ''}
+  </div>`;
+
+  const cards = buyers.map((b, i) => buildExecCard(b, i, isFallback)).join('');
+  document.getElementById('hunt-results').innerHTML = warningBanner + header + cards;
+}
+
+function buildExecCard(b, i, isFallback) {
+  const score = b.fit_score || 0;
+  const scoreCol = buyerScoreColor(score);
+  const confLabel = b.confidence === 'high' ? '高確信' : b.confidence === 'low' ? '低確信' : '中等';
+  const name = b.target_name || b.buyer || b.company || '—';
+  const seg = b.buyer_type || b.segment || '';
+  const ch = b.contact_channel || {};
+
+  // Contact channel pills
+  let chHtml = '';
+  if (ch.phone) chHtml += `<span class="ec-ch" onclick="copyText('${ch.phone}',this)">📞 ${ch.phone} <span class="ch-copy">複製</span></span>`;
+  if (ch.email) chHtml += `<span class="ec-ch" onclick="copyText('${ch.email}',this)">✉️ ${ch.email} <span class="ch-copy">複製</span></span>`;
+  if (ch.website) chHtml += `<a class="ec-ch" href="${ch.website}" target="_blank" style="text-decoration:none">🌐 官網</a>`;
+  if (ch.social) chHtml += `<span class="ec-ch">${ch.social}</span>`;
+  if (ch.search_hint && !ch.phone && !ch.email) chHtml += `<span class="ec-ch-hint">🔍 ${ch.search_hint}</span>`;
+
+  // Products
+  const bestProds = (b.best_product || []).map(p => `<span class="ec-prod-best">${p}</span>`).join('');
+  const secProds = (b.secondary_product || []).map(p => `<span class="ec-prod-sec">${p}</span>`).join('');
+
+  // Follow-up plan
+  const fuItems = (b.follow_up_plan || []).map(f => {
+    const day = f.day || f.days || '';
+    const action = f.action || f.message || f;
+    return `<div class="ec-fu-day">
+      <span class="ec-fu-dot">${day ? 'D'+day : '▸'}</span>
+      <span class="ec-fu-text">${typeof action === 'string' ? action : JSON.stringify(action)}</span>
+    </div>`;
+  }).join('');
+
+  // Risks
+  const risks = (b.deal_risk || []).map(r => `<span class="ec-risk">⚠️ ${r}</span>`).join('');
+
+  // Message draft — safe encode for data attr
+  const draft = (b.message_draft || '').replace(/`/g,'\'');
+
+  const draftId = `ec-draft-${i}`;
+  const fuId = `ec-fu-${i}`;
+
+  return `<div class="exec-card" id="ec-${i}">
+    <div class="ec-head">
+      <div>
+        <div class="ec-name">${name}</div>
+        ${seg ? `<div style="margin-top:3px">${buyerSegBadge(seg)}</div>` : ''}
+      </div>
+      ${score ? `<span class="ec-score" style="color:${scoreCol}">${score}</span>` : ''}
+    </div>
+    <div class="ec-body">
+      ${chHtml ? `<div class="ec-row"><span class="ec-label">聯絡</span><div class="ec-contact-row">${chHtml}</div></div>` : ''}
+      ${b.contact_person ? `<div class="ec-row"><span class="ec-label">聯絡人</span><span class="ec-val">${b.contact_person}</span></div>` : ''}
+      ${(bestProds||secProds) ? `<div class="ec-row"><span class="ec-label">產品</span><div class="ec-products">${bestProds}${secProds}</div></div>` : ''}
+      ${b.estimated_quantity ? `<div class="ec-row"><span class="ec-label">預估量</span><span class="ec-val">${b.estimated_quantity}</span></div>` : ''}
+      ${b.why_buy ? `<div class="ec-row"><span class="ec-label">原因</span><span class="ec-why">${b.why_buy}</span></div>` : ''}
+      ${b.first_action ? `<div class="ec-action">⚡ Day 1：${b.first_action}</div>` : ''}
+      ${b.message_draft ? `<div>
+        <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">話術草稿</div>
+        <div class="ec-draft" id="${draftId}">${b.message_draft.replace(/</g,'&lt;').replace(/>/g,'&gt;')}<button class="ec-draft-copy" onclick="copyDraft('${draftId}',this)">複製</button></div>
+      </div>` : ''}
+      ${fuItems ? `<div>
+        <div style="font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">追蹤計畫</div>
+        <div class="ec-followup" id="${fuId}">${fuItems}</div>
+      </div>` : ''}
+      ${risks ? `<div class="ec-risks">${risks}</div>` : ''}
+    </div>
+    <div class="ec-footer">
+      <span class="ec-verify">⚠️ AI推測 需驗證</span>
+      <span class="ec-conf">${confLabel}</span>
+      ${isFallback
+        ? `<button class="ec-add-btn" disabled title="這是預設範例，請重新搜尋後再加入" style="opacity:.35;cursor:not-allowed">⊘ 預設範例</button>`
+        : `<button class="ec-add-btn" id="bc-add-${i}" onclick="addBuyer(${i}, this)">＋ 加入 CRM + 建立任務</button>`
+      }
+    </div>
+  </div>`;
+}
+
+function copyText(text, el) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = el.innerHTML;
+    el.innerHTML = el.innerHTML.replace('複製','✓');
+    setTimeout(() => { el.innerHTML = orig; }, 1500);
+  }).catch(() => {
+    prompt('請手動複製：', text);
+  });
+}
+
+const BOOKING_URL_KEYS = {
+  farm: 'wegrow_sales_booking_farm_url',
+  online: 'wegrow_sales_booking_online_url'
+};
+
+function initBookingUrls() {
+  Object.entries(BOOKING_URL_KEYS).forEach(([type, key]) => {
+    const input = document.getElementById(`booking-${type}-url`);
+    if (input) input.value = localStorage.getItem(key) || '';
+  });
+}
+
+function saveBookingUrl(type) {
+  const key = BOOKING_URL_KEYS[type];
+  const input = document.getElementById(`booking-${type}-url`);
+  if (!key || !input) return;
+  localStorage.setItem(key, input.value.trim());
+  const status = document.getElementById(`booking-${type}-status`);
+  if (status) {
+    status.textContent = '已儲存';
+    setTimeout(() => { status.textContent = '本機設定'; }, 1500);
+  }
+}
+
+function getBookingUrl(type) {
+  const key = BOOKING_URL_KEYS[type];
+  const input = document.getElementById(`booking-${type}-url`);
+  const value = input?.value.trim() || (key ? localStorage.getItem(key) : '');
+  return value || '';
+}
+
+function openBookingUrl(type) {
+  const url = getBookingUrl(type);
+  if (!url) {
+    alert('請先貼上 Google Calendar 預約頁連結。');
+    return;
+  }
+  window.open(url, '_blank', 'noopener');
+}
+
+function copyBookingInvite(type, btn) {
+  const url = getBookingUrl(type);
+  if (!url) {
+    alert('請先貼上 Google Calendar 預約頁連結。');
+    return;
+  }
+  const label = type === 'farm' ? '農場參訪' : '線上會議';
+  const text = `您好，這裡是 WeGrow 威果。\n\n為了安排${label}，請直接從以下 Google Calendar 預約頁選擇方便的時間：\n${url}\n\n預約完成後系統會自動同步到行事曆。若有採購規格、企業認養或農場參訪需求，也可以先在備註留下，我們會在會前整理資料。`;
+  copyText(text, btn);
+}
+
+function copyDraft(id, btn) {
+  const el = document.getElementById(id);
+  const text = el ? el.innerText.replace('複製','').trim() : '';
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ 已複製';
+    btn.style.background = '#238636';
+    setTimeout(() => { btn.textContent = '複製'; btn.style.background = '#5d5d5d'; }, 2000);
+  }).catch(() => { prompt('請手動複製：', text); });
+}
+
+async function addBuyer(idx, btn) {
+  const b = (window._huntBuyers||[])[idx];
+  if (!b) return;
+  btn.disabled = true; btn.textContent = '加入中…';
+  try {
+    const r = await fetch('/api/ai/add-buyer', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({buyer: b})
+    });
+    const c = await r.json();
+    contacts.push(c);
+    renderLeads();
+    btn.textContent = '✅ 已加入'; btn.style.background = '#238636'; btn.style.color = '#fff';
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '＋ 加入 CRM + 建立任務';
+  }
+}
+
+async function addAllBuyers() {
+  const buyers = window._huntBuyers || [];
+  for (let i = 0; i < buyers.length; i++) {
+    const btn = document.getElementById(`bc-add-${i}`);
+    if (btn && btn.textContent !== '✅ 已加入') await addBuyer(i, btn);
+  }
+}
+
+// ── CRUD ──────────────────────────────────────────────────────────────────────
+async function saveNewContact() {
+  const name = document.getElementById('af-name').value.trim();
+  if (!name) { document.getElementById('af-name').focus(); return; }
+  const btn = document.querySelector('#add-modal .btn-primary');
+  const originalText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '建檔中...';
+  }
+  const body = {
+    name, type: document.getElementById('af-type').value,
+    contact_person: document.getElementById('af-person').value,
+    title: document.getElementById('af-title').value,
+    phone: document.getElementById('af-phone').value,
+    email: document.getElementById('af-email').value,
+    amount: parseInt(document.getElementById('af-amount').value)||0,
+    stage: document.getElementById('af-stage').value,
+    notes: document.getElementById('af-notes').value,
+  };
+  try {
+    const r = await fetch('/api/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const contentType = r.headers.get('content-type') || '';
+    if (!r.ok || !contentType.includes('application/json')) {
+      if (r.redirected || r.url.includes('/login') || !contentType.includes('application/json')) {
+        throw new Error('登入狀態已過期，請重新登入後再新增。');
+      }
+      throw new Error(`新增失敗（HTTP ${r.status}）`);
+    }
+    const c = await r.json();
+    contacts.push(c);
+    renderLeads();
+    closeModal('add-modal');
+    await selectContact(c.id);
+    try {
+      await runFullAnalysis();
+    } catch (e) {
+      console.warn('AI analysis failed after contact creation', e);
+      alert('客戶已建檔成功，但 AI 分析暫時失敗；請稍後在客戶頁按「AI 分析」。');
+    }
+  } catch (e) {
+    alert(e.message || '新增客戶失敗，請稍後再試。');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+}
+
+function openEditModal() {
+  const c = contacts.find(x => x.id === activeCid);
+  if (!c) return;
+  document.getElementById('ef-id').value = c.id;
+  document.getElementById('ef-name').value = c.name||'';
+  document.getElementById('ef-person').value = c.contact_person||'';
+  document.getElementById('ef-title').value = c.title||'';
+  document.getElementById('ef-type').value = c.type||'投資人';
+  document.getElementById('ef-phone').value = c.phone||'';
+  document.getElementById('ef-email').value = c.email||'';
+  document.getElementById('ef-amount').value = c.amount||0;
+  document.getElementById('ef-last').value = c.last_contact_date||'';
+  document.getElementById('ef-notes').value = c.notes||'';
+  document.getElementById('edit-modal').classList.add('show');
+}
+
+async function saveEdit() {
+  const cid = document.getElementById('ef-id').value;
+  const body = {
+    name: document.getElementById('ef-name').value,
+    contact_person: document.getElementById('ef-person').value,
+    title: document.getElementById('ef-title').value,
+    type: document.getElementById('ef-type').value,
+    phone: document.getElementById('ef-phone').value,
+    email: document.getElementById('ef-email').value,
+    amount: parseInt(document.getElementById('ef-amount').value)||0,
+    last_contact_date: document.getElementById('ef-last').value,
+    notes: document.getElementById('ef-notes').value,
+  };
+  const r = await fetch(`/api/contacts/${cid}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const updated = await r.json();
+  const idx = contacts.findIndex(x => x.id === cid);
+  if (idx >= 0) contacts[idx] = {...contacts[idx], ...updated};
+  renderLeads();
+  closeModal('edit-modal');
+  selectContact(cid);
+}
+
+function openStageModal() {
+  const c = contacts.find(x => x.id === activeCid);
+  if (!c) return;
+  document.getElementById('stage-buttons').innerHTML = STAGES.map(s =>
+    `<button onclick="moveStage('${s}')" style="background:${s===c.stage?'#238636':'#1c2128'};border:1px solid ${s===c.stage?'#238636':'#30363d'};color:${s===c.stage?'#fff':'#8b949e'};border-radius:6px;padding:10px;font-size:13px;cursor:pointer;text-align:left">${s===c.stage?'✓ ':''} ${s}</button>`
+  ).join('');
+  document.getElementById('stage-modal').classList.add('show');
+}
+
+async function moveStage(stage) {
+  if (!activeCid) return;
+  const r = await fetch(`/api/contacts/${activeCid}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({stage, last_contact_date: new Date().toISOString().slice(0,10)})});
+  const updated = await r.json();
+  const idx = contacts.findIndex(x => x.id === activeCid);
+  if (idx >= 0) contacts[idx] = {...contacts[idx], ...updated};
+  renderLeads();
+  closeModal('stage-modal');
+  document.getElementById('stage-btn').textContent = `📍 ${stage}`;
+  document.getElementById('center-contact-sub').textContent =
+    [updated.contact_person, updated.title, updated.type].filter(Boolean).join(' · ');
+}
+
+// ── Command Bar ───────────────────────────────────────────────────────────────
+async function runCommand(text) {
+  if (!text) return;
+  const lower = text.toLowerCase();
+  if (lower.includes('hunt') || lower.includes('找') || lower.includes('搜尋')) {
+    openHuntModal();
+    document.getElementById('hi-desc').value = text;
+  } else if (lower.includes('分析') && activeCid) {
+    runFullAnalysis();
+  } else if (lower.includes('下一步') || lower.includes('next') && activeCid) {
+    runNextAction();
+  } else if (lower.includes('新增') || lower.includes('add')) {
+    openAddModal();
+  } else {
+    openHuntModal();
+    document.getElementById('hi-desc').value = text;
+  }
+  document.getElementById('cmd-input').value = '';
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function showCenterTab(name, el) {
+  document.getElementById('tab-profile').style.display = name==='profile' ? 'block' : 'none';
+  document.getElementById('tab-fitscore').style.display = name==='fitscore' ? 'block' : 'none';
+  document.getElementById('tab-learning').style.display = name==='learning' ? 'block' : 'none';
+  document.querySelectorAll('.ctab').forEach(e => e.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // Guard: only auto-trigger if not already running (prevents recursive loop)
+  if (name==='fitscore' && activeCid && !_fitScoreRunning) {
+    const c = contacts.find(x=>x.id===activeCid);
+    if (!c?._fitScore) runFitScore();
+  }
+  if (name==='learning') loadLatestLearning();
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('add-modal').classList.add('show');
+  document.getElementById('af-classify-hint').style.display = 'none';
+}
+
+async function classifyContact(prefix) {
+  const name = document.getElementById(`${prefix}-name`).value.trim();
+  const notes = document.getElementById(`${prefix}-notes`).value.trim();
+  const person = document.getElementById(`${prefix}-person`)?.value.trim() || '';
+  const title = document.getElementById(`${prefix}-title`)?.value.trim() || '';
+  if (!name && !notes) {
+    alert('請先填入公司名稱或備注再讓 AI 判斷。');
+    return;
+  }
+  const btn = document.getElementById(`${prefix}-classify-btn`);
+  const hint = document.getElementById(`${prefix}-classify-hint`);
+  btn.disabled = true;
+  btn.textContent = '分析中…';
+  hint.style.display = 'none';
+  try {
+    const r = await fetch('/api/ai/classify-contact', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, notes, contact_person: person, title})
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    const confClass = d.confidence === 'high' ? 'ch-conf-high' : d.confidence === 'low' ? 'ch-conf-low' : 'ch-conf-medium';
+    const confLabel = d.confidence === 'high' ? '高確信' : d.confidence === 'low' ? '低確信' : '中等';
+    const signals = (d.signals || []).map(s => `<span class="ch-signal">${s}</span>`).join('');
+    hint.innerHTML = `
+      <div>🤖 AI 建議分類：<span class="ch-type">${d.suggested_type}</span>
+        <span class="ch-conf ${confClass}">${confLabel}</span>
+      </div>
+      <div style="margin-top:4px;color:#666">${d.reason || ''}</div>
+      ${signals ? `<div class="ch-signals">${signals}</div>` : ''}
+      <button class="ch-adopt" onclick="adoptClassify('${prefix}','${d.suggested_type}')">採納此分類</button>
+    `;
+    hint.style.display = 'block';
+  } catch(e) {
+    hint.innerHTML = `<div style="color:#c62828">分析失敗：${e.message}</div>`;
+    hint.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🤖 AI 判斷';
+  }
+}
+
+function adoptClassify(prefix, type) {
+  const sel = document.getElementById(`${prefix}-type`);
+  // Add option if not present (e.g. 農場)
+  if (![...sel.options].find(o => o.value === type)) {
+    const opt = document.createElement('option');
+    opt.value = type; opt.text = type;
+    sel.appendChild(opt);
+  }
+  sel.value = type;
+  const hint = document.getElementById(`${prefix}-classify-hint`);
+  hint.innerHTML = `<div style="color:#2e7d32;font-weight:700">✅ 已採納：${type}</div>`;
+  setTimeout(() => { hint.style.display = 'none'; }, 2000);
+}
+function openHuntModal() { document.getElementById('hunt-modal').classList.add('show'); }
+function openExtractModal() {
+  document.getElementById('em-text').value = '';
+  document.getElementById('em-kind').value = 'meeting';
+  document.getElementById('em-follow-date').value = '';
+  document.getElementById('em-file').value = '';
+  document.getElementById('extract-results').innerHTML = '';
+  document.getElementById('extract-actions').style.display = 'flex';
+  document.getElementById('extract-modal').classList.add('show');
+}
+
+function handleMeetingFile(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const textTypes = ['text/plain', 'text/markdown'];
+  const textExt = /\.(txt|md|vtt|srt)$/i.test(file.name);
+  if (!textTypes.includes(file.type) && !textExt) {
+    document.getElementById('extract-results').innerHTML =
+      '<div style="background:#fff8e1;border:1px solid #E2CF35;border-radius:8px;padding:10px;font-size:12px;color:#5d4e1a">錄音檔已選取，但 V0 尚未接語音轉文字。請先轉成逐字稿後貼入下方文字框。</div>';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const current = document.getElementById('em-text').value.trim();
+    document.getElementById('em-text').value = `${current ? current + '\n\n' : ''}${reader.result}`;
+  };
+  reader.readAsText(file, 'utf-8');
+}
+function openAddMemModal() { document.getElementById('mm-fact').value=''; document.getElementById('mem-modal').classList.add('show'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+init();
+</script>
+</body>
+</html>
