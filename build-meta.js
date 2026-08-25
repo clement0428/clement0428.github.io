@@ -1,7 +1,7 @@
 window.__WEGROW_BUILD_META__ = {
-  commit: "a2872a8",
-  source_commit: "a2872a80a9dc1942a5213d54dbdcea17e59b2bad",
-  deployed_at: "2026-08-24T03:56:30Z",
+  commit: "8311f25",
+  source_commit: "8311f25948b402f3776dc8d6ff81dd397ede73c1",
+  deployed_at: "2026-08-25T00:56:57Z",
   frontend_bundle_deployed: "pass",
   photo_storage_check: "not_checked"
 };
