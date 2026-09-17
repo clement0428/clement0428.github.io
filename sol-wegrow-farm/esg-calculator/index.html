@@ -1,0 +1,1671 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOL-WeGrow Farm | 品牌展示</title>
+  <meta name="description" content="SOL-WeGrow Farm 高級品牌聯名展示：企業資料後台、即時影像、照護步驟、ESG 資產與體驗活動。">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #141713;
+      --muted: #596258;
+      --paper: #fbfaf4;
+      --white: #ffffff;
+      --line: #dfded4;
+      --gold: #b68a35;
+      --green: #153f2a;
+      --mist: #eef1e8;
+      --rose: #c84c41;
+      --shadow: 0 24px 80px rgba(20, 23, 19, .13);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .nav {
+      width: min(1180px, calc(100% - 36px));
+      height: 76px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(20, 23, 19, .08);
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-combo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      display: block;
+      width: auto;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .brand-logo.sol {
+      height: 36px;
+    }
+
+    .brand-logo.wegrow {
+      height: 40px;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 34px;
+      background: rgba(20, 23, 19, .14);
+      flex: 0 0 auto;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-copy strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.1;
+    }
+
+    .brand-copy span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .nav-links a {
+      border-bottom: 1px solid transparent;
+    }
+
+    .nav-links a:hover {
+      border-bottom-color: currentColor;
+    }
+
+    .nav-links a.is-active {
+      color: var(--ink);
+      font-weight: 700;
+      border-bottom-color: var(--gold);
+    }
+
+    main > .hero, main .section, main .admin { display: none; }
+    main .section.is-active, main .admin.is-active { display: block; }
+    main > .hero.is-active { display: grid; }
+
+    .lang-toggle {
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--green);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 18px 0 34px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 26px;
+      align-items: start;
+    }
+
+    .image-stage {
+      position: relative;
+      overflow: hidden;
+      background: var(--mist);
+      box-shadow: var(--shadow);
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      max-height: min(520px, calc(100svh - 220px));
+      min-height: 330px;
+    }
+
+    .image-stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, .02), rgba(0, 0, 0, .4));
+      pointer-events: none;
+    }
+
+    .live-badge,
+    .client-badge {
+      position: absolute;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 13px;
+      background: rgba(255, 255, 255, .88);
+      color: var(--green);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .live-badge {
+      top: 18px;
+      left: 18px;
+      gap: 9px;
+    }
+
+    .client-badge {
+      right: 18px;
+      bottom: 18px;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--rose);
+      box-shadow: 0 0 0 5px rgba(200, 76, 65, .15);
+    }
+
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 11.5em;
+      font-size: clamp(38px, 5.2vw, 70px);
+      line-height: 1;
+      font-weight: 850;
+    }
+
+    .hero-line {
+      max-width: 34em;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.58;
+    }
+
+    .hero-actions {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .button {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border: 1px solid var(--green);
+      background: var(--green);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .button.secondary {
+      background: transparent;
+      color: var(--green);
+    }
+
+    .metrics {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      max-width: 680px;
+    }
+
+    .metric {
+      min-height: 76px;
+      padding: 14px;
+      border-right: 1px solid var(--line);
+    }
+
+    .metric:last-child {
+      border-right: 0;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 21px;
+      color: var(--green);
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .section {
+      margin-top: 22px;
+      padding-top: 22px;
+      border-top: 1px solid rgba(20, 23, 19, .12);
+      display: grid;
+      grid-template-columns: 190px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.12;
+    }
+
+    .micro {
+      margin-top: 10px;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .service-steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .step {
+      min-height: 148px;
+      padding: 18px;
+      background: var(--white);
+      border: 1px solid var(--line);
+    }
+
+    .step-number {
+      display: block;
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 850;
+      margin-bottom: 18px;
+    }
+
+    .step strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .step p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.52;
+    }
+
+    .asset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .asset-card {
+      min-height: 132px;
+      padding: 18px;
+      background: var(--green);
+      color: var(--white);
+      display: grid;
+      align-content: space-between;
+    }
+
+    .asset-card.light {
+      background: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .asset-card strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .asset-card span {
+      display: block;
+      margin-top: 8px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .asset-card.light span {
+      color: var(--muted);
+    }
+
+    .asset-card a {
+      margin-top: 16px;
+      color: inherit;
+      font-size: 13px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .experience {
+      display: grid;
+      gap: 10px;
+    }
+
+    .event {
+      display: grid;
+      grid-template-columns: 86px 1fr 76px;
+      gap: 16px;
+      align-items: center;
+      min-height: 66px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .event time {
+      color: var(--gold);
+      font-size: 15px;
+      font-weight: 850;
+    }
+
+    .event strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .event span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .tag {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .bond-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .bond-card {
+      min-height: 144px;
+      padding: 16px;
+      background: var(--white);
+      border: 1px solid var(--line);
+      display: grid;
+      align-content: space-between;
+    }
+
+    .plant-buddy {
+      width: 76px;
+      height: 76px;
+      position: relative;
+      display: grid;
+      place-items: end center;
+      margin-bottom: 10px;
+    }
+
+    .plant-pot {
+      width: 42px;
+      height: 24px;
+      position: relative;
+      z-index: 3;
+      background: linear-gradient(180deg, #d4a94b, #a97628);
+      border-radius: 0 0 18px 18px;
+      box-shadow: inset 0 5px 0 rgba(255, 255, 255, .22);
+    }
+
+    .plant-stem {
+      width: 7px;
+      height: calc(18px + var(--growth, 0) * 5px);
+      position: absolute;
+      left: 35px;
+      bottom: 23px;
+      z-index: 2;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #4c9a55, #1f6a3e);
+      transform-origin: bottom;
+      animation: sway 3.2s ease-in-out infinite;
+    }
+
+    .plant-leaf {
+      width: calc(19px + var(--growth, 0) * 3px);
+      height: calc(12px + var(--growth, 0) * 2px);
+      position: absolute;
+      bottom: calc(39px + var(--growth, 0) * 4px);
+      z-index: 2;
+      border-radius: 100% 0 100% 0;
+      background: linear-gradient(135deg, #89c86e, #216b3d);
+      transform-origin: right bottom;
+      animation: leafPulse 2.4s ease-in-out infinite;
+    }
+
+    .plant-leaf.left {
+      left: 12px;
+      transform: rotate(-26deg);
+    }
+
+    .plant-leaf.right {
+      right: 12px;
+      transform: rotate(116deg) scaleX(-1);
+      animation-delay: .35s;
+    }
+
+    .plant-sprout {
+      width: calc(15px + var(--growth, 0) * 2px);
+      height: calc(19px + var(--growth, 0) * 2px);
+      position: absolute;
+      left: 31px;
+      bottom: calc(48px + var(--growth, 0) * 5px);
+      z-index: 2;
+      border-radius: 100% 0 100% 0;
+      background: linear-gradient(135deg, #b7df78, #2d7d48);
+      transform: rotate(45deg);
+      animation: sproutGlow 3s ease-in-out infinite;
+    }
+
+    .growth-ring {
+      position: absolute;
+      inset: 13px;
+      border: 1px solid rgba(21, 63, 42, .16);
+      border-radius: 50%;
+      background: rgba(238, 241, 232, .72);
+    }
+
+    .plant-level {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      margin-top: 12px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    @keyframes sway {
+      0%, 100% { transform: rotate(-1deg); }
+      50% { transform: rotate(2deg); }
+    }
+
+    @keyframes leafPulse {
+      0%, 100% { filter: saturate(1); }
+      50% { filter: saturate(1.25) brightness(1.05); }
+    }
+
+    @keyframes sproutGlow {
+      0%, 100% { transform: rotate(45deg) scale(1); }
+      50% { transform: rotate(45deg) scale(1.08); }
+    }
+
+    .buddy {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--mist);
+      color: var(--green);
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .bond-card strong {
+      display: block;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .bond-card span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.42;
+    }
+
+    .admin {
+      display: none;
+      background: #111711;
+      color: var(--white);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .admin:target {
+      display: block;
+    }
+
+    .admin-head {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .admin-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid rgba(255, 255, 255, .22);
+      color: rgba(255, 255, 255, .82);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+
+    .admin h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .admin-note {
+      margin: 10px 0 0;
+      color: rgba(255, 255, 255, .68);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .admin-grid {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: rgba(255, 255, 255, .72);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      background: rgba(255, 255, 255, .08);
+      color: var(--white);
+      padding: 10px 12px;
+      font: inherit;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+      grid-column: span 2;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--gold);
+    }
+
+    .admin-actions {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .admin-actions button {
+      min-height: 42px;
+      border: 1px solid rgba(255, 255, 255, .25);
+      background: var(--white);
+      color: var(--green);
+      padding: 0 15px;
+      font: inherit;
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .admin-actions button.secondary {
+      background: transparent;
+      color: var(--white);
+    }
+
+    .admin-preview {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .admin-preview div {
+      min-height: 74px;
+      padding: 12px;
+      background: rgba(255, 255, 255, .08);
+      border: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .admin-preview span {
+      display: block;
+      color: rgba(255, 255, 255, .55);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    .admin-preview strong {
+      display: block;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .gallery {
+      margin-top: 22px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .gallery img {
+      width: 100%;
+      height: 190px;
+      object-fit: cover;
+      display: block;
+      background: var(--mist);
+    }
+
+    footer {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 22px 0 34px;
+      border-top: 1px solid rgba(20, 23, 19, .12);
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .section {
+        grid-template-columns: 1fr;
+      }
+
+      .service-steps,
+      .asset-grid,
+      .bond-grid,
+      .admin-grid,
+      .admin-preview {
+        grid-template-columns: 1fr;
+      }
+
+      textarea {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .nav,
+      main,
+      footer {
+        width: min(100% - 24px, 1180px);
+      }
+
+      .nav {
+        height: 68px;
+      }
+
+      .brand {
+        gap: 10px;
+      }
+
+      .brand-combo {
+        gap: 8px;
+      }
+
+      .brand-logo.sol {
+        height: 30px;
+      }
+
+      .brand-logo.wegrow {
+        height: 32px;
+      }
+
+      .brand-divider {
+        height: 28px;
+      }
+
+      .brand-copy strong {
+        font-size: 12px;
+      }
+
+      .brand-copy span {
+        font-size: 11px;
+      }
+
+      .brand-copy {
+        display: none;
+      }
+
+      .nav-links {
+        display: flex;
+      }
+
+      .nav-links a {
+        display: none;
+      }
+
+      main {
+        padding-top: 14px;
+      }
+
+      .hero {
+        gap: 22px;
+      }
+
+      .image-stage {
+        aspect-ratio: 4 / 3;
+        min-height: 0;
+        max-height: none;
+      }
+
+      .live-badge,
+      .client-badge {
+        min-height: 32px;
+        padding: 0 11px;
+        font-size: 12px;
+      }
+
+      .live-badge {
+        top: 12px;
+        left: 12px;
+      }
+
+      .client-badge {
+        right: 12px;
+        bottom: 12px;
+      }
+
+      .eyebrow {
+        margin-bottom: 12px;
+      }
+
+      h1 {
+        max-width: 9.8em;
+        font-size: clamp(36px, 12vw, 52px);
+      }
+
+      .hero-line {
+        margin-top: 14px;
+        font-size: 15px;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .metrics,
+      .gallery {
+        grid-template-columns: 1fr;
+      }
+
+      .metric {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .metric:last-child {
+        border-bottom: 0;
+      }
+
+      .event {
+        grid-template-columns: 1fr;
+      }
+
+      .tag {
+        justify-self: start;
+      }
+
+      footer {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <nav class="nav" aria-label="主導覽">
+        <a class="brand" href="#top" aria-label="SOL-WeGrow Farm 首頁">
+          <span class="brand-combo" aria-hidden="true">
+            <img class="brand-logo sol" src="assets/brand/sol-logo.png" alt="">
+            <span class="brand-divider"></span>
+            <img class="brand-logo wegrow" src="assets/brand/wegrow-logo.png" alt="">
+          </span>
+          <span class="brand-copy">
+            <strong>SOL-WeGrow Farm</strong>
+            <span data-i18n="brandSub">由 WeGrow Orbit 驅動</span>
+          </span>
+        </a>
+        <div class="nav-links">
+          <a href="#care" data-i18n="navCare">照護</a>
+          <a href="#asset" data-i18n="navAsset">ESG</a>
+          <a href="#esgcalc">ESG 試算</a>
+          <a href="#experience" data-i18n="navExperience">活動</a>
+          <a href="#admin" data-i18n="navAdmin">後台</a>
+          <button class="lang-toggle" id="langToggle" type="button" aria-label="切換語言">EN</button>
+        </div>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-label="即時溫室影像">
+        <div class="image-stage">
+          <img src="assets/greenhouse-room.jpg" alt="麻豆一場自有溫室 live 影像">
+          <span class="live-badge"><span class="live-dot"></span><span data-i18n="liveBadge">即時</span></span>
+          <span class="client-badge" data-bind="companyName">SOL 集團</span>
+        </div>
+
+        <div>
+          <p class="eyebrow" data-i18n="eyebrow">永續、科技、體驗</p>
+          <h1 data-i18n="heroTitle">把企業 ESG 變成看得見的農場體驗。</h1>
+          <p class="hero-line" data-i18n="heroLine">SOL-WeGrow Farm 連結即時植物影像、WeGrow Orbit 照護履歷與員工參與活動，讓永續不只是一份報告。</p>
+          <div class="hero-actions">
+            <a class="button" href="#admin" data-i18n="heroCtaAdmin">輸入企業資料</a>
+            <a class="button secondary" href="#experience" data-i18n="heroCtaExperience">安排體驗活動</a>
+          </div>
+          <div class="metrics" aria-label="認養摘要">
+            <div class="metric">
+              <strong>ESG</strong>
+              <span data-i18n="metricEsg">可下載成果與認養紀錄</span>
+            </div>
+            <div class="metric">
+              <strong>Orbit</strong>
+              <span data-i18n="metricOrbit">澆水、施肥、巡檢履歷</span>
+            </div>
+            <div class="metric">
+              <strong data-i18n="metricLiveTitle">即時</strong>
+              <span data-i18n="metricLive">線上看田與線下農場日</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="care" aria-label="今日照護">
+        <div class="section-title">
+          <h2 data-i18n="careTitle">今日照護</h2>
+        </div>
+        <div class="service-steps">
+          <article class="step">
+            <span class="step-number">01 · 08:20</span>
+            <strong data-i18n="care1Title">微量補水</strong>
+            <p data-i18n="care1Text">依根區乾濕狀態補水，每株約 180 mL。</p>
+          </article>
+          <article class="step">
+            <span class="step-number">02 · 09:05</span>
+            <strong data-i18n="care2Title">低 EC 營養液</strong>
+            <p data-i18n="care2Text">保留肥料、濃度、區域與操作人員。</p>
+          </article>
+          <article class="step">
+            <span class="step-number">03 · 10:10</span>
+            <strong data-i18n="care3Title">葉面巡檢</strong>
+            <p data-i18n="care3Text">確認葉片、果實與滴灌線，無急迫病蟲害。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="asset" aria-label="企業 ESG 品牌資產">
+        <div class="section-title">
+          <h2 data-i18n="assetTitle">ESG 資產</h2>
+        </div>
+        <div class="asset-grid">
+          <article class="asset-card">
+            <div>
+              <strong data-i18n="asset1Title">認養規劃 Excel</strong>
+              <span data-i18n="asset1Text">期程、活動、案例、執行節點。</span>
+            </div>
+            <a href="outputs/enterprise_adoption/亞果企業認養_甘特圖_國際案例15.xlsx" data-i18n="asset1Link">下載規劃表</a>
+          </article>
+          <article class="asset-card light">
+            <div>
+              <strong data-i18n="asset2Title">ESG 視覺預覽</strong>
+              <span data-i18n="asset2Text">提案、簡報、企業內部公告。</span>
+            </div>
+            <a href="outputs/enterprise_adoption/gantt_preview.png" data-i18n="asset2Link">查看預覽圖</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="experience" aria-label="體驗活動時間線">
+        <div class="section-title">
+          <h2 data-i18n="experienceTitle">體驗活動</h2>
+        </div>
+        <div class="experience">
+          <div class="event">
+            <time>07/05</time>
+            <div>
+              <strong data-i18n="event1Title">線上認養開場</strong>
+              <span data-i18n="event1Text">即時影像、認養區位置、照護履歷。</span>
+            </div>
+            <span class="tag" data-i18n="online">線上</span>
+          </div>
+          <div class="event">
+            <time>08/16</time>
+            <div>
+              <strong data-i18n="event2Title">員工遠端看田</strong>
+              <span data-i18n="event2Text">用三分鐘看見今天植物狀態。</span>
+            </div>
+            <span class="tag" data-i18n="online">線上</span>
+          </div>
+          <div class="event">
+            <time>10/18</time>
+            <div>
+              <strong data-i18n="event3Title">農場日</strong>
+              <span data-i18n="event3Text">導覽、採果、合照、員工體驗。</span>
+            </div>
+            <span class="tag" data-i18n="offline">線下</span>
+          </div>
+          <div class="event">
+            <time>12/20</time>
+            <div>
+              <strong data-i18n="event4Title">年度成果回顧</strong>
+              <span data-i18n="event4Text">成果、照片、數據、明年合作建議。</span>
+            </div>
+            <span class="tag" data-i18n="online">線上</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="companion" aria-label="農場陪伴計畫">
+        <div class="section-title">
+          <h2 data-i18n="companionTitle">農場陪伴計畫</h2>
+        </div>
+        <div class="bond-grid">
+          <article class="bond-card">
+            <div class="plant-buddy" id="plantBuddy" aria-label="會長大的小植物">
+              <div class="growth-ring"></div>
+              <div class="plant-stem"></div>
+              <div class="plant-leaf left"></div>
+              <div class="plant-leaf right"></div>
+              <div class="plant-sprout"></div>
+              <div class="plant-pot"></div>
+            </div>
+            <div>
+              <strong data-i18n="buddyTitle">小葉夥伴</strong>
+              <span data-i18n="buddyText">企業自己的小植物會隨照護紀錄慢慢長大，成為員工回來看的自然理由。</span>
+              <span class="plant-level" id="plantLevel">Lv. 1</span>
+            </div>
+          </article>
+          <article class="bond-card">
+            <div class="buddy">信</div>
+            <div>
+              <strong data-i18n="postcardTitle">農場明信片</strong>
+              <span data-i18n="postcardText">每次照護完成，自動產生一張可分享的今日明信片。</span>
+            </div>
+          </article>
+          <article class="bond-card">
+            <div class="buddy">果</div>
+            <div>
+              <strong data-i18n="harvestTitle">收成倒數</strong>
+              <span data-i18n="harvestText">把採果日變成企業員工期待的共同事件。</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="esgcalc" aria-label="ESG 試算">
+        <div class="section-title">
+          <h2>ESG 試算</h2>
+        </div>
+
+        <div class="esgcalc-frame">
+          <style>
+            #esgcalc .esgcalc-frame{
+              --ink:#14181f; --muted:#5b6270; --line:#e4e2da; --paper:#f7f6f1; --white:#fff;
+              --gold:#b68a35; --navy:#1c2b3d; --e:#3f6b52;
+              --shadow:0 20px 60px rgba(20,25,35,.10);
+              position:relative; background:var(--paper); border:1px solid var(--line); border-radius:16px;
+              padding:clamp(20px,4vw,40px); font-family:"Noto Serif TC","Georgia",serif; color:var(--ink);
+              box-shadow:var(--shadow); overflow:hidden;
+            }
+            #esgcalc .ec-sans{font-family:"Noto Sans TC","Helvetica Neue",Arial,sans-serif}
+            #esgcalc .ec-report{background:var(--white);border-radius:10px;padding:clamp(20px,3vw,36px)}
+            #esgcalc .ec-brandline{display:flex;justify-content:space-between;align-items:baseline;font-family:"Noto Sans TC",sans-serif;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:22px;padding-bottom:12px;border-bottom:2px solid var(--ink)}
+            #esgcalc .ec-doctitle{font-size:22px;font-weight:600;line-height:1.35;margin:0 0 6px}
+            #esgcalc .ec-docsub{font-family:"Noto Sans TC",sans-serif;color:var(--muted);font-size:12.5px;margin-bottom:24px}
+            #esgcalc .ec-unitbar{font-family:"Noto Sans TC",sans-serif;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:22px}
+            #esgcalc .ec-unitbar .f{display:flex;flex-direction:column;gap:4px}
+            #esgcalc .ec-unitbar label{font-size:10.5px;color:var(--muted)}
+            #esgcalc .ec-unitbar input{width:90px;padding:7px 9px;border-radius:6px;border:1px solid var(--line);background:var(--white);color:var(--ink);font-size:13px}
+            #esgcalc .ec-basisline{font-size:10.5px;color:var(--muted);margin-left:auto}
+            #esgcalc .ec-needinput{color:var(--gold);font-weight:700}
+            #esgcalc .ec-kpirow{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:26px}
+            #esgcalc .ec-kpi{background:var(--white);padding:16px 14px}
+            #esgcalc .ec-kpi .l{font-family:"Noto Sans TC",sans-serif;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+            #esgcalc .ec-kpi .v{font-size:19px;font-weight:600;margin-top:5px}
+            #esgcalc .ec-block h2{font-family:"Noto Sans TC",sans-serif;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:7px;margin:0 0 12px}
+            #esgcalc details.ec-figure{font-family:"Noto Sans TC",sans-serif;border-bottom:1px solid var(--line);padding:12px 0}
+            #esgcalc details.ec-figure:last-child{border-bottom:none}
+            #esgcalc details.ec-figure summary{display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;list-style:none;font-size:13.5px;gap:10px}
+            #esgcalc details.ec-figure summary::-webkit-details-marker{display:none}
+            #esgcalc details.ec-figure summary .amt{font-weight:700;font-size:14px;white-space:nowrap}
+            #esgcalc details.ec-figure summary::after{content:"展開計算依據";font-size:10.5px;color:var(--gold);border-bottom:1px dotted var(--gold);white-space:nowrap}
+            #esgcalc details.ec-figure[open] summary::after{content:"收合"}
+            #esgcalc .ec-basis{margin-top:10px;font-size:11.5px;color:var(--muted);line-height:1.9;background:var(--paper);padding:12px 14px;border-left:2px solid var(--gold)}
+            #esgcalc .ec-basis b{color:var(--ink)}
+            #esgcalc .ec-cite{font-family:"Noto Sans TC",sans-serif;font-size:10.5px;color:var(--muted);margin-top:18px;line-height:1.8;border-top:1px solid var(--line);padding-top:12px}
+            #esgcalc .ec-stamp{display:inline-block;font-family:"Noto Sans TC",sans-serif;font-size:9.5px;font-weight:700;padding:2px 8px;border:1px solid currentColor;border-radius:3px}
+            #esgcalc .ec-stamp.gap{color:var(--muted);background:var(--paper)}
+            #esgcalc .ec-aisource{font-family:"Noto Sans TC",sans-serif;font-size:10.5px;color:var(--muted);background:var(--paper);border-left:2px solid var(--navy);padding:10px 14px;margin-top:12px;line-height:1.8}
+            #esgcalc table.ec-evidence{width:100%;border-collapse:collapse;font-size:11.5px;font-family:"Noto Sans TC",sans-serif}
+            #esgcalc table.ec-evidence th{text-align:left;padding:7px 4px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--ink)}
+            #esgcalc table.ec-evidence td{padding:7px 4px;border-bottom:1px solid var(--line)}
+            #esgcalc .ec-aifab{position:absolute;right:18px;bottom:18px;width:46px;height:46px;border:0;border-radius:50%;background:#1b5e20;color:#E2CF35;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:5}
+            #esgcalc .ec-aipanel{position:absolute;right:18px;bottom:74px;width:min(320px,80vw);max-height:400px;background:var(--white);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.25);display:none;flex-direction:column;overflow:hidden;font-family:"Noto Sans TC",sans-serif;z-index:6}
+            #esgcalc .ec-aipanel.open{display:flex}
+            #esgcalc .ec-aihead{background:linear-gradient(135deg,#1b5e20,#2e7d32);padding:10px 14px;color:#fff}
+            #esgcalc .ec-aihead b{color:#E2CF35;font-size:13px}
+            #esgcalc .ec-aihead div{font-size:10.5px;opacity:.8;margin-top:2px}
+            #esgcalc .ec-aimsgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;min-height:120px}
+            #esgcalc .ec-aimsgs .ec-sugg{width:100%;text-align:left;background:#f1f8e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:8px;padding:6px 9px;font-size:11px;cursor:pointer;margin-bottom:4px}
+            #esgcalc .ec-bubble{max-width:88%;padding:7px 10px;border-radius:12px;font-size:11.5px;line-height:1.55;white-space:pre-wrap}
+            #esgcalc .ec-bubble.user{align-self:flex-end;background:#E2CF35;color:#333;border-bottom-right-radius:4px}
+            #esgcalc .ec-bubble.ai{align-self:flex-start;background:#f5f5f5;color:#333;border-bottom-left-radius:4px}
+            #esgcalc .ec-aiinput{display:flex;gap:6px;padding:8px 10px;border-top:1px solid var(--line)}
+            #esgcalc .ec-aiinput input{flex:1;padding:7px 9px;border-radius:8px;border:1px solid var(--line);font-size:11.5px}
+            #esgcalc .ec-aiinput button{padding:7px 11px;border-radius:8px;border:none;background:#E2CF35;color:#4a4310;font-weight:700;font-size:11px;cursor:pointer}
+          </style>
+
+          <div class="ec-report">
+            <div class="ec-brandline"><span>SOL-WeGrow Farm ｜ ESG Impact Assessment</span><span>2026 Q3 · Draft for Review</span></div>
+            <div class="ec-doctitle">四葉國際通路股份有限公司<br>威果農場認養方案 永續影響力評估</div>
+            <div class="ec-docsub">統一編號 83481068 ｜ 產業別：餐旅服務（對應 SASB Restaurants）｜ 依 GRI Standards 與 SASB 揭露框架編製</div>
+
+            <div class="ec-unitbar">
+              <div class="f"><label>認養單位數</label><input id="ecUnitsInput" type="number" min="1" value="5" onchange="ecRecompute()"></div>
+              <div class="f"><label>員工參與人次</label><input id="ecPplInput" type="number" min="0" value="1" onchange="ecRecompute()"></div>
+              <div class="ec-basisline">每單位＝100株草莓（<span class="ec-needinput">或25株蜜瓜／50顆美濃瓜，待確認</span>）</div>
+            </div>
+
+            <div style="text-align:center;padding:18px 0 22px">
+              <div id="ecTotalAmt" style="font-size:38px;font-weight:800">NT$ 7,570／月</div>
+              <div class="ec-sans" style="font-size:11px;color:var(--gold);margin-top:4px">僅按照我們假設推估，實際情況以正式查證後之數字為準</div>
+            </div>
+
+            <div class="ec-kpirow">
+              <div class="ec-kpi"><div class="l">已有真實數據</div><div class="v">6 / 8</div></div>
+              <div class="ec-kpi"><div class="l">對應揭露標準</div><div class="v">GRI 13</div></div>
+              <div class="ec-kpi"><div class="l">對應揭露標準</div><div class="v">SAI FSA · Cool Farm Tool</div></div>
+            </div>
+
+            <div class="ec-block">
+              <h2>影響力明細（只列真實數字對應真實標準，不換算成新臺幣金額除非有真實費率）</h2>
+              <details class="ec-figure" open>
+                <summary><span>化學農藥使用</span><span class="amt" id="ecEnvAmt">0 次／認養期間</span></summary>
+                <div class="ec-basis"><b>數字：</b>威果溫室認養期間化學農藥施用紀錄為 0 次，育苗期採天敵防治（捕植螨、草蛉、瓢蟲等）取代化學藥劑。<br><b>對應揭露指標：</b>GRI 13.6。<br><b>資料來源：</b>WeGrow Orbit 內部施肥／用藥記錄（原始紀錄不對外揭露）。</div>
+              </details>
+              <details class="ec-figure">
+                <summary><span>員工永續體驗參與</span><span class="amt" id="ecSocAmt">1 人次</span></summary>
+                <div class="ec-basis"><b>對應揭露指標：</b>GRI 413（在地社區）。<br><b>查證狀態：</b>參與人次可由 WeGrow 活動紀錄查證。</div>
+              </details>
+              <details class="ec-figure">
+                <summary><span>溫室氣體排放 — 電力　<small style="font-weight:400;color:var(--muted)">（農場整體，非本方案分攤值）</small></span><span class="amt">NT$ 7,070／月</span></summary>
+                <div class="ec-basis"><b>計算基礎：</b>台電115年7月繳費通知單揭露電力排碳量1,100公斤CO₂ × <b>美國環保署（EPA）2023年官方社會碳成本 US$204/公噸CO2e</b>（2023年12月正式發布報告，2023年值）× 約NT$31.5/US$ 匯率 ≈ NT$6,426/公噸 = <b>NT$7,070／月</b>。5月帳單1,517公斤，同方法為NT$9,750／月。<br>
+                <b>為何改用此方法：</b>國際 ESG 影響力估值方法論（含 VBA/IFVI）採用的正是「社會碳成本」而非各國政策碳稅——政策碳稅（如台灣NT$300/公噸）是為產業競爭力考量刻意訂低的政策工具，不代表對社會的真實外部成本；社會碳成本才是評估「真實影響力價值」的正確依據。<br>
+                <b>對應標準：</b>GRI 305、Cool Farm Tool、VBA/IFVI Global Value Factor Database方法論。<br>
+                <b style="color:var(--gold)">尚待確認：</b>整場排放如何分攤到單一認養單位；匯率會浮動，此處採概略市場匯率。<br>
+                <b>資料來源：</b>台電繳費通知單（2026年5、7月）＋美國EPA「Report on the Social Cost of Greenhouse Gases」（2023年12月）。<span class="ec-stamp">已驗證原始單據＋官方報告</span></div>
+              </details>
+              <details class="ec-figure">
+                <summary><span>水資源使用</span><span class="amt">約 NT$ 500／月</span></summary>
+                <div class="ec-basis"><b style="color:var(--gold)">估算，非實際帳單：</b>台灣自來水公司一般用戶費率，假設每月用水約50度。威果溫室同時使用地下水與自來水，尚無實際水表帳單，此數字信賴度低於電費／農藥／損耗率數字。<br><b>對應標準：</b>GRI 13.7、Cool Farm Tool 藍水足跡。</div>
+              </details>
+              <details class="ec-figure gap">
+                <summary><span>生物多樣性</span><span class="amt">部分資料</span></summary>
+                <div class="ec-basis"><b>已確認：</b>無緩衝綠帶，但採天敵防治。<b>缺口：</b><span class="ec-stamp gap">尚無生物多樣性量測方法</span>，設施型栽培需另定義衡量方式。<br><b>對應標準：</b>Cool Farm Tool、GRI 13.4。</div>
+              </details>
+              <details class="ec-figure">
+                <summary><span>介質健康</span><span class="amt">已有配方紀錄</span></summary>
+                <div class="ec-basis"><b>計算基礎：</b>種植計畫書記錄實際介質配方（椰纖65%+珍珠石25-30%+有機堆肥5-10%），並有EC異常主動調整紀錄。<br><b>對應標準：</b>GRI 13.5。<span class="ec-stamp">已驗證原始紀錄</span></div>
+              </details>
+              <details class="ec-figure">
+                <summary><span>食物損耗與剩食</span><span class="amt">11.4% 真實丟棄率</span></summary>
+                <div class="ec-basis"><b>計算基礎：</b>總採收319.7公斤中，76.1%轉果醬加工，11.3%鮮果銷售，僅11.4%真正丟棄。<br><b>對應標準：</b>Cool Farm Tool。<span class="ec-stamp">已驗證原始紀錄，非估算</span></div>
+              </details>
+              <details class="ec-figure">
+                <summary><span>在地經濟支持</span><span class="amt">已有薪資資料</span></summary>
+                <div class="ec-basis"><b>計算基礎：</b>威果溫室僱用3位在地員工，起薪NT$38,000／月，另含宿舍/餐費/生日/AI補助。<br><b style="color:var(--gold)">尚待確認：</b>台灣基本工資確切數字，暫不計算「高於基本工資百分比」。<br><b>對應標準：</b>GRI 13.22、SAI Platform FSA。</div>
+              </details>
+            </div>
+
+            <div class="ec-aisource">AI 資料存取：讀取 WeGrow Orbit 施肥／灌溉／用藥等內部作業記錄作為計算依據；原始紀錄不對外揭露，僅呈現彙總結果。</div>
+
+            <div class="ec-block" style="margin-top:22px">
+              <h2>佐證文件（可供貴公司永續報告書查證使用）</h2>
+              <table class="ec-evidence">
+                <tr><th>構面</th><th>文件</th><th>發文單位／日期</th></tr>
+                <tr><td>溫室氣體排放</td><td>台電電費繳費通知單</td><td>台灣電力公司，2026年5、7月</td></tr>
+                <tr><td>水資源</td><td>灌溉水質檢驗報告</td><td>農業部農業試驗所，2025/10/02</td></tr>
+                <tr><td>介質健康</td><td>種植計畫書</td><td>WeGrow內部文件，2025</td></tr>
+                <tr><td>食物損耗</td><td>逐日採收／出貨／丟棄紀錄</td><td>WeGrow內部文件，2025</td></tr>
+                <tr><td>化學農藥減量</td><td>病蟲害防治資材清單</td><td>WeGrow LV1蟲害教材</td></tr>
+              </table>
+            </div>
+
+            <div class="ec-cite">
+              <b>方法論依據：</b>GRI 13（農業/水產/漁業扇形標準）、SAI Platform Farm Sustainability Assessment（雀巢、聯合利華、可口可樂、達能等共同採用）、Cool Farm Tool（全球多數頂尖食品飲料跨國企業採用）、GLOBALG.A.P.（137國近20萬生產者採用）。一般企業ESG對照 S&amp;P 500：依 G&amp;A Institute 2025年度追蹤，99%已發布永續報告，346家採用GRI、452家採用SASB、395家採用TCFD。<br>
+              本評估為 WeGrow 內部估算草稿，尚未經第三方保證機構查證，不可直接作為正式揭露文件使用。
+            </div>
+          </div>
+
+          <button class="ec-aifab" onclick="ecToggleAi()">AI</button>
+          <div class="ec-aipanel" id="ecAiPanel">
+            <div class="ec-aihead"><b>WeGrow AI</b><div>問我這份評估怎麼算出來的</div></div>
+            <div class="ec-aimsgs" id="ecAiMsgs">
+              <button class="ec-sugg" onclick="ecAsk('為什麼環境價值是這個數字？')">為什麼環境價值是這個數字？</button>
+              <button class="ec-sugg" onclick="ecAsk('美濃瓜到底算25株還是50顆？')">美濃瓜到底算25株還是50顆？</button>
+              <button class="ec-sugg" onclick="ecAsk('這是WeGrow官方認證的標準嗎？')">這是WeGrow官方認證的標準嗎？</button>
+            </div>
+            <div class="ec-aiinput"><input id="ecAiInputBox" placeholder="輸入問題…" onkeydown="if(event.key==='Enter')ecSendAi()"><button onclick="ecSendAi()">送出</button></div>
+          </div>
+        </div>
+      </section>
+
+      <script>
+        function ecRecompute(){
+          const ppl = Math.max(0, Math.round(Number(document.getElementById('ecPplInput')?.value) || 0));
+          document.getElementById('ecSocAmt').textContent = ppl + ' 人次';
+        }
+        function ecToggleAi(){ document.getElementById('ecAiPanel').classList.toggle('open'); }
+        function ecPushMsg(role, text){
+          const el = document.createElement('div');
+          el.className = 'ec-bubble ' + role;
+          el.textContent = text;
+          document.getElementById('ecAiMsgs').appendChild(el);
+          el.scrollIntoView({block:'end'});
+        }
+        function ecAnswerFor(q){
+          if (/為什麼.*環境|環境.*為什麼|農藥/.test(q)) return '化學農藥使用顯示「0次／認養期間」，這是威果溫室的真實用藥記錄，對應 GRI 13.6，不硬套換算成新臺幣金額。';
+          if (/美濃瓜|25株|50顆/.test(q)) return '老實說這個我沒有確定答案，舊資料寫25株蜜瓜，這次您說的是50顆美濃瓜，兩者對不上，需要您親自確認，不會用猜的填上去。';
+          if (/官方|認證|WeGrow.*規範|規範.*WeGrow/.test(q)) return '不是。WeGrow 知識庫目前沒有收錄 ESG 計算的官方規範，這份評估用的是外部公開國際標準（GRI、SASB），清楚標示為WeGrow內部估算草稿，尚未經第三方保證。';
+          return '這題我目前答不出可查證的答案，需要您確認後我才能回覆，不會用猜的。';
+        }
+        function ecAsk(q){
+          ecPushMsg('user', q);
+          document.getElementById('ecAiPanel').classList.add('open');
+          ecPushMsg('ai', ecAnswerFor(q));
+        }
+        function ecSendAi(){
+          const box = document.getElementById('ecAiInputBox');
+          const q = box.value.trim();
+          if (!q) return;
+          box.value = '';
+          ecAsk(q);
+        }
+      </script>
+
+      <section class="admin" id="admin" aria-label="企業資料後台">
+        <div class="admin-head">
+          <div>
+            <h2 data-i18n="adminTitle">企業資料後台</h2>
+            <p class="admin-note" data-i18n="adminNote">Demo 版資料會存在這台電腦的瀏覽器 localStorage，可即時更新前台顯示。</p>
+          </div>
+          <a class="admin-close" href="#top" data-i18n="adminClose">關閉</a>
+        </div>
+
+        <form id="companyForm">
+          <div class="admin-grid">
+            <label>
+              <span data-i18n="fieldCompany">企業名稱</span>
+              <input data-field="companyName" name="companyName" autocomplete="organization">
+            </label>
+            <label>
+              <span data-i18n="fieldContact">聯絡人</span>
+              <input data-field="contactName" name="contactName" autocomplete="name">
+            </label>
+            <label>
+              <span data-i18n="fieldCount">認養株數</span>
+              <input data-field="adoptionCount" name="adoptionCount" inputmode="numeric">
+            </label>
+            <label>
+              <span data-i18n="fieldPhone">電話</span>
+              <input data-field="phone" name="phone" autocomplete="tel">
+            </label>
+            <label>
+              Email
+              <input data-field="email" name="email" autocomplete="email">
+            </label>
+            <label>
+              <span data-i18n="fieldPeriod">認養期間</span>
+              <input data-field="period" name="period">
+            </label>
+            <label>
+              <span data-i18n="fieldAddress">地址</span>
+              <input data-field="address" name="address" autocomplete="street-address">
+            </label>
+            <label>
+              <span data-i18n="fieldOnline">線上活動偏好</span>
+              <select data-field="onlineEvent" name="onlineEvent">
+                <option value="直播看田">直播看田</option>
+                <option value="員工線上導覽">員工線上導覽</option>
+                <option value="ESG 月報直播">ESG 月報直播</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="fieldOffline">線下活動偏好</span>
+              <select data-field="offlineEvent" name="offlineEvent">
+                <option value="農場日">農場日</option>
+                <option value="採果體驗">採果體驗</option>
+                <option value="親子永續活動">親子永續活動</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="fieldNotes">備註</span>
+              <textarea data-field="notes" name="notes"></textarea>
+            </label>
+          </div>
+
+          <div class="admin-actions">
+            <button type="submit" data-i18n="saveBtn">儲存企業資料</button>
+            <button class="secondary" type="button" id="resetDemo" data-i18n="resetBtn">恢復 Demo 資料</button>
+          </div>
+        </form>
+
+        <div class="admin-preview" aria-label="企業資料預覽">
+          <div>
+            <span data-i18n="previewCompany">企業</span>
+            <strong data-bind="companyName">SOL 集團</strong>
+          </div>
+          <div>
+            <span data-i18n="previewContact">聯絡人</span>
+            <strong data-bind="contactName">林小姐</strong>
+          </div>
+          <div>
+            <span data-i18n="previewPhone">電話</span>
+            <strong data-bind="phone">02-0000-0000</strong>
+          </div>
+          <div>
+            <span data-i18n="previewAddress">地址</span>
+            <strong data-bind="address">台北市信義區</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="gallery" aria-label="品牌照片">
+        <img src="assets/satellite-farm.jpg" alt="麻豆一場衛星農場空拍">
+        <img src="assets/strawberry-close.jpg" alt="麻豆一場草莓收成">
+      </div>
+    </main>
+
+    <footer>
+      <span>SOL-WeGrow Farm</span>
+      <span data-i18n="footerSub">品牌展示 · 由 WeGrow Orbit 驅動</span>
+    </footer>
+  </div>
+
+  <script>
+    const i18n = {
+      zh: {
+        title: "SOL-WeGrow Farm | 品牌展示",
+        brandSub: "由 WeGrow Orbit 驅動",
+        navCare: "照護",
+        navAsset: "ESG",
+        navExperience: "活動",
+        navAdmin: "後台",
+        liveBadge: "即時",
+        eyebrow: "永續、科技、體驗",
+        heroTitle: "把企業 ESG 變成看得見的農場體驗。",
+        heroLine: "SOL-WeGrow Farm 連結即時植物影像、WeGrow Orbit 照護履歷與員工參與活動，讓永續不只是一份報告。",
+        heroCtaAdmin: "輸入企業資料",
+        heroCtaExperience: "安排體驗活動",
+        metricEsg: "可下載成果與認養紀錄",
+        metricOrbit: "澆水、施肥、巡檢履歷",
+        metricLiveTitle: "即時",
+        metricLive: "線上看田與線下農場日",
+        careTitle: "今日照護",
+        care1Title: "微量補水",
+        care1Text: "依根區乾濕狀態補水，每株約 180 mL。",
+        care2Title: "低 EC 營養液",
+        care2Text: "保留肥料、濃度、區域與操作人員。",
+        care3Title: "葉面巡檢",
+        care3Text: "確認葉片、果實與滴灌線，無急迫病蟲害。",
+        assetTitle: "ESG 資產",
+        asset1Title: "認養規劃 Excel",
+        asset1Text: "期程、活動、案例、執行節點。",
+        asset1Link: "下載規劃表",
+        asset2Title: "ESG 視覺預覽",
+        asset2Text: "提案、簡報、企業內部公告。",
+        asset2Link: "查看預覽圖",
+        experienceTitle: "體驗活動",
+        event1Title: "線上認養開場",
+        event1Text: "即時影像、認養區位置、照護履歷。",
+        event2Title: "員工遠端看田",
+        event2Text: "用三分鐘看見今天植物狀態。",
+        event3Title: "農場日",
+        event3Text: "導覽、採果、合照、員工體驗。",
+        event4Title: "年度成果回顧",
+        event4Text: "成果、照片、數據、明年合作建議。",
+        online: "線上",
+        offline: "線下",
+        companionTitle: "農場陪伴計畫",
+        buddyTitle: "小葉夥伴",
+        buddyText: "企業自己的小植物會隨照護紀錄慢慢長大，成為員工回來看的自然理由。",
+        postcardTitle: "農場明信片",
+        postcardText: "每次照護完成，自動產生一張可分享的今日明信片。",
+        harvestTitle: "收成倒數",
+        harvestText: "把採果日變成企業員工期待的共同事件。",
+        adminTitle: "企業資料後台",
+        adminNote: "Demo 版資料會存在這台電腦的瀏覽器 localStorage，可即時更新前台顯示。",
+        adminClose: "關閉",
+        fieldCompany: "企業名稱",
+        fieldContact: "聯絡人",
+        fieldCount: "認養株數",
+        fieldPhone: "電話",
+        fieldPeriod: "認養期間",
+        fieldAddress: "地址",
+        fieldOnline: "線上活動偏好",
+        fieldOffline: "線下活動偏好",
+        fieldNotes: "備註",
+        saveBtn: "儲存企業資料",
+        resetBtn: "恢復 Demo 資料",
+        previewCompany: "企業",
+        previewContact: "聯絡人",
+        previewPhone: "電話",
+        previewAddress: "地址",
+        footerSub: "品牌展示 · 由 WeGrow Orbit 驅動",
+        plantLevel: "今日已照護",
+        toggle: "EN",
+        onlineOptions: ["直播看田", "員工線上導覽", "ESG 月報直播"],
+        offlineOptions: ["農場日", "採果體驗", "親子永續活動"]
+      },
+      en: {
+        title: "SOL-WeGrow Farm | Brand Showcase",
+        brandSub: "Powered by WeGrow Orbit",
+        navCare: "Care",
+        navAsset: "ESG",
+        navExperience: "Experience",
+        navAdmin: "Admin",
+        liveBadge: "Live",
+        eyebrow: "Sustainability, technology, experience",
+        heroTitle: "Turn corporate ESG into a visible farm experience.",
+        heroLine: "SOL-WeGrow Farm connects live plant views, WeGrow Orbit care records, and employee experiences so sustainability becomes more than a report.",
+        heroCtaAdmin: "Enter company data",
+        heroCtaExperience: "Plan experiences",
+        metricEsg: "Downloadable outcomes and adoption records",
+        metricOrbit: "Watering, feeding, and scouting history",
+        metricLiveTitle: "Live",
+        metricLive: "Online farm visits and offline farm day",
+        careTitle: "Today’s Care",
+        care1Title: "Micro watering",
+        care1Text: "Water by root-zone condition, about 180 mL per plant.",
+        care2Title: "Low EC nutrition",
+        care2Text: "Record fertilizer, concentration, zone, and operator.",
+        care3Title: "Leaf scouting",
+        care3Text: "Check leaves, fruit, and drip lines with no urgent pest signal.",
+        assetTitle: "ESG Assets",
+        asset1Title: "Adoption planning Excel",
+        asset1Text: "Timeline, events, cases, and execution milestones.",
+        asset1Link: "Download workbook",
+        asset2Title: "ESG visual preview",
+        asset2Text: "For proposals, decks, and internal company posts.",
+        asset2Link: "View preview",
+        experienceTitle: "Experience Events",
+        event1Title: "Online adoption kickoff",
+        event1Text: "Live view, adopted zone, and care history.",
+        event2Title: "Remote employee farm visit",
+        event2Text: "See today’s plant status in three minutes.",
+        event3Title: "Farm day",
+        event3Text: "Tour, harvest, team photo, and employee experience.",
+        event4Title: "Annual impact review",
+        event4Text: "Results, photos, data, and next-year proposal.",
+        online: "Online",
+        offline: "Offline",
+        companionTitle: "Farm Companion Program",
+        buddyTitle: "Leaf Companion",
+        buddyText: "A custom company plant grows with care records and gives employees a reason to return.",
+        postcardTitle: "Farm Postcard",
+        postcardText: "Each completed care action creates a shareable daily postcard.",
+        harvestTitle: "Harvest Countdown",
+        harvestText: "Make harvest day a shared company moment employees look forward to.",
+        adminTitle: "Company Admin",
+        adminNote: "Demo data is stored in this browser’s localStorage and updates the page instantly.",
+        adminClose: "Close",
+        fieldCompany: "Company name",
+        fieldContact: "Contact person",
+        fieldCount: "Adopted plants",
+        fieldPhone: "Phone",
+        fieldPeriod: "Adoption period",
+        fieldAddress: "Address",
+        fieldOnline: "Online event preference",
+        fieldOffline: "Offline event preference",
+        fieldNotes: "Notes",
+        saveBtn: "Save company data",
+        resetBtn: "Reset demo data",
+        previewCompany: "Company",
+        previewContact: "Contact",
+        previewPhone: "Phone",
+        previewAddress: "Address",
+        footerSub: "Brand showcase · Powered by WeGrow Orbit",
+        plantLevel: "cared for today",
+        toggle: "中文",
+        onlineOptions: ["Live farm viewing", "Employee online tour", "ESG monthly livestream"],
+        offlineOptions: ["Farm day", "Harvest experience", "Family sustainability event"]
+      }
+    };
+
+    const defaults = {
+      companyName: "SOL 集團",
+      contactName: "林小姐",
+      adoptionCount: "120",
+      phone: "02-0000-0000",
+      email: "esg@sol.example",
+      period: "2026.07 - 2027.06",
+      address: "台北市信義區",
+      onlineEvent: "直播看田",
+      offlineEvent: "農場日",
+      notes: "企業員工可參與線上看田與線下採果。"
+    };
+
+    const storageKey = "sol-wegrow-farm-company-demo";
+    const langStorageKey = "sol-wegrow-farm-lang";
+    const form = document.querySelector("#companyForm");
+    const fields = Array.from(document.querySelectorAll("[data-field]"));
+    const bindTargets = Array.from(document.querySelectorAll("[data-bind]"));
+    const langToggle = document.querySelector("#langToggle");
+    let currentLang = localStorage.getItem(langStorageKey) || "zh";
+
+    function loadData() {
+      try {
+        return { ...defaults, ...JSON.parse(localStorage.getItem(storageKey) || "{}") };
+      } catch {
+        return { ...defaults };
+      }
+    }
+
+    function applyData(data) {
+      fields.forEach((field) => {
+        const key = field.dataset.field;
+        field.value = data[key] || "";
+      });
+      bindTargets.forEach((node) => {
+        const key = node.dataset.bind;
+        node.textContent = data[key] || defaults[key] || "";
+      });
+      updatePlantBuddy(data);
+    }
+
+    function updatePlantBuddy(data) {
+      const plant = document.querySelector("#plantBuddy");
+      const level = document.querySelector("#plantLevel");
+      if (!plant || !level) return;
+
+      const daySeed = Math.floor(Date.now() / 86400000);
+      const count = Number.parseInt(data.adoptionCount, 10) || 0;
+      const growth = Math.max(1, Math.min(6, Math.floor(count / 80) + (daySeed % 3) + 1));
+
+      plant.style.setProperty("--growth", String(growth));
+      level.textContent = `Lv. ${growth} · ${i18n[currentLang].plantLevel}`;
+    }
+
+    function updateSelectOptions(selectName, options) {
+      const select = document.querySelector(`select[name="${selectName}"]`);
+      if (!select) return;
+      Array.from(select.options).forEach((option, index) => {
+        option.textContent = options[index] || option.textContent;
+      });
+    }
+
+    function applyLanguage(lang) {
+      currentLang = lang;
+      const strings = i18n[lang];
+      document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+      document.title = strings.title;
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.dataset.i18n;
+        if (strings[key]) node.textContent = strings[key];
+      });
+      updateSelectOptions("onlineEvent", strings.onlineOptions);
+      updateSelectOptions("offlineEvent", strings.offlineOptions);
+      langToggle.textContent = strings.toggle;
+      localStorage.setItem(langStorageKey, lang);
+      updatePlantBuddy(data);
+    }
+
+    function currentFormData() {
+      return fields.reduce((data, field) => {
+        data[field.dataset.field] = field.value.trim();
+        return data;
+      }, {});
+    }
+
+    let data = loadData();
+    applyData(data);
+    applyLanguage(currentLang);
+
+    form.addEventListener("input", () => {
+      data = { ...defaults, ...currentFormData() };
+      applyData(data);
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      data = { ...defaults, ...currentFormData() };
+      localStorage.setItem(storageKey, JSON.stringify(data));
+      applyData(data);
+    });
+
+    document.querySelector("#resetDemo").addEventListener("click", () => {
+      localStorage.removeItem(storageKey);
+      data = { ...defaults };
+      applyData(data);
+    });
+
+    langToggle.addEventListener("click", () => {
+      applyLanguage(currentLang === "zh" ? "en" : "zh");
+    });
+
+    // ---- 分頁切換：每個 nav 項目是獨立畫面，不是同頁往下捲 ----
+    const TAB_IDS = ["top", "care", "asset", "esgcalc", "experience", "admin"];
+    const heroEl = document.querySelector(".hero");
+    function showTab(id) {
+      if (!TAB_IDS.includes(id)) id = "top";
+      heroEl.classList.toggle("is-active", id === "top");
+      document.querySelectorAll("main .section, main .admin").forEach((el) => {
+        const match = id === "experience"
+          ? (el.id === "experience" || el.id === "companion")
+          : el.id === id;
+        el.classList.toggle("is-active", match);
+      });
+      document.querySelectorAll(".nav-links a[href^='#']").forEach((a) => {
+        a.classList.toggle("is-active", a.getAttribute("href") === "#" + id);
+      });
+      window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+    }
+    function navigateToTab(id) {
+      showTab(id);
+      history.pushState(null, "", "#" + id);
+    }
+    document.querySelectorAll("a[href^='#']").forEach((a) => {
+      const target = a.getAttribute("href").slice(1);
+      if (!TAB_IDS.includes(target)) return;
+      a.addEventListener("click", (event) => {
+        event.preventDefault();
+        navigateToTab(target);
+      });
+    });
+    window.addEventListener("popstate", () => {
+      showTab((location.hash || "#top").slice(1));
+    });
+    showTab((location.hash || "#top").slice(1));
+  </script>
+</body>
+</html>

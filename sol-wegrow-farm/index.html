@@ -1027,7 +1027,6 @@
         <div class="nav-links">
           <a href="#care" data-i18n="navCare">照護</a>
           <a href="#asset" data-i18n="navAsset">ESG</a>
-          <a href="#experience" data-i18n="navExperience">活動</a>
           <a href="calculator.html" data-i18n="navCost">費用試算</a>
           <a href="payment-flow.html">金流架構</a>
           <a href="#admin" data-i18n="navAdmin">後台</a>
@@ -1037,11 +1036,10 @@
     </header>
 
     <main id="top">
-      <section class="hero" aria-label="即時溫室影像">
+      <section class="hero" aria-label="溫室照片">
         <div class="image-stage">
-          <img src="assets/greenhouse-room.jpg" alt="麻豆一場自有溫室 live 影像">
-          <span class="live-badge"><span class="live-dot"></span><span data-i18n="liveBadge">即時</span></span>
-          <span class="client-badge" data-bind="companyName">SOL 集團</span>
+          <img src="assets/greenhouse-room.jpg" alt="麻豆一場自有溫室照片">
+          <span class="client-badge">SOL 集團</span>
         </div>
 
         <div>
@@ -1050,7 +1048,6 @@
           <p class="hero-line" data-i18n="heroLine">SOL-WeGrow Farm 連結即時植物影像、WeGrow Orbit 照護履歷與員工參與活動，讓永續不只是一份報告。</p>
           <div class="hero-actions">
             <a class="button" href="#admin" data-i18n="heroCtaAdmin">輸入企業資料</a>
-            <a class="button secondary" href="#experience" data-i18n="heroCtaExperience">安排體驗活動</a>
             <a class="button secondary" href="calculator.html" data-i18n="heroCtaCost">試算加購費用</a>
             <a class="button secondary" href="payment-flow.html">金流架構</a>
           </div>
@@ -1062,10 +1059,6 @@
             <div class="metric">
               <strong>Orbit</strong>
               <span data-i18n="metricOrbit">澆水、施肥、巡檢履歷</span>
-            </div>
-            <div class="metric">
-              <strong data-i18n="metricLiveTitle">即時</strong>
-              <span data-i18n="metricLive">線上看田與線下農場日</span>
             </div>
           </div>
         </div>
@@ -1120,46 +1113,13 @@
             </div>
             <a href="calculator.html" data-i18n="asset3Link">開啟計算機</a>
           </article>
-        </div>
-      </section>
-
-      <section class="section" id="experience" aria-label="體驗活動時間線">
-        <div class="section-title">
-          <h2 data-i18n="experienceTitle">體驗活動</h2>
-        </div>
-        <div class="experience">
-          <div class="event">
-            <time>07/05</time>
+          <article class="asset-card light">
             <div>
-              <strong data-i18n="event1Title">線上認養開場</strong>
-              <span data-i18n="event1Text">即時影像、認養區位置、照護履歷。</span>
+              <strong data-i18n="asset4Title">ESG 碳排計算器</strong>
+              <span data-i18n="asset4Text">溫室氣體貨幣化、用水成本估算。</span>
             </div>
-            <span class="tag" data-i18n="online">線上</span>
-          </div>
-          <div class="event">
-            <time>08/16</time>
-            <div>
-              <strong data-i18n="event2Title">員工遠端看田</strong>
-              <span data-i18n="event2Text">用三分鐘看見今天植物狀態。</span>
-            </div>
-            <span class="tag" data-i18n="online">線上</span>
-          </div>
-          <div class="event">
-            <time>10/18</time>
-            <div>
-              <strong data-i18n="event3Title">農場日</strong>
-              <span data-i18n="event3Text">導覽、採果、合照、員工體驗。</span>
-            </div>
-            <span class="tag" data-i18n="offline">線下</span>
-          </div>
-          <div class="event">
-            <time>12/20</time>
-            <div>
-              <strong data-i18n="event4Title">年度成果回顧</strong>
-              <span data-i18n="event4Text">成果、照片、數據、明年合作建議。</span>
-            </div>
-            <span class="tag" data-i18n="online">線上</span>
-          </div>
+            <a href="esg-calculator/" data-i18n="asset4Link">開啟碳排計算器</a>
+          </article>
         </div>
       </section>
 
@@ -1200,90 +1160,12 @@
         </div>
       </section>
 
-      <section class="admin" id="admin" aria-label="企業資料後台">
+      <section class="admin" id="admin" aria-label="認養客戶後台">
         <div class="admin-head">
           <div>
-            <h2 data-i18n="adminTitle">企業資料後台</h2>
-            <p class="admin-note" data-i18n="adminNote">Demo 版資料會存在這台電腦的瀏覽器 localStorage，可即時更新前台顯示。</p>
+            <h2 data-i18n="adminTitle">認養客戶後台</h2>
           </div>
           <a class="admin-close" href="#top" data-i18n="adminClose">關閉</a>
-        </div>
-
-        <form id="companyForm">
-          <div class="admin-grid">
-            <label>
-              <span data-i18n="fieldCompany">企業名稱</span>
-              <input data-field="companyName" name="companyName" autocomplete="organization">
-            </label>
-            <label>
-              <span data-i18n="fieldContact">聯絡人</span>
-              <input data-field="contactName" name="contactName" autocomplete="name">
-            </label>
-            <label>
-              <span data-i18n="fieldCount">認養株數</span>
-              <input data-field="adoptionCount" name="adoptionCount" inputmode="numeric">
-            </label>
-            <label>
-              <span data-i18n="fieldPhone">電話</span>
-              <input data-field="phone" name="phone" autocomplete="tel">
-            </label>
-            <label>
-              Email
-              <input data-field="email" name="email" autocomplete="email">
-            </label>
-            <label>
-              <span data-i18n="fieldPeriod">認養期間</span>
-              <input data-field="period" name="period">
-            </label>
-            <label>
-              <span data-i18n="fieldAddress">地址</span>
-              <input data-field="address" name="address" autocomplete="street-address">
-            </label>
-            <label>
-              <span data-i18n="fieldOnline">線上活動偏好</span>
-              <select data-field="onlineEvent" name="onlineEvent">
-                <option value="直播看田">直播看田</option>
-                <option value="員工線上導覽">員工線上導覽</option>
-                <option value="ESG 月報直播">ESG 月報直播</option>
-              </select>
-            </label>
-            <label>
-              <span data-i18n="fieldOffline">線下活動偏好</span>
-              <select data-field="offlineEvent" name="offlineEvent">
-                <option value="農場日">農場日</option>
-                <option value="採果體驗">採果體驗</option>
-                <option value="親子永續活動">親子永續活動</option>
-              </select>
-            </label>
-            <label>
-              <span data-i18n="fieldNotes">備註</span>
-              <textarea data-field="notes" name="notes"></textarea>
-            </label>
-          </div>
-
-          <div class="admin-actions">
-            <button type="submit" data-i18n="saveBtn">儲存企業資料</button>
-            <button class="secondary" type="button" id="resetDemo" data-i18n="resetBtn">恢復 Demo 資料</button>
-          </div>
-        </form>
-
-        <div class="admin-preview" aria-label="企業資料預覽">
-          <div>
-            <span data-i18n="previewCompany">企業</span>
-            <strong data-bind="companyName">SOL 集團</strong>
-          </div>
-          <div>
-            <span data-i18n="previewContact">聯絡人</span>
-            <strong data-bind="contactName">林小姐</strong>
-          </div>
-          <div>
-            <span data-i18n="previewPhone">電話</span>
-            <strong data-bind="phone">02-0000-0000</strong>
-          </div>
-          <div>
-            <span data-i18n="previewAddress">地址</span>
-            <strong data-bind="address">台北市信義區</strong>
-          </div>
         </div>
 
         <div class="portal" aria-label="認養客戶照片查看">
@@ -1334,20 +1216,15 @@
         brandSub: "由 WeGrow Orbit 驅動",
         navCare: "照護",
         navAsset: "ESG",
-        navExperience: "活動",
         navCost: "費用試算",
         navAdmin: "後台",
-        liveBadge: "即時",
         eyebrow: "永續、科技、體驗",
         heroTitle: "把企業 ESG 變成看得見的農場體驗。",
         heroLine: "SOL-WeGrow Farm 連結即時植物影像、WeGrow Orbit 照護履歷與員工參與活動，讓永續不只是一份報告。",
         heroCtaAdmin: "輸入企業資料",
-        heroCtaExperience: "安排體驗活動",
         heroCtaCost: "試算加購費用",
         metricEsg: "可下載成果與認養紀錄",
         metricOrbit: "澆水、施肥、巡檢履歷",
-        metricLiveTitle: "即時",
-        metricLive: "線上看田與線下農場日",
         careTitle: "今日照護",
         care1Title: "微量補水",
         care1Text: "依根區乾濕狀態補水，每株約 180 mL。",
@@ -1365,17 +1242,9 @@
         asset3Title: "加購費用試算",
         asset3Text: "物流、加工、設計費一頁估算。",
         asset3Link: "開啟計算機",
-        experienceTitle: "體驗活動",
-        event1Title: "線上認養開場",
-        event1Text: "即時影像、認養區位置、照護履歷。",
-        event2Title: "員工遠端看田",
-        event2Text: "用三分鐘看見今天植物狀態。",
-        event3Title: "農場日",
-        event3Text: "導覽、採果、合照、員工體驗。",
-        event4Title: "年度成果回顧",
-        event4Text: "成果、照片、數據、明年合作建議。",
-        online: "線上",
-        offline: "線下",
+        asset4Title: "ESG 碳排計算器",
+        asset4Text: "溫室氣體貨幣化、用水成本估算。",
+        asset4Link: "開啟碳排計算器",
         companionTitle: "農場陪伴計畫",
         buddyTitle: "小葉夥伴",
         buddyText: "企業自己的小植物會隨照護紀錄慢慢長大，成為員工回來看的自然理由。",
@@ -1384,23 +1253,7 @@
         harvestTitle: "收成倒數",
         harvestText: "把採果日變成企業員工期待的共同事件。",
         adminTitle: "企業資料後台",
-        adminNote: "Demo 版資料會存在這台電腦的瀏覽器 localStorage，可即時更新前台顯示。",
         adminClose: "關閉",
-        fieldCompany: "企業名稱",
-        fieldContact: "聯絡人",
-        fieldCount: "認養株數",
-        fieldPhone: "電話",
-        fieldPeriod: "認養期間",
-        fieldAddress: "地址",
-        fieldOnline: "線上活動偏好",
-        fieldOffline: "線下活動偏好",
-        fieldNotes: "備註",
-        saveBtn: "儲存企業資料",
-        resetBtn: "恢復 Demo 資料",
-        previewCompany: "企業",
-        previewContact: "聯絡人",
-        previewPhone: "電話",
-        previewAddress: "地址",
         portalTitle: "認養客戶：查看農場照片",
         portalNote: "請用威果管理員開通的帳號登入，只會看到您企業已認養且有效的農場照片。這不是Demo，會實際呼叫 WeGrow Orbit 後端。",
         portalEmail: "帳號 Email",
@@ -1418,28 +1271,21 @@
         footerSub: "品牌展示 · 由 WeGrow Orbit 驅動",
         plantLevel: "今日已照護",
         toggle: "EN",
-        onlineOptions: ["直播看田", "員工線上導覽", "ESG 月報直播"],
-        offlineOptions: ["農場日", "採果體驗", "親子永續活動"]
       },
       en: {
         title: "SOL-WeGrow Farm | Brand Showcase",
         brandSub: "Powered by WeGrow Orbit",
         navCare: "Care",
         navAsset: "ESG",
-        navExperience: "Experience",
         navCost: "Cost",
         navAdmin: "Admin",
-        liveBadge: "Live",
         eyebrow: "Sustainability, technology, experience",
         heroTitle: "Turn corporate ESG into a visible farm experience.",
         heroLine: "SOL-WeGrow Farm connects live plant views, WeGrow Orbit care records, and employee experiences so sustainability becomes more than a report.",
         heroCtaAdmin: "Enter company data",
-        heroCtaExperience: "Plan experiences",
         heroCtaCost: "Estimate add-ons",
         metricEsg: "Downloadable outcomes and adoption records",
         metricOrbit: "Watering, feeding, and scouting history",
-        metricLiveTitle: "Live",
-        metricLive: "Online farm visits and offline farm day",
         careTitle: "Today’s Care",
         care1Title: "Micro watering",
         care1Text: "Water by root-zone condition, about 180 mL per plant.",
@@ -1457,17 +1303,9 @@
         asset3Title: "Add-on cost estimator",
         asset3Text: "One-page estimate for logistics, processing, and design.",
         asset3Link: "Open calculator",
-        experienceTitle: "Experience Events",
-        event1Title: "Online adoption kickoff",
-        event1Text: "Live view, adopted zone, and care history.",
-        event2Title: "Remote employee farm visit",
-        event2Text: "See today’s plant status in three minutes.",
-        event3Title: "Farm day",
-        event3Text: "Tour, harvest, team photo, and employee experience.",
-        event4Title: "Annual impact review",
-        event4Text: "Results, photos, data, and next-year proposal.",
-        online: "Online",
-        offline: "Offline",
+        asset4Title: "ESG carbon calculator",
+        asset4Text: "GHG monetization and water-cost estimation.",
+        asset4Link: "Open carbon calculator",
         companionTitle: "Farm Companion Program",
         buddyTitle: "Leaf Companion",
         buddyText: "A custom company plant grows with care records and gives employees a reason to return.",
@@ -1476,23 +1314,7 @@
         harvestTitle: "Harvest Countdown",
         harvestText: "Make harvest day a shared company moment employees look forward to.",
         adminTitle: "Company Admin",
-        adminNote: "Demo data is stored in this browser’s localStorage and updates the page instantly.",
         adminClose: "Close",
-        fieldCompany: "Company name",
-        fieldContact: "Contact person",
-        fieldCount: "Adopted plants",
-        fieldPhone: "Phone",
-        fieldPeriod: "Adoption period",
-        fieldAddress: "Address",
-        fieldOnline: "Online event preference",
-        fieldOffline: "Offline event preference",
-        fieldNotes: "Notes",
-        saveBtn: "Save company data",
-        resetBtn: "Reset demo data",
-        previewCompany: "Company",
-        previewContact: "Contact",
-        previewPhone: "Phone",
-        previewAddress: "Address",
         portalTitle: "Adoption Customers: View Farm Photos",
         portalNote: "Log in with an account WeGrow's admin has enabled. You'll only see photos for your company's active adoption. This is not a demo -- it calls the real WeGrow Orbit backend.",
         portalEmail: "Account email",
@@ -1510,71 +1332,28 @@
         footerSub: "Brand showcase · Powered by WeGrow Orbit",
         plantLevel: "cared for today",
         toggle: "中文",
-        onlineOptions: ["Live farm viewing", "Employee online tour", "ESG monthly livestream"],
-        offlineOptions: ["Farm day", "Harvest experience", "Family sustainability event"]
       }
     };
 
-    const defaults = {
-      companyName: "SOL 集團",
-      contactName: "林小姐",
-      adoptionCount: "120",
-      phone: "02-0000-0000",
-      email: "esg@sol.example",
-      period: "2026.07 - 2027.06",
-      address: "台北市信義區",
-      onlineEvent: "直播看田",
-      offlineEvent: "農場日",
-      notes: "企業員工可參與線上看田與線下採果。"
-    };
+    // 2026-09-18：拿掉原本可編輯的企業資料Demo表單(localStorage假後台)。
+    // adoptionCount只留來畫裝飾用的小葉夥伴成長動畫，是固定展示值，不是任何人可編輯的
+    // 「企業資料」，不再假裝這是後台。
+    const plantBuddyAdoptionCount = 120;
 
-    const storageKey = "sol-wegrow-farm-company-demo";
     const langStorageKey = "sol-wegrow-farm-lang";
-    const form = document.querySelector("#companyForm");
-    const fields = Array.from(document.querySelectorAll("[data-field]"));
-    const bindTargets = Array.from(document.querySelectorAll("[data-bind]"));
     const langToggle = document.querySelector("#langToggle");
     let currentLang = localStorage.getItem(langStorageKey) || "zh";
 
-    function loadData() {
-      try {
-        return { ...defaults, ...JSON.parse(localStorage.getItem(storageKey) || "{}") };
-      } catch {
-        return { ...defaults };
-      }
-    }
-
-    function applyData(data) {
-      fields.forEach((field) => {
-        const key = field.dataset.field;
-        field.value = data[key] || "";
-      });
-      bindTargets.forEach((node) => {
-        const key = node.dataset.bind;
-        node.textContent = data[key] || defaults[key] || "";
-      });
-      updatePlantBuddy(data);
-    }
-
-    function updatePlantBuddy(data) {
+    function updatePlantBuddy() {
       const plant = document.querySelector("#plantBuddy");
       const level = document.querySelector("#plantLevel");
       if (!plant || !level) return;
 
       const daySeed = Math.floor(Date.now() / 86400000);
-      const count = Number.parseInt(data.adoptionCount, 10) || 0;
-      const growth = Math.max(1, Math.min(6, Math.floor(count / 80) + (daySeed % 3) + 1));
+      const growth = Math.max(1, Math.min(6, Math.floor(plantBuddyAdoptionCount / 80) + (daySeed % 3) + 1));
 
       plant.style.setProperty("--growth", String(growth));
       level.textContent = `Lv. ${growth} · ${i18n[currentLang].plantLevel}`;
-    }
-
-    function updateSelectOptions(selectName, options) {
-      const select = document.querySelector(`select[name="${selectName}"]`);
-      if (!select) return;
-      Array.from(select.options).forEach((option, index) => {
-        option.textContent = options[index] || option.textContent;
-      });
     }
 
     function applyLanguage(lang) {
@@ -1586,41 +1365,12 @@
         const key = node.dataset.i18n;
         if (strings[key]) node.textContent = strings[key];
       });
-      updateSelectOptions("onlineEvent", strings.onlineOptions);
-      updateSelectOptions("offlineEvent", strings.offlineOptions);
       langToggle.textContent = strings.toggle;
       localStorage.setItem(langStorageKey, lang);
-      updatePlantBuddy(data);
+      updatePlantBuddy();
     }
 
-    function currentFormData() {
-      return fields.reduce((data, field) => {
-        data[field.dataset.field] = field.value.trim();
-        return data;
-      }, {});
-    }
-
-    let data = loadData();
-    applyData(data);
     applyLanguage(currentLang);
-
-    form.addEventListener("input", () => {
-      data = { ...defaults, ...currentFormData() };
-      applyData(data);
-    });
-
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      data = { ...defaults, ...currentFormData() };
-      localStorage.setItem(storageKey, JSON.stringify(data));
-      applyData(data);
-    });
-
-    document.querySelector("#resetDemo").addEventListener("click", () => {
-      localStorage.removeItem(storageKey);
-      data = { ...defaults };
-      applyData(data);
-    });
 
     langToggle.addEventListener("click", () => {
       applyLanguage(currentLang === "zh" ? "en" : "zh");
