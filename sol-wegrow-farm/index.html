@@ -836,6 +836,59 @@
       }
     }
 
+    .portal-esg {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(255, 255, 255, .12);
+    }
+
+    .portal-esg h4 {
+      font-size: 13px;
+      margin: 0 0 4px;
+    }
+
+    .portal-esg .portal-esg-note {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .5);
+      margin: 0 0 12px;
+      line-height: 1.6;
+    }
+
+    .portal-esg-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .portal-esg-item {
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .12);
+      padding: 10px 12px;
+    }
+
+    .portal-esg-item .code {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .portal-esg-item .weight {
+      font-size: 11px;
+      color: rgba(255, 255, 255, .5);
+      margin-top: 2px;
+    }
+
+    .portal-esg-item .status {
+      font-size: 11px;
+      color: #E2CF35;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 720px) {
+      .portal-esg-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .gallery {
       margin-top: 22px;
       display: grid;
@@ -1194,6 +1247,8 @@
           </div>
 
           <div class="portal-photos" id="portalPhotos" aria-live="polite"></div>
+
+          <div class="portal-esg" id="portalEsg" aria-live="polite" hidden></div>
         </div>
       </section>
 
@@ -1268,6 +1323,11 @@
         portalStatusRevoked: "此功能已被暫停授權，若有疑問請聯絡威果。",
         portalStatusNetworkError: "無法連線到 WeGrow Orbit 後端，請稍後再試。",
         portalPhotoTime: "拍攝時間",
+        portalEsgTitle: "台灣ESG評鑑得分",
+        portalEsgLoading: "正在讀取ESG資料…",
+        portalEsgNotEntitled: "此帳號的合約未開通ESG評鑑資料，請聯絡威果確認認養方案。",
+        portalEsgPending: "待確認（缺分證據尚未取得，非0分或已達標）",
+        portalEsgWeight: "單題權重",
         footerSub: "品牌展示 · 由 WeGrow Orbit 驅動",
         plantLevel: "今日已照護",
         toggle: "EN",
@@ -1329,6 +1389,11 @@
         portalStatusRevoked: "This feature's access has been suspended. Please contact WeGrow if you have questions.",
         portalStatusNetworkError: "Could not reach the WeGrow Orbit backend. Please try again later.",
         portalPhotoTime: "Captured at",
+        portalEsgTitle: "Taiwan ESG Rating Score",
+        portalEsgLoading: "Loading ESG data…",
+        portalEsgNotEntitled: "This account's contract does not include ESG rating access. Please contact WeGrow to confirm your plan.",
+        portalEsgPending: "Pending confirmation (evidence not yet obtained — not a 0 score or a met criterion)",
+        portalEsgWeight: "Question weight",
         footerSub: "Brand showcase · Powered by WeGrow Orbit",
         plantLevel: "cared for today",
         toggle: "中文",
@@ -1393,6 +1458,7 @@
       const orgNameEl = document.querySelector("#portalOrgName");
       const logoutBtn = document.querySelector("#portalLogoutBtn");
       const photosEl = document.querySelector("#portalPhotos");
+      const esgEl = document.querySelector("#portalEsg");
 
       let objectUrls = [];
 
@@ -1415,6 +1481,8 @@
         sessionEl.hidden = true;
         loginForm.hidden = false;
         photosEl.innerHTML = "";
+        esgEl.innerHTML = "";
+        esgEl.hidden = true;
         orgNameEl.textContent = "";
       }
 
@@ -1524,6 +1592,76 @@
         });
       }
 
+      async function loadEsg() {
+        esgEl.hidden = false;
+        esgEl.innerHTML = `<p class="portal-esg-note">${t("portalEsgLoading")}</p>`;
+
+        let resp;
+        try {
+          resp = await apiFetch("/api/customer/esg");
+        } catch {
+          esgEl.innerHTML = `<p class="portal-esg-note">${t("portalStatusNetworkError")}</p>`;
+          return;
+        }
+
+        if (resp.status === 401) {
+          setToken("");
+          showLoggedOut();
+          setStatus("portalStatusLoginFailed", true);
+          return;
+        }
+        if (resp.status === 403) {
+          // 跟 loadPhotos() 同一個原則：這個企業「沒有ESG這項授權」跟「完全沒有會籍」
+          // 是兩種不同原因，不能共用一句話蓋掉。
+          const body = await resp.json().catch(() => ({}));
+          esgEl.innerHTML = `<p class="portal-esg-note">${
+            body.detail === "resource_not_entitled" ? t("portalEsgNotEntitled") : t("portalStatusNoMembership")
+          }</p>`;
+          return;
+        }
+        if (!resp.ok) {
+          esgEl.innerHTML = `<p class="portal-esg-note">${t("portalStatusNetworkError")}</p>`;
+          return;
+        }
+
+        const data = await resp.json();
+        const questions = Array.isArray(data.questions) ? data.questions : [];
+
+        const grid = document.createElement("div");
+        grid.className = "portal-esg-grid";
+        questions.forEach((q) => {
+          const item = document.createElement("div");
+          item.className = "portal-esg-item";
+          const code = document.createElement("div");
+          code.className = "code";
+          code.textContent = q.code;
+          const weight = document.createElement("div");
+          weight.className = "weight";
+          weight.textContent = `${t("portalEsgWeight")} ${typeof q.weight === "number" ? q.weight.toFixed(4) : "—"}`;
+          const status = document.createElement("div");
+          status.className = "status";
+          // addition 為 null 一律顯示「待確認」，不能自行換算成0分或已達標——
+          // 缺分證據沒取得就是沒取得，不能用UI掩蓋成看起來像有數字的結果。
+          status.textContent = q.addition === null || q.addition === undefined
+            ? t("portalEsgPending")
+            : `+${q.addition}`;
+          item.appendChild(code);
+          item.appendChild(weight);
+          item.appendChild(status);
+          grid.appendChild(item);
+        });
+
+        esgEl.innerHTML = "";
+        const heading = document.createElement("h4");
+        heading.textContent = `${t("portalEsgTitle")}${data.rating_year_minguo ? ` (${data.rating_year_minguo}年度)` : ""}`;
+        const note = document.createElement("p");
+        note.className = "portal-esg-note";
+        note.textContent = data.note || "";
+        esgEl.appendChild(heading);
+        esgEl.appendChild(note);
+        esgEl.appendChild(grid);
+      }
+
       async function restoreOrLoginSession() {
         const token = getToken();
         if (!token) {
@@ -1554,6 +1692,7 @@
         const me = await resp.json();
         showLoggedIn(me.organization ? me.organization.name : "");
         await loadPhotos();
+        await loadEsg();
       }
 
       loginForm.addEventListener("submit", async (event) => {
