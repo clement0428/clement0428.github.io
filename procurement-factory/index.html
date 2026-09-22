@@ -335,6 +335,13 @@
     return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  // 2026-09-22 E2E瀏覽器實測抓到的真bug：這裡原本沒有window.showBatchList，
+  // HTML裡「← 返回批次列表」是inline onclick="showBatchList()"，但inline handler
+  // 是在全域作用域執行，showBatchList是IIFE內的區域函式，全域根本看不到，
+  // 實際點擊會丟ReferenceError、整個返回按鈕形同壞掉——跟customer頁面同一種寫法
+  // 只是customer頁面那邊有記得window.showBatchList = showBatchList，這裡漏了。
+  window.showBatchList = showBatchList;
+
   window.logout = function () {
     setToken("");
     location.reload();
