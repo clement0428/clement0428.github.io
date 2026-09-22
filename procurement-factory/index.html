@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>代工工作台｜WeGrow Orbit</title>
+<meta name="description" content="SOL×WeGrow 企業採購批次寄送：代工廠工作台。查看受派批次、下載最新寄送單、回填物流單號。">
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: light;
+    --paper: #fbfaf4; --panel: #ffffff; --ink: #1b1e1a; --muted: #5c6058;
+    --line: #dedbd0; --brand: #E2CF35; --brand-ink: #4a4310;
+    --danger: #b3261e; --success: #1b5e20; --shadow: 0 18px 50px rgba(20,20,15,.10);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Noto Sans TC","Helvetica Neue",Arial,sans-serif; background:var(--paper); color:var(--ink); }
+  header { background:#333; color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+  header b { color: var(--brand); }
+  main { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-bottom:18px; box-shadow: var(--shadow); }
+  h1 { font-size: 18px; margin:0; }
+  h2 { font-size: 15px; margin: 0 0 12px; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  input { width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--line); font-size:14px; margin-bottom:12px; }
+  button { cursor:pointer; border:none; border-radius:8px; padding:9px 16px; font-size:13px; font-weight:700; }
+  button.primary { background:var(--brand); color:var(--brand-ink); }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--ink); }
+  button.small { padding:5px 10px; font-size:12px; }
+  .status { font-size:13px; margin: 6px 0 14px; }
+  .status.error { color: var(--danger); }
+  .status.success { color: var(--success); }
+  table { width:100%; border-collapse: collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:12px; }
+  .batch-row { cursor:pointer; }
+  .batch-row:hover { background: #faf8ee; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; background:#eee; }
+  .hidden { display:none; }
+  .comment { border-left:2px solid var(--brand); padding:6px 10px; margin-bottom:8px; font-size:13px; background:#fbfaf4; }
+  .back-link { cursor:pointer; color:var(--muted); font-size:13px; margin-bottom:10px; display:inline-block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>代工工作台 ｜ <b>WeGrow Orbit</b></h1>
+  <div id="headerRight"></div>
+</header>
+
+<main>
+  <!-- 登入 -->
+  <section class="card" id="loginCard">
+    <h2>代工廠帳號登入</h2>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 14px;">請使用威果管理員提供的帳號登入。這不是Demo，會實際呼叫 WeGrow Orbit 後端。首次登入若被要求更換密碼，請先完成更換才能查看受派資料。</p>
+    <form id="loginForm">
+      <label>帳號 Email</label>
+      <input type="email" id="loginEmail" autocomplete="username" required>
+      <label>密碼</label>
+      <input type="password" id="loginPassword" autocomplete="current-password" required>
+      <button type="submit" class="primary">登入</button>
+    </form>
+    <p class="status" id="loginStatus"></p>
+  </section>
+
+  <!-- 改密（首次登入強制） -->
+  <section class="card hidden" id="changePasswordCard">
+    <h2>首次登入須更換密碼</h2>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 14px;">在更換密碼前，無法查看任何受派批次的收件人資料。</p>
+    <form id="changePasswordForm">
+      <label>目前密碼（初始密碼）</label>
+      <input type="password" id="currentPassword" required>
+      <label>新密碼</label>
+      <input type="password" id="newPassword" required>
+      <button type="submit" class="primary">更換密碼並繼續</button>
+    </form>
+    <p class="status" id="changePasswordStatus"></p>
+  </section>
+
+  <!-- 批次列表 -->
+  <section class="card hidden" id="batchListCard">
+    <h2>受派批次<button class="ghost small" style="float:right" onclick="logout()">登出</button></h2>
+    <table>
+      <thead><tr><th>批次名稱</th><th>狀態</th><th></th></tr></thead>
+      <tbody id="batchListBody"></tbody>
+    </table>
+    <p class="status" id="batchListStatus"></p>
+  </section>
+
+  <!-- 批次詳情 -->
+  <section class="card hidden" id="batchDetailCard">
+    <span class="back-link" onclick="showBatchList()">← 返回批次列表</span>
+    <h2 id="batchDetailTitle"></h2>
+
+    <h3 style="font-size:13px;margin:18px 0 8px;">最新寄送單（版本 <span id="manifestVersion"></span>，產生時間 <span id="manifestGeneratedAt"></span>）</h3>
+    <table>
+      <thead><tr><th>收件人</th><th>電話</th><th>地址</th><th>品項數量</th><th>回填單號</th></tr></thead>
+      <tbody id="manifestBody"></tbody>
+    </table>
+    <p class="status" id="manifestStatus"></p>
+
+    <h3 style="font-size:13px;margin:22px 0 8px;">留言</h3>
+    <div id="commentsBody"></div>
+    <form id="commentForm">
+      <input type="text" id="commentInput" placeholder="輸入留言...">
+      <button type="submit" class="ghost small">送出留言</button>
+    </form>
+  </section>
+</main>
+
+<script>
+(function () {
+  const API_BASE = window.PROCUREMENT_FACTORY_API_BASE || "https://api.wegrow-orbit.com";
+  const TOKEN_KEY = "procurement-factory-token";
+  const i18n = {
+    loginFailed: "登入失敗：Email 或密碼錯誤。",
+    passwordChangeRequired: "首次登入必須更換密碼才能繼續。",
+    noFactoryMembership: "此帳號沒有有效的代工廠身分，請聯絡威果管理員確認。",
+    networkError: "無法連線到 WeGrow Orbit 後端，請稍後再試。",
+    noBatches: "目前沒有受派批次。",
+    revisionSuperseded: "名單版本已更新，頁面已重新整理為最新版，請重新確認後再次提交出貨。",
+    recipientNotFound: "找不到此收件人於此名單版本，請重新整理頁面。",
+  };
+
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+  function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+
+  async function apiFetch(path, options) {
+    const headers = Object.assign({}, (options && options.headers) || {}, { Authorization: `Bearer ${getToken()}` });
+    return fetch(`${API_BASE}${path}`, Object.assign({}, options, { headers }));
+  }
+
+  function show(id) { document.getElementById(id).classList.remove("hidden"); }
+  function hide(id) { document.getElementById(id).classList.add("hidden"); }
+  function setStatus(id, text, cls) {
+    const el = document.getElementById(id);
+    el.textContent = text || "";
+    el.className = "status" + (cls ? " " + cls : "");
+  }
+
+  let currentPassword = "";
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    setStatus("loginStatus", "登入中…");
+
+    let resp;
+    try {
+      const body = new URLSearchParams({ username: email, password });
+      resp = await fetch(`${API_BASE}/auth/login`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+    } catch { setStatus("loginStatus", i18n.networkError, "error"); return; }
+
+    if (!resp.ok) { setStatus("loginStatus", i18n.loginFailed, "error"); return; }
+    const result = await resp.json();
+    setToken(result.access_token);
+    currentPassword = password;
+    setStatus("loginStatus", "");
+    await afterLogin();
+  });
+
+  document.getElementById("changePasswordForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const cur = document.getElementById("currentPassword").value;
+    const next = document.getElementById("newPassword").value;
+    setStatus("changePasswordStatus", "處理中…");
+    let resp;
+    try {
+      resp = await apiFetch("/api/procurement/me/change-password", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current_password: cur, new_password: next }),
+      });
+    } catch { setStatus("changePasswordStatus", i18n.networkError, "error"); return; }
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      setStatus("changePasswordStatus", "更換失敗：" + (body.detail || resp.status), "error");
+      return;
+    }
+    hide("changePasswordCard");
+    await loadBatches();
+  });
+
+  async function afterLogin() {
+    hide("loginCard");
+    document.getElementById("headerRight").textContent = document.getElementById("loginEmail").value.trim();
+    await loadBatches();
+  }
+
+  async function loadBatches() {
+    let resp;
+    try {
+      resp = await apiFetch("/api/factory/batches");
+    } catch { setStatus("batchListStatus", i18n.networkError, "error"); return; }
+
+    if (resp.status === 401) { setToken(""); location.reload(); return; }
+    if (resp.status === 403) {
+      const body = await resp.json().catch(() => ({}));
+      if (body.detail === "password_change_required") {
+        show("changePasswordCard");
+        return;
+      }
+      setStatus("batchListStatus", i18n.noFactoryMembership, "error");
+      show("batchListCard");
+      return;
+    }
+    if (!resp.ok) { setStatus("batchListStatus", i18n.networkError, "error"); show("batchListCard"); return; }
+
+    const batches = await resp.json();
+    show("batchListCard");
+    const tbody = document.getElementById("batchListBody");
+    tbody.innerHTML = "";
+    if (!batches.length) { setStatus("batchListStatus", i18n.noBatches); return; }
+    setStatus("batchListStatus", "");
+    batches.forEach((b) => {
+      const tr = document.createElement("tr");
+      tr.className = "batch-row";
+      tr.innerHTML = `<td>${escapeHtml(b.name)}</td><td><span class="tag">${escapeHtml(b.status)}</span></td><td>開啟 →</td>`;
+      tr.addEventListener("click", () => openBatch(b.id, b.name));
+      tbody.appendChild(tr);
+    });
+  }
+
+  function showBatchList() {
+    hide("batchDetailCard");
+    show("batchListCard");
+  }
+
+  let currentBatchId = null;
+  let currentRevisionId = null;
+
+  async function openBatch(batchId, name) {
+    currentBatchId = batchId;
+    hide("batchListCard");
+    show("batchDetailCard");
+    document.getElementById("batchDetailTitle").textContent = name;
+    await loadManifest(batchId);
+    await loadComments(batchId);
+  }
+
+  async function loadManifest(batchId) {
+    let resp;
+    try { resp = await apiFetch(`/api/factory/batches/${batchId}/manifest`); }
+    catch { setStatus("manifestStatus", i18n.networkError, "error"); return; }
+
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      setStatus("manifestStatus", "無法取得寄送單：" + (body.detail || resp.status), "error");
+      return;
+    }
+    const data = await resp.json();
+    currentRevisionId = data.recipient_revision_id;
+    document.getElementById("manifestVersion").textContent = data.recipient_revision_version;
+    document.getElementById("manifestGeneratedAt").textContent = new Date(data.generated_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" });
+
+    const tbody = document.getElementById("manifestBody");
+    tbody.innerHTML = "";
+    data.recipients.forEach((r) => {
+      const tr = document.createElement("tr");
+      const qtyText = r.allocations.map(a => `${a.batch_item_id.slice(0, 8)}…×${a.quantity}`).join("、");
+      tr.innerHTML = `
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.phone || "")}</td>
+        <td>${escapeHtml(r.address)}</td>
+        <td>${escapeHtml(qtyText)}</td>
+        <td>
+          <input type="text" placeholder="物流單號" style="width:110px;margin:0;display:inline-block;padding:5px 7px;font-size:12px;" id="tracking-${r.id}">
+          <button class="ghost small" data-recipient="${r.id}" data-allocations='${JSON.stringify(r.allocations)}' onclick="window.__submitShipment(this)">回填出貨</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    setStatus("manifestStatus", "");
+  }
+
+  window.__submitShipment = async function (btn) {
+    const recipientId = btn.getAttribute("data-recipient");
+    const allocations = JSON.parse(btn.getAttribute("data-allocations"));
+    const trackingNo = document.getElementById(`tracking-${recipientId}`).value.trim();
+    if (!trackingNo) { setStatus("manifestStatus", "請先輸入物流單號", "error"); return; }
+
+    let resp;
+    try {
+      resp = await apiFetch(`/api/factory/batches/${currentBatchId}/shipment-reports`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient_id: recipientId, recipient_revision_id: currentRevisionId,
+          items: allocations.map(a => ({ batch_item_id: a.batch_item_id, quantity: a.quantity })),
+          tracking_no: trackingNo,
+        }),
+      });
+    } catch { setStatus("manifestStatus", i18n.networkError, "error"); return; }
+
+    if (resp.status === 409) {
+      const body = await resp.json().catch(() => ({}));
+      if (body.detail === "recipient_revision_superseded_reload_latest") {
+        setStatus("manifestStatus", i18n.revisionSuperseded, "error");
+        await loadManifest(currentBatchId); // 重新載入最新版
+        return;
+      }
+      setStatus("manifestStatus", "提交失敗：" + (body.detail || resp.status), "error");
+      return;
+    }
+    if (resp.status === 404) { setStatus("manifestStatus", i18n.recipientNotFound, "error"); return; }
+    if (!resp.ok) { setStatus("manifestStatus", i18n.networkError, "error"); return; }
+
+    const result = await resp.json();
+    setStatus("manifestStatus", result.deduplicated ? "此單號先前已回報過，未重複建立出貨紀錄" : "已回填出貨單號", "success");
+  };
+
+  async function loadComments(batchId) {
+    let resp;
+    try { resp = await apiFetch(`/api/factory/batches/${batchId}/comments`); }
+    catch { return; }
+    if (!resp.ok) return;
+    const comments = await resp.json();
+    const el = document.getElementById("commentsBody");
+    el.innerHTML = comments.length
+      ? comments.map(c => `<div class="comment">${escapeHtml(c.body)}<div style="font-size:11px;color:var(--muted);margin-top:3px;">${new Date(c.created_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}</div></div>`).join("")
+      : `<p style="font-size:12px;color:var(--muted);">尚無留言</p>`;
+  }
+
+  document.getElementById("commentForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.getElementById("commentInput");
+    const body = input.value.trim();
+    if (!body) return;
+    await apiFetch(`/api/factory/batches/${currentBatchId}/comments`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body }),
+    });
+    input.value = "";
+    await loadComments(currentBatchId);
+  });
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // 2026-09-22 E2E瀏覽器實測抓到的真bug：這裡原本沒有window.showBatchList，
+  // HTML裡「← 返回批次列表」是inline onclick="showBatchList()"，但inline handler
+  // 是在全域作用域執行，showBatchList是IIFE內的區域函式，全域根本看不到，
+  // 實際點擊會丟ReferenceError、整個返回按鈕形同壞掉——跟customer頁面同一種寫法
+  // 只是customer頁面那邊有記得window.showBatchList = showBatchList，這裡漏了。
+  window.showBatchList = showBatchList;
+
+  window.logout = function () {
+    setToken("");
+    location.reload();
+  };
+
+  // 若已有token，直接嘗試載入(session還原)
+  if (getToken()) {
+    hide("loginCard");
+    loadBatches();
+  }
+})();
+</script>
+
+</body>
+</html>
