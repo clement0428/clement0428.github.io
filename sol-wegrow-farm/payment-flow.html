@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SOL-WeGrow Farm | 金流架構</title>
-  <meta name="description" content="SOL-WeGrow Farm 企業認養金流架構：四葉主約與威果客製費拆分、付款完成才放行出貨與加工。">
+  <meta name="description" content="SOL-WeGrow Farm 企業認養金流架構：四葉主約與威果客製費拆分、威果人工核實付款並確認其他放行條件齊備後才放行出貨與加工。">
   <link rel="icon" href="data:,">
   <style>
     :root {
@@ -371,8 +371,8 @@
       <section class="hero" aria-label="金流架構摘要">
         <div>
           <p class="eyebrow">Payment Architecture</p>
-          <h1>付款完成，才啟動出貨、加工與設計。</h1>
-          <p class="lead">企業認養的主約年費與威果客製費分開管理。四葉處理主約收款；威果處理物流、加工、包裝設計與客製加購。系統用付款狀態作為放行條件，避免未付款就保留鮮果、通知物流或啟動加工。</p>
+          <h1>威果人工核實付款，條件齊備才放行出貨與加工。</h1>
+          <p class="lead">企業認養的主約年費與威果客製費分開管理。四葉處理主約收款；威果處理物流、加工、包裝設計與客製加購。企業回報付款後由威果人工核對匯款憑證，核實付款只是放行條件之一，還要報價已確認、供應包裝已核准、合約(如有)有效才會放行，避免未核實就保留鮮果、通知物流或啟動加工。目前為P1人工核實流程，尚未串接自動金流／付款閘道。</p>
           <div class="cta" style="margin-top:24px;">
             <a class="button" href="/procurement-customer/">進入企業採購批次系統 →</a>
           </div>
@@ -401,7 +401,7 @@
       <section class="section" aria-label="金流流程">
         <div class="section-title">
           <h2>金流流程</h2>
-          <p>由現場果況決定可出貨比例，再產生可付款金額。付款狀態回寫後，才讓內部工作流進入下一步。</p>
+          <p>由現場果況決定可出貨比例，再產生可付款金額。企業回報付款後，威果人工核對匯款憑證並確認其他放行條件齊備，才讓內部工作流進入下一步——目前為人工核實，非系統自動比對。</p>
         </div>
         <div class="flow">
           <article class="step">
@@ -422,12 +422,12 @@
           <article class="step">
             <b>4</b>
             <h3>威果收款</h3>
-            <p>產生付款通知或藍新付款編號，等待客製費付款完成。</p>
+            <p>提供匯款帳戶資訊，企業匯款後於系統回報付款金額與末四碼，等待威果人工核對。</p>
           </article>
           <article class="step">
             <b>5</b>
-            <h3>放行通知</h3>
-            <p>付款完成才通知物流、加工、包材設計與內部對帳。</p>
+            <h3>人工放行</h3>
+            <p>威果核實付款，並確認報價已確認、供應包裝已核准、合約(如有)有效後，人工放行才通知物流、加工、包材設計與內部對帳——不是付款一到就自動放行。</p>
           </article>
         </div>
       </section>
@@ -447,10 +447,10 @@
             </ul>
           </article>
           <article class="panel">
-            <h3>已付款</h3>
+            <h3>已核實</h3>
             <ul>
-              <li>回寫付款編號與時間。</li>
-              <li>放行出貨、加工與包裝設計。</li>
+              <li>威果人工核對匯款金額與末四碼後標記為已核實。</li>
+              <li>已核實付款＋報價確認＋供應包裝核准等條件齊備，威果才人工放行出貨、加工與包裝設計。</li>
               <li>財務可做四葉主約與威果客製費對帳。</li>
             </ul>
           </article>
@@ -474,7 +474,7 @@
 
     <footer>
       <span>SOL-WeGrow Farm</span>
-      <span>四葉主約與威果客製費拆分，付款完成才放行；企業採購批次進度請於<a href="/procurement-customer/" style="text-decoration:underline;">企業採購系統</a>登入查詢。</span>
+      <span>四葉主約與威果客製費拆分，威果人工核實付款並確認其他條件齊備後才放行；企業採購批次進度請於<a href="/procurement-customer/" style="text-decoration:underline;">企業採購系統</a>登入查詢。</span>
     </footer>
   </div>
 </body>
