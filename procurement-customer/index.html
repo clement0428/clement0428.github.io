@@ -85,6 +85,18 @@
       <thead><tr><th>版本</th><th>狀態</th><th>收件人數</th><th>操作</th></tr></thead>
       <tbody id="revisionsBody"></tbody>
     </table>
+    <div id="revisionDetailPanel" class="hidden" style="margin:10px 0 20px;padding:14px 16px;background:#fbfaf4;border:1px solid var(--line);border-radius:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <strong style="font-size:13px;" id="revisionDetailTitle"></strong>
+        <button class="ghost small" onclick="window.__closeRevisionDetail()">收合</button>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 10px;">請核對每一位收件人的姓名、地址與品項數量無誤後再確認，確認後名單即鎖定寄送依據。</p>
+      <div id="revisionDetailRecipients"></div>
+      <button class="primary small" id="revisionDetailConfirmBtn" style="margin-top:10px;">我已核對，確認此版本</button>
+    </div>
+
+    <h3>出貨進度／物流單號</h3>
+    <div id="shipmentsBody"></div>
 
     <h3>報價</h3>
     <div id="quotesBody"></div>
@@ -217,14 +229,53 @@
         <td>${r.version}</td>
         <td><span class="tag">${r.status === "confirmed" ? "已確認" : "草稿"}</span></td>
         <td>${r.recipient_count}</td>
-        <td>${r.status !== "confirmed" ? `<button class="ghost small" onclick="window.__confirmRevision('${r.id}')">確認此版本</button>` : ""}</td>
+        <td>${r.status !== "confirmed" ? `<button class="ghost small" onclick="window.__viewRevisionDetail('${r.id}', ${r.version})">查看明細並確認</button>` : ""}</td>
       </tr>`).join("");
+    await loadShipments(batchId);
   }
+
+  // 2026-09-22 Clement review：企業窗口原本按版本號旁邊的按鈕就能直接確認，完全看不到
+  // 實際收件人姓名/地址/品項/數量。改成必須先打開明細面板、看到真實收件人清單後，
+  // 確認按鈕才在這個面板裡出現——不能再靠版本號+人數就盲目按確認。
+  window.__viewRevisionDetail = async function (revisionId, version) {
+    const resp = await apiFetch(`/api/procurement/batches/${currentBatchId}/recipient-revisions/${revisionId}`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    document.getElementById("revisionDetailTitle").textContent = `第 ${version} 版名單明細（共 ${data.recipients.length} 位收件人）`;
+    const el = document.getElementById("revisionDetailRecipients");
+    el.innerHTML = data.recipients.map(r => `
+      <div style="margin-bottom:10px;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;">
+        <div><strong>${escapeHtml(r.name)}</strong>　${escapeHtml(r.phone || "")}</div>
+        <div style="font-size:12px;color:var(--muted);">${escapeHtml(r.postal_code || "")} ${escapeHtml(r.address || "")}</div>
+        <table style="margin-top:6px;"><thead><tr><th>品項</th><th>數量</th></tr></thead><tbody>
+          ${r.allocations.map(a => `<tr><td>${escapeHtml(a.sku_name || a.sku_code || a.batch_item_id)}</td><td>${a.quantity} ${escapeHtml(a.unit || "")}</td></tr>`).join("") || "<tr><td colspan='2' style='color:var(--muted)'>尚未分配品項</td></tr>"}
+        </tbody></table>
+      </div>`).join("");
+    document.getElementById("revisionDetailConfirmBtn").onclick = () => window.__confirmRevision(revisionId);
+    show("revisionDetailPanel");
+  };
+
+  window.__closeRevisionDetail = function () { hide("revisionDetailPanel"); };
 
   window.__confirmRevision = async function (revisionId) {
     const resp = await apiFetch(`/api/procurement/batches/${currentBatchId}/recipient-revisions/${revisionId}/confirm`, { method: "POST" });
-    if (resp.ok) await loadBatchDetail(currentBatchId);
+    if (resp.ok) {
+      hide("revisionDetailPanel");
+      await loadBatchDetail(currentBatchId);
+    }
   };
+
+  async function loadShipments(batchId) {
+    const resp = await apiFetch(`/api/procurement/batches/${batchId}/shipments`);
+    const el = document.getElementById("shipmentsBody");
+    if (!resp.ok) { el.innerHTML = ""; return; }
+    const shipments = await resp.json();
+    el.innerHTML = shipments.length
+      ? `<table><thead><tr><th>收件人</th><th>物流單號</th><th>貨運商</th><th>出貨時間</th></tr></thead><tbody>
+          ${shipments.map(s => `<tr><td>${escapeHtml(s.recipient_name || "")}</td><td>${escapeHtml(s.tracking_no || "尚未產生單號")}</td><td>${escapeHtml(s.logistics_carrier || "")}</td><td>${s.shipped_at ? new Date(s.shipped_at).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }) : ""}</td></tr>`).join("")}
+        </tbody></table>`
+      : `<p style="font-size:12px;color:var(--muted);">尚未有出貨紀錄。</p>`;
+  }
 
   async function loadQuotes(batchId) {
     const resp = await apiFetch(`/api/procurement/batches/${batchId}/quotes`);
