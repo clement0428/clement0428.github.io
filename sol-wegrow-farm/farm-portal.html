@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我們公司的認養農場｜WeGrow</title>
+<meta name="description" content="企業員工入口：看現場、活動回憶、ESG下載。">
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #141713; --muted: #596258; --paper: #fbfaf4; --white: #ffffff;
+    --line: #dfded4; --gold: #b68a35; --green: #153f2a; --mist: #eef1e8; --rose: #c84c41;
+    --shadow: 0 24px 80px rgba(20, 23, 19, .13);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Noto Sans TC","Microsoft JhengHei",Arial,sans-serif; background:var(--paper); color:var(--ink); }
+  a { color:inherit; text-decoration:none; }
+  button { cursor:pointer; font-family:inherit; }
+  .hidden { display:none !important; }
+
+  header.topbar {
+    position: sticky; top:0; z-index:20; background: var(--white);
+    border-bottom: 1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 20px;
+  }
+  .brand { display:flex; align-items:center; gap:10px; min-width:0; }
+  .brand-name { font-size:16px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brand-sub { font-size:11px; color: var(--muted); }
+  .user-menu { display:flex; align-items:center; gap:10px; font-size:13px; color: var(--muted); flex:0 0 auto; }
+  .user-menu button { border:1px solid var(--line); background:var(--white); border-radius:999px; padding:6px 14px; font-size:12px; color:var(--ink); white-space:nowrap; }
+  #userEmailLabel { display:none; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } /* 窄螢幕先隱藏email，避免跟品牌名稱擠在同一行溢出；桌機才顯示，且長信箱截斷 */
+  header.topbar { flex-wrap: nowrap; gap: 8px; }
+  .brand { flex: 1 1 auto; min-width: 0; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 0 0 90px; }
+
+  /* ---- login ---- */
+  #loginCard { max-width: 420px; margin: 60px auto; background: var(--white); border:1px solid var(--line); border-radius:12px; padding:28px 24px; box-shadow: var(--shadow); }
+  #loginCard h2 { margin:0 0 6px; font-size:18px; }
+  #loginCard p { font-size:13px; color: var(--muted); margin: 0 0 18px; }
+  #loginCard label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  #loginCard input { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-size:14px; margin-bottom:14px; }
+  #loginCard button.primary { width:100%; background: var(--green); color:#fff; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:700; }
+  .status { font-size:13px; margin:8px 0 0; }
+  .status.error { color: var(--rose); }
+  .status.success { color: var(--green); }
+
+  /* ---- farm switcher ---- */
+  #farmSwitcher { display:flex; gap:8px; padding: 14px 16px 0; overflow-x:auto; }
+  #farmSwitcher button { flex:0 0 auto; border:1px solid var(--line); background:var(--white); border-radius:999px; padding:7px 14px; font-size:13px; }
+  #farmSwitcher button.active { background: var(--green); color:#fff; border-color: var(--green); }
+
+  /* ---- 看現場 ---- */
+  .live-hero { margin: 14px 16px 0; border-radius:14px; overflow:hidden; background:var(--mist); position:relative; box-shadow: var(--shadow); }
+  .live-hero img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; cursor:zoom-in; background:var(--mist); }
+  .live-hero .meta { position:absolute; left:0; right:0; bottom:0; padding:14px 16px; background:linear-gradient(0deg, rgba(20,23,19,.72), transparent); color:#fff; }
+  .live-hero .meta .farm-name { font-size:15px; font-weight:800; }
+  .live-hero .meta .captured-at { font-size:12px; opacity:.92; margin-top:2px; }
+  .live-hero .zoom-btn { position:absolute; right:12px; top:12px; background:rgba(20,23,19,.55); color:#fff; border:none; border-radius:999px; padding:8px 14px; font-size:12px; }
+  .live-empty { margin:14px 16px 0; padding:40px 20px; text-align:center; background:var(--white); border:1px dashed var(--line); border-radius:14px; color:var(--muted); font-size:14px; }
+  .live-banner { margin: 10px 16px 0; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+  .live-banner.stale { background:#fff6ea; color:#8a5a12; border:1px solid #f0d9ad; }
+  .live-banner.broken { background:#fdeceb; color:#a3382e; border:1px solid #f3c4bf; }
+  .live-banner.denied { background:var(--mist); color:var(--muted); border:1px solid var(--line); }
+
+  .card { margin: 16px 16px 0; background: var(--white); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+  .card h3 { margin:0 0 10px; font-size:14px; color: var(--muted); font-weight:700; }
+  .update-text { font-size:15px; line-height:1.6; }
+  .empty-note { font-size:13px; color: var(--muted); }
+
+  .record-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .record-row:last-child { border-bottom:none; }
+  .record-row .date { color:var(--muted); }
+
+  /* ---- 活動回憶 ---- */
+  .activity-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); cursor:pointer; }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-item img { width:84px; height:60px; object-fit:cover; border-radius:8px; background:var(--mist); flex:0 0 auto; }
+  .activity-item .info strong { font-size:14px; }
+  .activity-item .info div { font-size:12px; color:var(--muted); margin-top:3px; }
+  .gallery-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(96px,1fr)); gap:8px; margin-top:12px; }
+  .gallery-grid img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; cursor:zoom-in; background:var(--mist); }
+  .back-link { display:inline-block; margin: 14px 16px 0; font-size:13px; color:var(--muted); cursor:pointer; }
+
+  /* ---- ESG ---- */
+  .esg-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line); gap:10px; }
+  .esg-item:last-child { border-bottom:none; }
+  .esg-item .info strong { font-size:14px; display:block; }
+  .esg-item .info div { font-size:12px; color:var(--muted); margin-top:3px; }
+  .esg-item button { flex:0 0 auto; border:1px solid var(--green); color:var(--green); background:#fff; border-radius:999px; padding:7px 14px; font-size:12px; font-weight:700; }
+  .esg-disclaimer { font-size:12px; color:var(--muted); margin-top:10px; line-height:1.6; }
+
+  /* ---- bottom nav (mobile) ---- */
+  nav.bottom-nav {
+    position: fixed; left:0; right:0; bottom:0; z-index:30;
+    background: var(--white); border-top:1px solid var(--line);
+    display:flex; padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav.bottom-nav button {
+    flex:1; border:none; background:none; padding:10px 4px 8px; font-size:11px; color: var(--muted);
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  nav.bottom-nav button .icon { font-size:18px; }
+  nav.bottom-nav button.active { color: var(--green); font-weight:800; }
+
+  @media (min-width: 720px) {
+    nav.bottom-nav { display:none; }
+    .desktop-nav { display:flex !important; }
+    #userEmailLabel { display:inline; }
+  }
+  .desktop-nav { display:none; gap:6px; }
+  .desktop-nav button { border:1px solid var(--line); background:var(--white); border-radius:999px; padding:8px 16px; font-size:13px; color:var(--muted); }
+  .desktop-nav button.active { background: var(--green); color:#fff; border-color: var(--green); }
+
+  #lightbox { position:fixed; inset:0; background:rgba(10,12,9,.92); z-index:100; display:flex; align-items:center; justify-content:center; }
+  #lightbox img { max-width:94vw; max-height:88vh; object-fit:contain; }
+  #lightbox .close { position:absolute; top:16px; right:20px; color:#fff; font-size:28px; background:none; border:none; }
+</style>
+</head>
+<body>
+
+<div id="loginCard">
+  <h2>企業員工登入</h2>
+  <p>請用威果管理員開通的帳號登入，只會看到您企業已授權的農場內容。這不是Demo，會實際呼叫 WeGrow Orbit 後端。</p>
+  <form id="loginForm">
+    <label>帳號 Email</label>
+    <input type="email" id="loginEmail" autocomplete="username" required>
+    <label>密碼</label>
+    <input type="password" id="loginPassword" autocomplete="current-password" required>
+    <button type="submit" class="primary">登入</button>
+  </form>
+  <p class="status" id="loginStatus"></p>
+</div>
+
+<div id="appShell" class="hidden">
+  <header class="topbar">
+    <div class="brand">
+      <div>
+        <div class="brand-name" id="orgBrandName">我們公司的認養農場</div>
+        <div class="brand-sub">by WeGrow</div>
+      </div>
+    </div>
+    <div class="desktop-nav" id="desktopNav">
+      <button data-tab="live" class="active">看現場</button>
+      <button data-tab="activities">活動回憶</button>
+      <button data-tab="esg">ESG 下載</button>
+    </div>
+    <div class="user-menu">
+      <span id="userEmailLabel"></span>
+      <button id="logoutBtn">登出</button>
+    </div>
+  </header>
+
+  <div id="farmSwitcher"></div>
+
+  <main>
+    <!-- 看現場 -->
+    <section id="tabLive">
+      <div id="liveHeroWrap"></div>
+      <div class="card">
+        <h3>農場近況</h3>
+        <div id="farmUpdateBody"><p class="empty-note">尚無近況更新。</p></div>
+      </div>
+      <div class="card">
+        <h3>成長紀錄</h3>
+        <div id="growthRecordBody"><p class="empty-note">尚無紀錄。</p></div>
+      </div>
+    </section>
+
+    <!-- 活動回憶 -->
+    <section id="tabActivities" class="hidden">
+      <div class="card" id="activityListCard">
+        <h3>活動回憶</h3>
+        <div id="activityListBody"><p class="empty-note">目前沒有可查看的活動。</p></div>
+      </div>
+      <div class="hidden" id="activityDetailCard">
+        <span class="back-link" id="activityBackLink">← 返回活動列表</span>
+        <div class="card">
+          <h3 id="activityDetailTitle"></h3>
+          <p id="activityDetailMeta" style="font-size:13px;color:var(--muted);"></p>
+          <p id="activityDetailDesc" style="font-size:14px;line-height:1.6;"></p>
+          <div class="gallery-grid" id="activityGallery"></div>
+          <div id="activityAttachments" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESG -->
+    <section id="tabEsg" class="hidden">
+      <div class="card">
+        <h3>ESG 成果文件</h3>
+        <div id="esgListBody"><p class="empty-note">本期資料整理中。</p></div>
+        <p class="esg-disclaimer">認養不自動等於 ESG 加分或減碳量。以上為已發布之正式文件，版本與期間如上標示。</p>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button data-tab="live" class="active"><span class="icon">🌱</span>看現場</button>
+    <button data-tab="activities"><span class="icon">📷</span>活動回憶</button>
+    <button data-tab="esg"><span class="icon">📄</span>ESG 下載</button>
+  </nav>
+</div>
+
+<div id="lightbox" class="hidden">
+  <button class="close" id="lightboxClose">×</button>
+  <img id="lightboxImg" alt="放大檢視">
+</div>
+
+<script>
+(function () {
+  const API_BASE = window.FARM_PORTAL_API_BASE || "https://api.wegrow-orbit.com";
+  const TOKEN_KEY = "farm-portal-token";
+
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+  function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+  async function apiFetch(path, options) {
+    const headers = Object.assign({}, (options && options.headers) || {}, { Authorization: `Bearer ${getToken()}` });
+    return fetch(`${API_BASE}${path}`, Object.assign({}, options, { headers }));
+  }
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" });
+  }
+  function fmtDate(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" });
+  }
+  function setStatus(id, text, cls) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "status" + (cls ? " " + cls : "");
+  }
+
+  // 2026-09-26 沿用index.html#admin既有驗證過的做法：私有照片/文件端點都要驗
+  // Authorization Bearer header，<img src>/<a href>本身送不出這個header，一定要
+  // 先用fetch(帶header)把內容抓成blob，再轉成object URL塞進src，或觸發下載。
+  const objectUrls = [];
+  async function loadAuthedImage(path, imgEl, onError) {
+    try {
+      const resp = await apiFetch(path);
+      if (!resp.ok) { if (onError) onError(resp.status); return; }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      objectUrls.push(url);
+      imgEl.src = url;
+    } catch { if (onError) onError(0); }
+  }
+  async function triggerAuthedDownload(path, filename) {
+    const resp = await apiFetch(path);
+    if (!resp.ok) return false;
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename || "download";
+    document.body.appendChild(a);
+    a.click();
+    // 不要在click()後馬上remove()——瀏覽器(尤其headless自動化環境)啟動下載是非同步的，
+    // 太快把<a>從DOM移除或revoke掉blob URL會讓下載被悄悄取消掉，看起來像「什麼都沒發生」。
+    setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 30000);
+    return true;
+  }
+
+  let currentFarmId = null;
+  let farms = [];
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    setStatus("loginStatus", "登入中…");
+    let resp;
+    try {
+      const body = new URLSearchParams({ username: email, password });
+      resp = await fetch(`${API_BASE}/auth/login`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+    } catch { setStatus("loginStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error"); return; }
+    if (!resp.ok) { setStatus("loginStatus", "登入失敗：Email 或密碼錯誤。", "error"); return; }
+    const result = await resp.json();
+    setToken(result.access_token);
+    document.getElementById("userEmailLabel").textContent = email;
+    await afterLogin();
+  });
+
+  async function afterLogin() {
+    const meResp = await apiFetch("/api/customer/me");
+    if (meResp.status === 401) { setToken(""); location.reload(); return; }
+    if (!meResp.ok) {
+      const body = await meResp.json().catch(() => ({}));
+      setStatus("loginStatus", body.detail === "password_change_required" ? "首次登入必須更換密碼才能繼續，請聯絡威果協助處理。" : "此帳號尚未被開通任何企業會籍，請聯絡威果確認。", "error");
+      return;
+    }
+    const me = await meResp.json();
+    document.getElementById("orgBrandName").textContent = me.organization ? `${me.organization.name}的認養農場` : "我們公司的認養農場";
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.remove("hidden");
+
+    const farmsResp = await apiFetch("/api/customer/farms");
+    farms = farmsResp.ok ? await farmsResp.json() : [];
+    renderFarmSwitcher();
+    if (farms.length) {
+      currentFarmId = farms[0].farm_id;
+      await loadLiveTab();
+    } else {
+      document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">您的企業目前沒有已授權的場域。</div>`;
+    }
+    await loadActivities();
+    await loadEsgDocuments();
+  }
+
+  function renderFarmSwitcher() {
+    const el = document.getElementById("farmSwitcher");
+    if (farms.length <= 1) { el.innerHTML = ""; return; }
+    el.innerHTML = farms.map(f => `<button data-farm="${f.farm_id}" class="${f.farm_id === currentFarmId ? 'active' : ''}">${escapeHtml(f.farm_name)}</button>`).join("");
+    el.querySelectorAll("button").forEach(btn => btn.addEventListener("click", async () => {
+      currentFarmId = btn.getAttribute("data-farm");
+      el.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+      document.getElementById("liveHeroWrap").innerHTML = "";
+      await loadLiveTab();
+    }));
+  }
+
+  function liveBannerFor(farm) {
+    if (!farm.latest_photo_captured_at) return "";
+    if (!farm.expected_update_interval_minutes) return "";
+    const ageMinutes = (Date.now() - new Date(farm.latest_photo_captured_at).getTime()) / 60000;
+    if (ageMinutes > farm.expected_update_interval_minutes) {
+      return `<div class="live-banner stale">影像尚未更新，最後拍攝時間：${fmtDateTime(farm.latest_photo_captured_at)}</div>`;
+    }
+    return "";
+  }
+
+  async function loadLiveTab() {
+    const farm = farms.find(f => f.farm_id === currentFarmId);
+    const wrap = document.getElementById("liveHeroWrap");
+    if (!farm || !farm.latest_photo_captured_at) {
+      wrap.innerHTML = `<div class="live-empty">這個認養區尚未發布現場照片。</div>`;
+    } else {
+      const photosResp = await apiFetch(`/api/customer/photos?farm_id=${currentFarmId}`);
+      const photos = photosResp.ok ? await photosResp.json() : [];
+      const latest = photos[0];
+      if (!latest) {
+        wrap.innerHTML = `<div class="live-empty">這個認養區尚未發布現場照片。</div>`;
+      } else {
+        const imgPath = `/api/customer/photos/${latest.id}/image`;
+        wrap.innerHTML = `
+          ${liveBannerFor(farm)}
+          <div class="live-hero">
+            <img id="liveHeroImg" alt="現場照片">
+            <button class="zoom-btn" id="liveZoomBtn">放大看現場</button>
+            <div class="meta">
+              <div class="farm-name">${escapeHtml(farm.farm_name)}${latest.zone_name ? '｜' + escapeHtml(latest.zone_name) : ''}</div>
+              <div class="captured-at">拍攝時間：${fmtDateTime(latest.captured_at)}</div>
+            </div>
+          </div>`;
+        const img = document.getElementById("liveHeroImg");
+        await loadAuthedImage(imgPath, img, () => {
+          wrap.innerHTML = `<div class="live-banner broken">目前影像暫停更新，請稍後再試。</div>`;
+        });
+        if (img.src) {
+          img.addEventListener("click", () => openLightbox(img.src));
+          document.getElementById("liveZoomBtn").addEventListener("click", () => openLightbox(img.src));
+        }
+      }
+    }
+
+    const updatesResp = await apiFetch(`/api/customer/farms/${currentFarmId}/updates`);
+    const updates = updatesResp.ok ? await updatesResp.json() : [];
+    const updateBody = document.getElementById("farmUpdateBody");
+    updateBody.innerHTML = updates.length
+      ? `<p class="update-text">${escapeHtml(updates[0].update_text)}</p>`
+      : `<p class="empty-note">尚無近況更新。</p>`;
+
+    const recordBody = document.getElementById("growthRecordBody");
+    recordBody.innerHTML = updates.length
+      ? updates.map(u => `<div class="record-row"><span>${escapeHtml(u.update_text)}</span><span class="date">${fmtDate(u.published_at)}</span></div>`).join("")
+      : `<p class="empty-note">尚無紀錄。</p>`;
+  }
+
+  function openLightbox(url) {
+    document.getElementById("lightboxImg").src = url;
+    document.getElementById("lightbox").classList.remove("hidden");
+  }
+  document.getElementById("lightboxClose").addEventListener("click", () => document.getElementById("lightbox").classList.add("hidden"));
+  document.getElementById("lightbox").addEventListener("click", (e) => { if (e.target.id === "lightbox") document.getElementById("lightbox").classList.add("hidden"); });
+
+  // ---- tabs ----
+  function switchTab(tab) {
+    ["live", "activities", "esg"].forEach(t => {
+      document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle("hidden", t !== tab);
+    });
+    document.querySelectorAll("[data-tab]").forEach(btn => btn.classList.toggle("active", btn.getAttribute("data-tab") === tab));
+  }
+  document.querySelectorAll("[data-tab]").forEach(btn => btn.addEventListener("click", () => switchTab(btn.getAttribute("data-tab"))));
+
+  // ---- 活動回憶 ----
+  async function loadActivities() {
+    const resp = await apiFetch("/api/customer/activities");
+    const body = document.getElementById("activityListBody");
+    if (!resp.ok) { body.innerHTML = `<p class="empty-note">目前沒有可查看的活動。</p>`; return; }
+    const data = await resp.json();
+    if (!data.items.length) { body.innerHTML = `<p class="empty-note">目前沒有可查看的活動。</p>`; return; }
+    body.innerHTML = data.items.map(a => `
+      <div class="activity-item" data-id="${a.id}">
+        ${a.cover_asset_id ? `<img data-cover-activity="${a.id}" data-cover-asset="${a.cover_asset_id}">` : `<div style="width:84px;height:60px;border-radius:8px;background:var(--mist);flex:0 0 auto;"></div>`}
+        <div class="info"><strong>${escapeHtml(a.title)}</strong><div>${fmtDate(a.event_date)}</div></div>
+      </div>`).join("");
+    body.querySelectorAll(".activity-item").forEach(el => el.addEventListener("click", () => openActivityDetail(el.getAttribute("data-id"))));
+    body.querySelectorAll("img[data-cover-activity]").forEach(img => {
+      loadAuthedImage(`/api/customer/activities/${img.getAttribute("data-cover-activity")}/assets/${img.getAttribute("data-cover-asset")}/image`, img, () => { img.style.visibility = "hidden"; });
+    });
+  }
+
+  async function openActivityDetail(activityId) {
+    const resp = await apiFetch(`/api/customer/activities/${activityId}`);
+    if (!resp.ok) return;
+    const a = await resp.json();
+    document.getElementById("activityListCard").classList.add("hidden");
+    document.getElementById("activityDetailCard").classList.remove("hidden");
+    document.getElementById("activityDetailTitle").textContent = a.title;
+    document.getElementById("activityDetailMeta").textContent = fmtDate(a.event_date);
+    document.getElementById("activityDetailDesc").textContent = a.description || "";
+    const photos = a.assets.filter(x => x.kind === "photo");
+    const attachments = a.assets.filter(x => x.kind === "attachment");
+    const galleryEl = document.getElementById("activityGallery");
+    galleryEl.innerHTML = photos.map(p => `<img data-asset="${p.id}">`).join("");
+    galleryEl.querySelectorAll("img").forEach(img => {
+      const assetId = img.getAttribute("data-asset");
+      loadAuthedImage(`/api/customer/activities/${activityId}/assets/${assetId}/image`, img, () => { img.style.visibility = "hidden"; });
+      img.addEventListener("click", () => img.src && openLightbox(img.src));
+    });
+    const attBody = document.getElementById("activityAttachments");
+    attBody.innerHTML = attachments.length
+      ? attachments.map(att => `<div style="margin-bottom:6px;"><button data-asset="${att.id}" data-name="${escapeHtml(att.original_name || '活動資料')}" style="background:none;border:none;color:var(--green);font-weight:700;font-size:13px;padding:0;">📎 ${escapeHtml(att.original_name || '下載活動資料')}</button></div>`).join("")
+      : "";
+    attBody.querySelectorAll("button[data-asset]").forEach(btn => btn.addEventListener("click", () => {
+      triggerAuthedDownload(`/api/customer/activities/${activityId}/assets/${btn.getAttribute("data-asset")}/download`, btn.getAttribute("data-name"));
+    }));
+  }
+  document.getElementById("activityBackLink").addEventListener("click", () => {
+    document.getElementById("activityDetailCard").classList.add("hidden");
+    document.getElementById("activityListCard").classList.remove("hidden");
+  });
+
+  // ---- ESG ----
+  async function loadEsgDocuments() {
+    const resp = await apiFetch("/api/customer/esg-documents");
+    const body = document.getElementById("esgListBody");
+    if (!resp.ok) { body.innerHTML = `<p class="empty-note">本期資料整理中。</p>`; return; }
+    const docs = await resp.json();
+    if (!docs.length) { body.innerHTML = `<p class="empty-note">本期資料整理中。</p>`; return; }
+    const categoryLabel = { outcome_report: "成果報告", activity_evidence: "活動佐證", farm_record: "場域紀錄", other: "其他附件" };
+    body.innerHTML = docs.map(d => `
+      <div class="esg-item">
+        <div class="info">
+          <strong>${escapeHtml(d.title)}</strong>
+          <div>${categoryLabel[d.category] || d.category}｜${d.period_year}年度｜${escapeHtml(d.version_label)}</div>
+        </div>
+        <button data-doc="${d.id}" data-name="${escapeHtml(d.title)}.pdf">下載 ESG 資料</button>
+      </div>`).join("");
+    body.querySelectorAll("button[data-doc]").forEach(btn => btn.addEventListener("click", () => {
+      triggerAuthedDownload(`/api/customer/esg-documents/${btn.getAttribute("data-doc")}/download`, btn.getAttribute("data-name"));
+    }));
+  }
+
+  document.getElementById("logoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
+
+  if (getToken()) {
+    document.getElementById("loginCard").classList.add("hidden");
+    afterLogin();
+  }
+})();
+</script>
+
+</body>
+</html>
