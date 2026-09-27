@@ -121,6 +121,10 @@
 </head>
 <body>
 
+<div id="sessionRestoring" class="hidden" style="max-width:420px;margin:60px auto;text-align:center;color:var(--muted);font-size:14px;padding:20px;">
+  正在恢復登入狀態…
+</div>
+
 <div id="loginCard">
   <h2>企業員工登入</h2>
   <p>請用威果管理員開通的帳號登入，只會看到您企業已授權的農場內容。這不是Demo，會實際呼叫 WeGrow Orbit 後端。</p>
@@ -270,6 +274,27 @@
   let currentFarmId = null;
   let farms = [];
 
+  // 2026-09-27 修復白屏：不管是「剛登入」還是「用舊token恢復工作階段」，畫面永遠只能是
+  // 三種狀態之一——載入中／登入表單（含錯誤訊息）／主畫面，不能同時把登入表單跟主畫面
+  // 都隱藏起來（那就是白屏，之前的bug就是這樣：舊token失敗時錯誤訊息寫進已經被隱藏的
+  // loginCard，使用者只看到空白）。
+  function showRestoring() {
+    document.getElementById("sessionRestoring").classList.remove("hidden");
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+  }
+  function showLoginCard(message) {
+    document.getElementById("sessionRestoring").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("loginCard").classList.remove("hidden");
+    if (message) setStatus("loginStatus", message, "error");
+  }
+  function showApp() {
+    document.getElementById("sessionRestoring").classList.add("hidden");
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.remove("hidden");
+  }
+
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("loginEmail").value.trim();
@@ -283,34 +308,52 @@
     if (!resp.ok) { setStatus("loginStatus", "登入失敗：Email 或密碼錯誤。", "error"); return; }
     const result = await resp.json();
     setToken(result.access_token);
-    document.getElementById("userEmailLabel").textContent = email;
     await afterLogin();
   });
 
+  // afterLogin() 對外只有兩種結果：成功叫showApp()，失敗一律叫showLoginCard(訊息)並清掉
+  // token——不管失敗原因是401、其他4xx（沒會籍/需要改密碼）、還是fetch本身丟例外
+  // （斷網），都不能讓呼叫端還停在「登入表單跟主畫面都隱藏」的中間狀態。
   async function afterLogin() {
-    const meResp = await apiFetch("/api/customer/me");
-    if (meResp.status === 401) { setToken(""); location.reload(); return; }
+    let meResp;
+    try {
+      meResp = await apiFetch("/api/customer/me");
+    } catch {
+      setToken("");
+      showLoginCard("無法連線到 WeGrow Orbit 後端，請檢查網路後重新登入。");
+      return;
+    }
+    if (meResp.status === 401) {
+      setToken("");
+      showLoginCard("登入已過期，請重新登入。");
+      return;
+    }
     if (!meResp.ok) {
       const body = await meResp.json().catch(() => ({}));
-      setStatus("loginStatus", body.detail === "password_change_required" ? "首次登入必須更換密碼才能繼續，請聯絡威果協助處理。" : "此帳號尚未被開通任何企業會籍，請聯絡威果確認。", "error");
+      setToken("");
+      showLoginCard(body.detail === "password_change_required" ? "首次登入必須更換密碼才能繼續，請聯絡威果協助處理。" : "此帳號尚未被開通任何企業會籍，請聯絡威果確認。");
       return;
     }
     const me = await meResp.json();
     document.getElementById("orgBrandName").textContent = me.organization ? `${me.organization.name}的認養農場` : "我們公司的認養農場";
-    document.getElementById("loginCard").classList.add("hidden");
-    document.getElementById("appShell").classList.remove("hidden");
+    if (me.user && me.user.email) document.getElementById("userEmailLabel").textContent = me.user.email;
+    showApp();
 
-    const farmsResp = await apiFetch("/api/customer/farms");
-    farms = farmsResp.ok ? await farmsResp.json() : [];
-    renderFarmSwitcher();
-    if (farms.length) {
-      currentFarmId = farms[0].farm_id;
-      await loadLiveTab();
-    } else {
-      document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">您的企業目前沒有已授權的場域。</div>`;
+    try {
+      const farmsResp = await apiFetch("/api/customer/farms");
+      farms = farmsResp.ok ? await farmsResp.json() : [];
+      renderFarmSwitcher();
+      if (farms.length) {
+        currentFarmId = farms[0].farm_id;
+        await loadLiveTab();
+      } else {
+        document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">您的企業目前沒有已授權的場域。</div>`;
+      }
+      await loadActivities();
+      await loadEsgDocuments();
+    } catch {
+      // 主畫面已經顯示，這裡失敗只影響個別區塊內容，不應該讓整頁又變回白屏。
     }
-    await loadActivities();
-    await loadEsgDocuments();
   }
 
   function renderFarmSwitcher() {
@@ -471,8 +514,11 @@
   document.getElementById("logoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
 
   if (getToken()) {
-    document.getElementById("loginCard").classList.add("hidden");
-    afterLogin();
+    showRestoring();
+    afterLogin().catch(() => {
+      setToken("");
+      showLoginCard("連線發生問題，請重新登入。");
+    });
   }
 })();
 </script>
