@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>我們公司的認養農場｜WeGrow</title>
+<title>Sol-WeGrow-Farm</title>
 <meta name="description" content="企業員工入口：看現場、活動回憶、ESG下載。">
 <link rel="icon" href="data:,">
 <style>
@@ -168,7 +168,7 @@
   <header class="topbar">
     <div class="brand">
       <div>
-        <div class="brand-name" id="orgBrandName">我們公司的認養農場</div>
+        <div class="brand-name" id="orgBrandName">Sol-WeGrow-Farm</div>
         <div class="brand-sub">by WeGrow</div>
       </div>
     </div>
@@ -365,7 +365,10 @@
       return;
     }
     const me = await meResp.json();
-    document.getElementById("orgBrandName").textContent = me.organization ? `${me.organization.name}的認養農場` : "我們公司的認養農場";
+    // 2026-09-28：主標題固定顯示Sol-WeGrow-Farm，不再用企業名稱拼接——企業身分仍用於
+    // 驗權(membership_role/organization.id)，只是不再反映到畫面標題文字。
+    document.title = "Sol-WeGrow-Farm";
+    document.getElementById("orgBrandName").textContent = "Sol-WeGrow-Farm";
     if (me.user && me.user.email) document.getElementById("userEmailLabel").textContent = me.user.email;
     showApp();
 
