@@ -75,31 +75,62 @@
   .record-row:last-child { border-bottom:none; }
   .record-row .date { color:var(--muted); }
 
-  /* ---- 認養位置地圖 ---- */
+  /* ---- 認養位置地圖：威果黃／深灰品牌配色（2026-09-28） ---- */
+  .wg-adoption-map {
+    --wg-yellow: #E2CF35;
+    --wg-yellow-soft: #FBF3C8;
+    --wg-ink: #424242;
+    --wg-muted: #808080;
+    --wg-bg: #F7F7F3;
+    --wg-surface: #FFFFFF;
+    --wg-row: #E5E7E7;
+    --wg-line: #B8BDBF;
+    --wg-focus: #424242;
+    font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    color: var(--wg-ink);
+    padding: 24px;
+  }
+  @media (max-width: 720px) { .wg-adoption-map { padding: 16px; } }
+  .map-farm-subtitle { margin:-6px 0 10px; font-size:12px; color: var(--wg-muted, var(--muted)); }
   .map-toolbar { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
-  .map-toolbar button { border:1px solid var(--line); background:var(--white); border-radius:999px; padding:6px 13px; font-size:12px; color:var(--ink); }
-  .map-toolbar button.primary { background: var(--green); color:#fff; border-color: var(--green); }
-  .map-viewport { position:relative; width:100%; aspect-ratio:96/48; background:var(--mist); border-radius:10px; overflow:hidden; touch-action:none; cursor:grab; }
+  .map-toolbar button {
+    border:1px solid var(--wg-line); background:var(--wg-surface); border-radius:999px;
+    padding:8px 16px; font-size:13px; color:var(--wg-ink); min-height:44px;
+  }
+  .map-toolbar button.primary { background: var(--wg-yellow); color: var(--wg-ink); border-color: var(--wg-yellow); font-weight:700; }
+  .map-toolbar button:focus-visible, .map-zoom-controls button:focus-visible {
+    outline:3px solid var(--wg-focus); outline-offset:2px;
+  }
+  .map-viewport {
+    position:relative; width:100%; aspect-ratio:96/48; background:var(--wg-bg);
+    border-radius:10px; overflow:hidden; touch-action:none; cursor:grab;
+  }
   .map-viewport.grabbing { cursor:grabbing; }
   .map-viewport svg { width:100%; height:100%; display:block; }
-  .map-row { fill:#e4e9dc; stroke:#c7cebb; stroke-width:0.25; cursor:pointer; }
-  .map-row:hover { stroke:#8a9478; stroke-width:0.4; }
-  .map-row.mine { fill:#dff3df; stroke: var(--green); stroke-width:0.5; }
-  .map-row.selected { stroke: var(--gold); stroke-width:0.9; }
-  .map-row.mine.selected { fill:#bfe6bf; }
-  .map-row.nursery { fill:#f2ece0; stroke:#d8cbb0; stroke-dasharray:1,0.6; }
-  .map-row-label { font-size:2.1px; fill:#5b6151; pointer-events:none; }
-  .map-row-label.mine { fill:#0f2f1c; font-weight:700; }
-  .map-zoom-controls { position:absolute; right:8px; bottom:8px; display:flex; flex-direction:column; gap:4px; }
-  .map-zoom-controls button { width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:rgba(255,255,255,.92); font-size:16px; line-height:1; }
-  .map-legend { display:flex; gap:14px; margin-top:10px; font-size:12px; color:var(--muted); flex-wrap:wrap; }
-  .map-legend .swatch { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
-  .map-info-panel { margin-top:10px; padding:10px 12px; background:var(--mist); border-radius:10px; font-size:13px; display:none; }
+  .map-row { fill:var(--wg-row); stroke:var(--wg-line); stroke-width:0.25; cursor:pointer; }
+  .map-row:hover { stroke:var(--wg-ink); stroke-width:0.4; }
+  .map-row:focus-visible { outline:none; stroke:var(--wg-focus); stroke-width:0.9; stroke-dasharray:1.2,0.8; }
+  .map-row.mine { fill:var(--wg-yellow); stroke:var(--wg-ink); stroke-width:0.6; }
+  /* 選取：額外深灰虛線外框，保留原本填色（本企業排選取後仍是黃色，其他排選取後維持灰色，不能變黃） */
+  .map-row.selected { stroke:var(--wg-ink); stroke-width:0.7; stroke-dasharray:1.4,0.9; }
+  .map-row.nursery { fill:#EFEFEF; stroke:var(--wg-line); stroke-dasharray:1,0.6; }
+  .map-row-label { font-size:2.1px; fill:var(--wg-ink); font-weight:600; pointer-events:none; }
+  .map-row-label.mine { font-weight:800; }
+  .map-zone-label { font-size:2.4px; fill:var(--wg-ink); font-weight:700; pointer-events:none; }
+  .map-zone-label-bg { fill:var(--wg-yellow-soft); }
+  .map-zoom-controls { position:absolute; right:8px; bottom:8px; display:flex; flex-direction:column; gap:6px; }
+  .map-zoom-controls button {
+    width:44px; height:44px; border-radius:10px; border:1px solid var(--wg-line);
+    background:rgba(255,255,255,.95); font-size:18px; line-height:1; color:var(--wg-ink);
+  }
+  .map-legend { display:flex; gap:14px; margin-top:10px; font-size:12px; color:var(--wg-muted); flex-wrap:wrap; }
+  .map-legend .swatch { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px; border:1px solid var(--wg-line); }
+  .map-info-panel { margin-top:10px; padding:10px 12px; background:var(--wg-bg); border-radius:10px; font-size:13px; display:none; }
   .map-info-panel.show { display:block; }
   .map-row-list { margin-top:10px; }
-  .map-row-list summary { font-size:12px; color:var(--muted); cursor:pointer; }
-  .map-row-chip { display:inline-block; font-size:11px; padding:3px 8px; border-radius:999px; background:var(--mist); color:var(--muted); margin:4px 4px 0 0; }
-  .map-row-chip.mine { background: var(--green); color:#fff; font-weight:700; }
+  .map-row-list summary { font-size:12px; color:var(--wg-muted); cursor:pointer; }
+  .map-row-chip { display:inline-block; font-size:11px; padding:3px 8px; border-radius:999px; background:var(--wg-row); color:var(--wg-ink); margin:4px 4px 0 0; }
+  .map-row-chip.mine { background: var(--wg-yellow); color:var(--wg-ink); font-weight:800; }
 
   /* ---- 活動回憶 ---- */
   .activity-item { display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); cursor:pointer; }
@@ -207,8 +238,9 @@
     <!-- 看現場 -->
     <section id="tabLive">
       <div id="liveHeroWrap"></div>
-      <div class="card hidden" id="layoutMapCard">
-        <h3>認養位置</h3>
+      <div class="card wg-adoption-map hidden" id="layoutMapCard">
+        <h3>我的認養區</h3>
+        <p class="map-farm-subtitle" id="mapFarmSubtitle"></p>
         <div id="layoutMapBody"></div>
       </div>
       <div class="card">
@@ -544,6 +576,8 @@
     }
 
     card.classList.remove("hidden");
+    const currentFarm = farms.find(f => f.farm_id === farmId);
+    document.getElementById("mapFarmSubtitle").textContent = currentFarm ? currentFarm.farm_name : "";
     mapRowsData = data.rows;
     mapSelectedRowId = null;
     const [vx, vy, vw, vh] = (data.layout_version.view_box || "0 0 96 48").split(/\s+/).map(Number);
@@ -564,9 +598,9 @@
         </div>
       </div>
       <div class="map-legend">
-        <span><span class="swatch" style="background:#dff3df;border:1px solid var(--green);"></span>本企業認養</span>
-        <span><span class="swatch" style="background:#e4e9dc;"></span>其他區域</span>
-        <span><span class="swatch" style="background:#f2ece0;"></span>育苗室(不開放認養)</span>
+        <span><span class="swatch" style="background:#E2CF35;"></span>您的認養區</span>
+        <span><span class="swatch" style="background:#E5E7E7;"></span>其他區域</span>
+        <span><span class="swatch" style="background:#EFEFEF;"></span>育苗室(不開放認養)</span>
       </div>
       <div class="map-info-panel" id="mapInfoPanel"></div>
       <details class="map-row-list">
@@ -588,6 +622,28 @@
     setupMapPanZoom();
   }
 
+  function zoneLabelsMarkup() {
+    // A–F分區淡黃標籤：取每個zone_group所有排的bbox，貼在該zone最靠外側(通常是入口那一側/上緣)
+    // 的小範圍，不佔用排本身中央的排號文字位置。
+    const zones = {};
+    mapRowsData.forEach(r => {
+      if (r.zone_group === "nursery") return; // 育苗室本身已有獨立標籤(1..6)，不用再貼分區標籤
+      const g = r.geometry;
+      if (!zones[r.zone_group]) zones[r.zone_group] = { minX: g.x, minY: g.y, maxX: g.x + g.w, maxY: g.y + g.h };
+      const z = zones[r.zone_group];
+      z.minX = Math.min(z.minX, g.x); z.minY = Math.min(z.minY, g.y);
+      z.maxX = Math.max(z.maxX, g.x + g.w); z.maxY = Math.max(z.maxY, g.y + g.h);
+    });
+    return Object.entries(zones).map(([zone, z]) => {
+      const cx = (z.minX + z.maxX) / 2;
+      const labelY = z.minY + 1.1;
+      const label = `${zone}區`;
+      const w = 4.2, h = 2;
+      return `<rect class="map-zone-label-bg" x="${cx - w / 2}" y="${labelY - h / 2}" width="${w}" height="${h}" rx="0.4"></rect>
+        <text class="map-zone-label" x="${cx}" y="${labelY}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+    }).join("");
+  }
+
   function renderMapSvg() {
     const svg = document.getElementById("mapSvg");
     if (!svg) return;
@@ -602,7 +658,7 @@
         <rect class="${cls}" data-row-id="${r.id}" x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" tabindex="0" role="button" aria-label="${escapeHtml(r.zone_group === 'nursery' ? '育苗室' : r.zone_group + '區')} ${escapeHtml(r.display_label || r.code)}${r.is_mine ? '，本企業認養' : ''}"></rect>
         <text class="map-row-label ${r.is_mine ? "mine" : ""}" x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" transform="rotate(${g.h > g.w ? -90 : 0} ${labelX} ${labelY})">${escapeHtml(r.code)}</text>
       </g>`;
-    }).join("");
+    }).join("") + zoneLabelsMarkup();
     svg.querySelectorAll("[data-row-id]").forEach(el => {
       el.addEventListener("click", () => selectMapRow(el.getAttribute("data-row-id")));
       el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectMapRow(el.getAttribute("data-row-id")); } });
