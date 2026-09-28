@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="企業員工入口：看現場、活動回憶、ESG下載。">
-<meta name="build-version" content="20260928T4-map-layout-refresh" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20260928T5-toolbar-wording-fix" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -105,7 +105,7 @@
     padding:8px 16px; font-size:13px; color:var(--wg-ink); min-height:44px;
   }
   .map-toolbar button.primary { background: var(--wg-yellow); color: var(--wg-ink); border-color: var(--wg-yellow); font-weight:700; }
-  .map-toolbar button:focus-visible, .map-zoom-controls button:focus-visible {
+  .map-toolbar button:focus-visible {
     outline:3px solid var(--wg-focus); outline-offset:2px;
   }
   .map-viewport {
@@ -134,11 +134,6 @@
   .map-mine-callout-box { fill:var(--wg-ink); }
   .map-mine-callout-title { font-size:1.9px; fill:#fff; font-weight:700; text-anchor:middle; dominant-baseline:middle; }
   .map-mine-callout-sub { font-size:1.7px; fill:var(--wg-yellow); font-weight:700; text-anchor:middle; dominant-baseline:middle; }
-  .map-zoom-controls { position:absolute; right:8px; bottom:8px; display:flex; flex-direction:column; gap:6px; }
-  .map-zoom-controls button {
-    width:44px; height:44px; border-radius:10px; border:1px solid var(--wg-line);
-    background:rgba(255,255,255,.95); font-size:18px; line-height:1; color:var(--wg-ink);
-  }
   .map-legend { display:flex; gap:14px; margin-top:10px; font-size:12px; color:var(--wg-muted); flex-wrap:wrap; }
   .map-legend .swatch { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:5px; vertical-align:-1px; border:1px solid var(--wg-line); }
   .map-info-panel { margin-top:10px; padding:10px 12px; background:var(--wg-bg); border-radius:10px; font-size:13px; display:none; }
@@ -608,19 +603,16 @@
         <div class="map-toolbar">
           <button id="mapLocateBtn" class="primary" ${myCount ? "" : "disabled"}>定位我的認養區</button>
           <button id="mapResetBtn">顯示全場</button>
+          <button id="mapZoomInBtn" aria-label="放大">＋</button>
+          <button id="mapZoomOutBtn" aria-label="縮小">－</button>
         </div>
       </div>
       <div class="map-viewport" id="mapViewport" tabindex="0" aria-label="農場認養地圖，可用方向鍵移動、Enter選取">
         <svg id="mapSvg" viewBox="${mapBaseViewBox.x} ${mapBaseViewBox.y} ${mapBaseViewBox.w} ${mapBaseViewBox.h}" role="group"></svg>
-        <div class="map-zoom-controls">
-          <button id="mapZoomInBtn" aria-label="放大">＋</button>
-          <button id="mapZoomOutBtn" aria-label="縮小">－</button>
-          <button id="mapResetZoomBtn" aria-label="重設視角">↻</button>
-        </div>
       </div>
       <div class="map-legend">
         <span><span class="swatch" style="background:#E2CF35;"></span>您的認養區</span>
-        <span><span class="swatch" style="background:#E5E7E7;"></span>其他區域</span>
+        <span><span class="swatch" style="background:#E5E7E7;"></span>非本企業認養範圍</span>
         <span><span class="swatch" style="background:#EFEFEF;"></span>育苗室(不開放認養)</span>
       </div>
       <div class="map-info-panel" id="mapInfoPanel"></div>
@@ -637,7 +629,6 @@
     document.getElementById("mapResetBtn").addEventListener("click", resetMapView);
     document.getElementById("mapZoomInBtn").addEventListener("click", () => zoomMap(0.8));
     document.getElementById("mapZoomOutBtn").addEventListener("click", () => zoomMap(1.25));
-    document.getElementById("mapResetZoomBtn").addEventListener("click", resetMapView);
     body.querySelectorAll(".map-row-chip").forEach(chip => {
       chip.addEventListener("click", () => selectMapRow(chip.getAttribute("data-row-id")));
     });
