@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="企業員工入口：看現場、活動回憶、ESG下載。">
-<meta name="build-version" content="20260928T3-brand-restyle" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20260928T4-map-layout-refresh" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -91,8 +91,15 @@
     padding: 24px;
   }
   @media (max-width: 720px) { .wg-adoption-map { padding: 16px; } }
-  .map-farm-subtitle { margin:-6px 0 10px; font-size:12px; color: var(--wg-muted, var(--muted)); }
-  .map-toolbar { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .map-header-row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .map-header-left { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; min-width:0; }
+  .map-header-left h3 { margin:0; font-size:16px; font-weight:800; color:var(--wg-ink); }
+  .map-farm-subtitle { font-size:13px; color: var(--wg-muted, var(--muted)); }
+  .map-badge {
+    display:inline-flex; align-items:center; gap:5px; background:var(--wg-yellow-soft);
+    color:var(--wg-ink); font-size:12px; font-weight:700; border-radius:999px; padding:5px 12px;
+  }
+  .map-toolbar { display:flex; gap:8px; flex-wrap:wrap; }
   .map-toolbar button {
     border:1px solid var(--wg-line); background:var(--wg-surface); border-radius:999px;
     padding:8px 16px; font-size:13px; color:var(--wg-ink); min-height:44px;
@@ -107,7 +114,7 @@
   }
   .map-viewport.grabbing { cursor:grabbing; }
   .map-viewport svg { width:100%; height:100%; display:block; }
-  .map-row { fill:var(--wg-row); stroke:var(--wg-line); stroke-width:0.25; cursor:pointer; }
+  .map-row { fill:url(#wgRowGrain); stroke:var(--wg-line); stroke-width:0.25; cursor:pointer; }
   .map-row:hover { stroke:var(--wg-ink); stroke-width:0.4; }
   .map-row:focus-visible { outline:none; stroke:var(--wg-focus); stroke-width:0.9; stroke-dasharray:1.2,0.8; }
   .map-row.mine { fill:var(--wg-yellow); stroke:var(--wg-ink); stroke-width:0.6; }
@@ -116,8 +123,17 @@
   .map-row.nursery { fill:#EFEFEF; stroke:var(--wg-line); stroke-dasharray:1,0.6; }
   .map-row-label { font-size:2.1px; fill:var(--wg-ink); font-weight:600; pointer-events:none; }
   .map-row-label.mine { font-weight:800; }
-  .map-zone-label { font-size:2.4px; fill:var(--wg-ink); font-weight:700; pointer-events:none; }
-  .map-zone-label-bg { fill:var(--wg-yellow-soft); }
+  .map-row-note { font-size:1.5px; fill:var(--wg-muted); pointer-events:none; }
+  .map-zone-band-bg { fill:var(--wg-yellow-soft); }
+  .map-zone-band-label { font-size:2.3px; fill:var(--wg-ink); font-weight:700; pointer-events:none; text-anchor:middle; dominant-baseline:middle; }
+  .map-walkway-label { font-size:1.9px; fill:var(--wg-muted); text-anchor:middle; dominant-baseline:middle; letter-spacing:.1px; }
+  .map-entrance-label { font-size:2.1px; fill:var(--wg-ink); font-weight:700; text-anchor:middle; dominant-baseline:middle; }
+  .map-entrance-arrow { fill:var(--wg-ink); }
+  .map-workspace-box { fill:var(--wg-surface); stroke:var(--wg-line); stroke-dasharray:1,0.8; }
+  .map-workspace-label { font-size:1.8px; fill:var(--wg-muted); text-anchor:middle; dominant-baseline:middle; }
+  .map-mine-callout-box { fill:var(--wg-ink); }
+  .map-mine-callout-title { font-size:1.9px; fill:#fff; font-weight:700; text-anchor:middle; dominant-baseline:middle; }
+  .map-mine-callout-sub { font-size:1.7px; fill:var(--wg-yellow); font-weight:700; text-anchor:middle; dominant-baseline:middle; }
   .map-zoom-controls { position:absolute; right:8px; bottom:8px; display:flex; flex-direction:column; gap:6px; }
   .map-zoom-controls button {
     width:44px; height:44px; border-radius:10px; border:1px solid var(--wg-line);
@@ -239,8 +255,6 @@
     <section id="tabLive">
       <div id="liveHeroWrap"></div>
       <div class="card wg-adoption-map hidden" id="layoutMapCard">
-        <h3>我的認養區</h3>
-        <p class="map-farm-subtitle" id="mapFarmSubtitle"></p>
         <div id="layoutMapBody"></div>
       </div>
       <div class="card">
@@ -577,7 +591,6 @@
 
     card.classList.remove("hidden");
     const currentFarm = farms.find(f => f.farm_id === farmId);
-    document.getElementById("mapFarmSubtitle").textContent = currentFarm ? currentFarm.farm_name : "";
     mapRowsData = data.rows;
     mapSelectedRowId = null;
     const [vx, vy, vw, vh] = (data.layout_version.view_box || "0 0 96 48").split(/\s+/).map(Number);
@@ -586,15 +599,23 @@
 
     const myCount = data.rows.filter(r => r.is_mine).length;
     body.innerHTML = `
-      <div class="map-toolbar">
-        <button id="mapLocateBtn" class="primary" ${myCount ? "" : "disabled"}>定位我的認養區</button>
-        <button id="mapResetBtn">顯示全場</button>
+      <div class="map-header-row">
+        <div class="map-header-left">
+          <h3>我的認養位置</h3>
+          <span class="map-farm-subtitle">｜${escapeHtml(currentFarm ? currentFarm.farm_name : "")}</span>
+          ${myCount ? `<span class="map-badge">已認養 ${myCount} 排</span>` : ""}
+        </div>
+        <div class="map-toolbar">
+          <button id="mapLocateBtn" class="primary" ${myCount ? "" : "disabled"}>定位我的認養區</button>
+          <button id="mapResetBtn">顯示全場</button>
+        </div>
       </div>
       <div class="map-viewport" id="mapViewport" tabindex="0" aria-label="農場認養地圖，可用方向鍵移動、Enter選取">
         <svg id="mapSvg" viewBox="${mapBaseViewBox.x} ${mapBaseViewBox.y} ${mapBaseViewBox.w} ${mapBaseViewBox.h}" role="group"></svg>
         <div class="map-zoom-controls">
           <button id="mapZoomInBtn" aria-label="放大">＋</button>
           <button id="mapZoomOutBtn" aria-label="縮小">－</button>
+          <button id="mapResetZoomBtn" aria-label="重設視角">↻</button>
         </div>
       </div>
       <div class="map-legend">
@@ -616,49 +637,157 @@
     document.getElementById("mapResetBtn").addEventListener("click", resetMapView);
     document.getElementById("mapZoomInBtn").addEventListener("click", () => zoomMap(0.8));
     document.getElementById("mapZoomOutBtn").addEventListener("click", () => zoomMap(1.25));
+    document.getElementById("mapResetZoomBtn").addEventListener("click", resetMapView);
     body.querySelectorAll(".map-row-chip").forEach(chip => {
       chip.addEventListener("click", () => selectMapRow(chip.getAttribute("data-row-id")));
     });
     setupMapPanZoom();
   }
 
-  function zoneLabelsMarkup() {
-    // A–F分區淡黃標籤：取每個zone_group所有排的bbox，貼在該zone最靠外側(通常是入口那一側/上緣)
-    // 的小範圍，不佔用排本身中央的排號文字位置。
+  function computeZoneBoxes() {
     const zones = {};
     mapRowsData.forEach(r => {
-      if (r.zone_group === "nursery") return; // 育苗室本身已有獨立標籤(1..6)，不用再貼分區標籤
       const g = r.geometry;
       if (!zones[r.zone_group]) zones[r.zone_group] = { minX: g.x, minY: g.y, maxX: g.x + g.w, maxY: g.y + g.h };
       const z = zones[r.zone_group];
       z.minX = Math.min(z.minX, g.x); z.minY = Math.min(z.minY, g.y);
       z.maxX = Math.max(z.maxX, g.x + g.w); z.maxY = Math.max(z.maxY, g.y + g.h);
     });
+    return zones;
+  }
+
+  function zoneLabelsMarkup() {
+    // A–F分區＋育苗室標題橫幅：橫幅寬度=該zone實際bbox寬度，貼在zone頂端，不臆造新座標。
+    const zones = computeZoneBoxes();
     return Object.entries(zones).map(([zone, z]) => {
       const cx = (z.minX + z.maxX) / 2;
-      const labelY = z.minY + 1.1;
-      const label = `${zone}區`;
-      const w = 4.2, h = 2;
-      return `<rect class="map-zone-label-bg" x="${cx - w / 2}" y="${labelY - h / 2}" width="${w}" height="${h}" rx="0.4"></rect>
-        <text class="map-zone-label" x="${cx}" y="${labelY}" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+      const isNursery = zone === "nursery";
+      const bandH = isNursery ? 2.2 : 2.3;
+      // 育苗室排較矮(每排僅約2單位)，標題橫幅若疊在頂端會整條蓋住第一排；
+      // 改貼在育苗室bbox「下方」的真實空白畫布(育苗室與中央走道之間本來就沒有排)。
+      const bandY = isNursery ? z.maxY + 0.6 : z.minY;
+      const labelY = bandY + bandH / 2;
+      const label = isNursery ? "育苗室（不開放認養）" : `${zone}區`;
+      const fontAdjust = isNursery ? ` style="font-size:1.9px;"` : "";
+      return `<rect class="map-zone-band-bg" x="${z.minX}" y="${bandY}" width="${z.maxX - z.minX}" height="${bandH}" rx="0.5"></rect>
+        <text class="map-zone-band-label"${fontAdjust} x="${cx}" y="${labelY}">${label}</text>`;
     }).join("");
+  }
+
+  function walkwayAndEntranceMarkup(vx, vy, vw, vh) {
+    const zones = computeZoneBoxes();
+    const mainZones = Object.entries(zones).filter(([z]) => z !== "nursery");
+    if (!mainZones.length) return "";
+    const midY = vy + vh / 2;
+    const upper = mainZones.filter(([, z]) => (z.minY + z.maxY) / 2 < midY);
+    const lower = mainZones.filter(([, z]) => (z.minY + z.maxY) / 2 >= midY);
+    let out = "";
+
+    // 中央走道：上下兩排zone之間的實際空隙（真實座標算出，非臆造）
+    if (upper.length && lower.length) {
+      const upperMaxY = Math.max(...upper.map(([, z]) => z.maxY));
+      const lowerMinY = Math.min(...lower.map(([, z]) => z.minY));
+      if (lowerMinY - upperMaxY > 0.6) {
+        const midWalkY = (upperMaxY + lowerMinY) / 2;
+        out += `<text class="map-walkway-label" x="${vx + vw / 2}" y="${midWalkY}">中央走道</text>`;
+      }
+    }
+
+    // 入口＋作業空間：主要栽培區右側若有未使用的實際空白畫布，才畫（不臆造尺寸，直接用bbox算出的空白）
+    if (lower.length) {
+      const lowerMaxX = Math.max(...lower.map(([, z]) => z.maxX));
+      const lowerMinY = Math.min(...lower.map(([, z]) => z.minY));
+      const lowerMaxY = Math.max(...lower.map(([, z]) => z.maxY));
+      const gapX0 = lowerMaxX + 0.8;
+      const gapX1 = vx + vw - 1.5;
+      if (gapX1 - gapX0 > 3) {
+        // 浮動縮放按鈕固定貼在viewport右下角(螢幕座標)，因此文字說明都集中在這塊空白的「上半部」，
+        // 底部留給按鈕覆蓋，避免文字被不透明按鈕蓋住看不全。
+        out += `<rect class="map-workspace-box" x="${gapX0}" y="${lowerMinY}" width="${gapX1 - gapX0}" height="${lowerMaxY - lowerMinY}" rx="1"></rect>
+          <text class="map-workspace-label" style="text-anchor:start;font-size:1.5px;" x="${gapX0 + 0.5}" y="${lowerMinY + 6.4}">作業區</text>`;
+        const arrowRightX = gapX1 - 0.6;
+        const arrowY = lowerMinY + 3.2;
+        out += `<polygon class="map-entrance-arrow" points="${arrowRightX},${arrowY - 1} ${arrowRightX},${arrowY + 1} ${arrowRightX - 2},${arrowY}"></polygon>
+          <text class="map-entrance-label" style="text-anchor:end;" x="${arrowRightX - 2.6}" y="${arrowY}">入口</text>`;
+      }
+    }
+    return out;
+  }
+
+  function mineCalloutMarkup(vx, vy, vw, vh) {
+    const mine = mapRowsData.filter(r => r.is_mine);
+    if (!mine.length) return "";
+    const minX = Math.min(...mine.map(r => r.geometry.x));
+    const minY = Math.min(...mine.map(r => r.geometry.y));
+    const maxX = Math.max(...mine.map(r => r.geometry.x + r.geometry.w));
+    const maxY = Math.max(...mine.map(r => r.geometry.y + r.geometry.h));
+    const zoneSet = [...new Set(mine.map(r => r.zone_group))];
+    const zoneLabel = zoneSet.map(z => ZONE_LABEL[z] || z).join("/");
+    const codes = mine.map(r => r.display_label || r.code).join("/");
+    const cx = (minX + maxX) / 2;
+    const boxW = Math.max(14, Math.min(vw * 0.6, (codes.length + zoneLabel.length) * 0.9));
+    const boxH = 4.6;
+
+    // 只在「真的量得出來的空白畫布」放提示框，避免蓋住其他分區的排或走道文字；
+    // 量法：找出x範圍重疊、且在本企業排上方/下方的其他分區bbox，算出實際可用高度。
+    const zones = computeZoneBoxes();
+    const others = Object.values(zones).filter(z => z.maxX > minX && z.minX < maxX);
+    const obstructionsAbove = others.filter(z => z.maxY <= minY).map(z => z.maxY);
+    const obstructionsBelow = others.filter(z => z.minY >= maxY).map(z => z.minY);
+    const aboveLimit = obstructionsAbove.length ? Math.max(...obstructionsAbove) : vy;
+    const belowLimit = obstructionsBelow.length ? Math.min(...obstructionsBelow) : vy + vh;
+    const aboveSpace = minY - aboveLimit;
+    const belowSpace = belowLimit - maxY;
+
+    let boxY;
+    if (aboveSpace >= boxH + 1) {
+      boxY = minY - boxH - 0.8;
+    } else if (belowSpace >= boxH + 1) {
+      boxY = maxY + 0.8;
+    } else {
+      return ""; // 版面太擠找不到安全空白，就不畫浮動提示框，圖例＋點選詳情已足夠傳達
+    }
+    const boxX = Math.min(Math.max(vx + 0.3, cx - boxW / 2), vx + vw - boxW - 0.3);
+    return `<rect class="map-mine-callout-box" x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="1"></rect>
+      <text class="map-mine-callout-title" x="${boxX + boxW / 2}" y="${boxY + 1.6}">您的認養區</text>
+      <text class="map-mine-callout-sub" x="${boxX + boxW / 2}" y="${boxY + boxH - 1.3}">${escapeHtml(zoneLabel)} · ${escapeHtml(codes)}</text>`;
+  }
+
+  function svgDefsMarkup() {
+    return `<defs>
+      <pattern id="wgRowGrain" width="1.2" height="1.2" patternUnits="userSpaceOnUse">
+        <rect width="1.2" height="1.2" style="fill:var(--wg-row);"></rect>
+        <rect x="0" width="0.15" height="1.2" style="fill:var(--wg-line);opacity:0.35;"></rect>
+      </pattern>
+    </defs>`;
   }
 
   function renderMapSvg() {
     const svg = document.getElementById("mapSvg");
     if (!svg) return;
     svg.setAttribute("viewBox", `${mapViewBox.x} ${mapViewBox.y} ${mapViewBox.w} ${mapViewBox.h}`);
-    svg.innerHTML = mapRowsData.map(r => {
+    const rowsMarkup = mapRowsData.map(r => {
       const g = r.geometry;
       const isNursery = r.space_type === "nursery_row";
       const cls = ["map-row", isNursery ? "nursery" : "", r.is_mine ? "mine" : "", r.id === mapSelectedRowId ? "selected" : ""].filter(Boolean).join(" ");
       const labelX = g.x + g.w / 2;
       const labelY = g.y + g.h / 2;
+      const rotate = g.h > g.w ? -90 : 0;
+      let noteMarkup = "";
+      if (isNursery && (r.code === "N1" || r.code === "N6")) {
+        const note = r.code === "N1" ? "溫室內部" : "溫室外部";
+        const noteX = g.x + g.w - 3;
+        noteMarkup = `<text class="map-row-note" x="${noteX}" y="${labelY}" text-anchor="end" dominant-baseline="middle">${note}</text>`;
+      }
       return `<g>
         <rect class="${cls}" data-row-id="${r.id}" x="${g.x}" y="${g.y}" width="${g.w}" height="${g.h}" tabindex="0" role="button" aria-label="${escapeHtml(r.zone_group === 'nursery' ? '育苗室' : r.zone_group + '區')} ${escapeHtml(r.display_label || r.code)}${r.is_mine ? '，本企業認養' : ''}"></rect>
-        <text class="map-row-label ${r.is_mine ? "mine" : ""}" x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" transform="rotate(${g.h > g.w ? -90 : 0} ${labelX} ${labelY})">${escapeHtml(r.code)}</text>
+        <text class="map-row-label ${r.is_mine ? "mine" : ""}" x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle" transform="rotate(${rotate} ${labelX} ${labelY})">${escapeHtml(r.code)}</text>
+        ${noteMarkup}
       </g>`;
-    }).join("") + zoneLabelsMarkup();
+    }).join("");
+    const { x: vx, y: vy, w: vw, h: vh } = mapBaseViewBox;
+    svg.innerHTML = svgDefsMarkup() + rowsMarkup + zoneLabelsMarkup()
+      + walkwayAndEntranceMarkup(vx, vy, vw, vh) + mineCalloutMarkup(vx, vy, vw, vh);
     svg.querySelectorAll("[data-row-id]").forEach(el => {
       el.addEventListener("click", () => selectMapRow(el.getAttribute("data-row-id")));
       el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectMapRow(el.getAttribute("data-row-id")); } });
