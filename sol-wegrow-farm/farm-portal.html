@@ -198,6 +198,7 @@
     background:#141713; color:#fff; border:none; border-radius:999px;
     padding:6px 16px; font-size:12px; font-weight:700;
   }
+.farm-photo-button{display:block;padding:0;border:0;background:none;width:100%;cursor:zoom-in}.farm-photo-button img{display:block;width:100%;height:auto;border-radius:12px}.farm-photo-button:focus-visible{outline:3px solid #F2C230;outline-offset:4px}
 </style>
 </head>
 <body>
@@ -249,6 +250,7 @@
     <!-- 看現場 -->
     <section id="tabLive">
       <div id="liveHeroWrap"></div>
+      <section class="card"><h3>收成與配送</h3><div id="harvestOutlookBody"></div></section>
       <div class="card wg-adoption-map hidden" id="layoutMapCard">
         <div id="layoutMapBody"></div>
       </div>
@@ -497,58 +499,112 @@
     return "";
   }
 
-  async function loadLiveTab() {
-    const farm = farms.find(f => f.farm_id === currentFarmId);
-    const wrap = document.getElementById("liveHeroWrap");
-    if (!farm || !farm.latest_photo_captured_at) {
-      wrap.innerHTML = `<div class="live-empty">這個認養區尚未發布現場照片。</div>`;
-    } else {
-      const photosResp = await apiFetch(`/api/customer/photos?farm_id=${currentFarmId}`);
-      const photos = photosResp.ok ? await photosResp.json() : [];
-      const latest = photos[0];
-      if (!latest) {
-        wrap.innerHTML = `<div class="live-empty">這個認養區尚未發布現場照片。</div>`;
-      } else {
-        const imgPath = `/api/customer/photos/${latest.id}/image`;
-        wrap.innerHTML = `
-          ${liveBannerFor(farm)}
-          <div class="live-hero">
-            <img id="liveHeroImg" alt="現場照片">
-            <button class="zoom-btn" id="liveZoomBtn">放大看現場</button>
-            <div class="meta">
-              <div class="farm-name">${escapeHtml(farm.farm_name)}${latest.zone_name ? '｜' + escapeHtml(latest.zone_name) : ''}</div>
-              <div class="captured-at">拍攝時間：${fmtDateTime(latest.captured_at)}</div>
-            </div>
-          </div>`;
-        const img = document.getElementById("liveHeroImg");
-        await loadAuthedImage(imgPath, img, () => {
-          wrap.innerHTML = `<div class="live-banner broken">目前影像暫停更新，請稍後再試。</div>`;
-        });
-        if (img.src) {
-          img.addEventListener("click", () => openLightbox(img.src));
-          document.getElementById("liveZoomBtn").addEventListener("click", () => openLightbox(img.src));
-        }
-      }
-    }
+  let liveRequest = 0;
+  let liveAbort = null;
+  let livePhotoUrl = null;
 
-    const updatesResp = await apiFetch(`/api/customer/farms/${currentFarmId}/updates`);
-    const updates = updatesResp.ok ? await updatesResp.json() : [];
-    const updateBody = document.getElementById("farmUpdateBody");
-    updateBody.innerHTML = updates.length
-      ? `<p class="update-text">${escapeHtml(updates[0].update_text)}</p>`
-      : `<p class="empty-note">尚無近況更新。</p>`;
-
-    const recordBody = document.getElementById("growthRecordBody");
-    recordBody.innerHTML = updates.length
-      ? updates.map(u => `<div class="record-row"><span>${escapeHtml(u.update_text)}</span><span class="date">${fmtDate(u.published_at)}</span></div>`).join("")
-      : `<p class="empty-note">尚無紀錄。</p>`;
-
-    try {
-      await loadFarmLayoutMap(currentFarmId);
-    } catch {
-      // 地圖失敗不該連累看現場其他區塊都不顯示，錯誤在loadFarmLayoutMap內部自己處理。
-    }
+  function clearLivePhoto() {
+    if (livePhotoUrl) URL.revokeObjectURL(livePhotoUrl);
+    livePhotoUrl = null;
   }
+  function photoHeading(iso) {
+    const date = new Date(iso);
+    if (!Number.isFinite(date.getTime())) return '農場現場照';
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Taipei', month: 'numeric', day: 'numeric' }).formatToParts(date);
+    return `${parts.find(p=>p.type==='month').value}月${parts.find(p=>p.type==='day').value}日更新農場照`;
+  }
+
+  async function loadLiveTab() {
+    const id = ++liveRequest;
+    liveAbort?.abort();
+    liveAbort = new AbortController();
+    const signal = liveAbort.signal;
+    const farmId = currentFarmId;
+    const token = getToken();
+    const current = () => id === liveRequest && farmId === currentFarmId && token === getToken() && !signal.aborted;
+    const wrap = document.getElementById('liveHeroWrap');
+    const outlook = document.getElementById('harvestOutlookBody');
+    wrap.replaceChildren();
+    outlook.replaceChildren();
+    clearLivePhoto();
+    if (!farmId || !token) return;
+    const read = async path => {
+      const res = await apiFetch(path, {signal, cache:'no-store'});
+      if (!res.ok) {
+        if (current() && res.status === 401) { setToken(''); showLoginCard('登入已過期，請重新登入。'); }
+        throw new Error(String(res.status));
+      }
+      return res;
+    };
+    const photoTask = async () => {
+      try {
+        const photos = await (await read(`/api/customer/photos?farm_id=${encodeURIComponent(farmId)}`)).json();
+        if (!current()) return;
+        const latest = photos[0];
+        if (!latest) { wrap.textContent='這個認養區尚未發布現場照片。'; return; }
+        const blob = await (await read(`/api/customer/photos/${encodeURIComponent(latest.id)}/image`)).blob();
+        if (!current()) return;
+        livePhotoUrl = URL.createObjectURL(blob);
+        const heading = document.createElement('h2');
+        heading.textContent = photoHeading(latest.captured_at);
+        const button = document.createElement('button');
+        button.className = 'farm-photo-button';
+        button.type = 'button';
+        button.setAttribute('aria-label','放大農場現場照片');
+        const img = document.createElement('img');
+        img.src = livePhotoUrl;
+        img.alt = '農場現場照片';
+        button.append(img);
+        button.addEventListener('click',()=>openLightbox(img.src));
+        wrap.append(heading,button);
+      } catch (error) {
+        if (!current()) return;
+        wrap.textContent = error.message==='403' ? '目前沒有此照片的檢視權限。' : '照片載入失敗。';
+        const retry=document.createElement('button');retry.textContent='重試';retry.onclick=loadLiveTab;wrap.append(retry);
+      }
+    };
+    const harvestTask = async () => {
+      try {
+        const data = await (await read(`/api/customer/farms/${encodeURIComponent(farmId)}/harvest-outlook`)).json();
+        if (!current()) return;
+        outlook.dataset.forecastRunId=data.forecast_run_id || '';
+        if (!data.zones?.length) outlook.textContent='預測資料更新中';
+        for (const zone of data.zones || []) {
+          const row=document.createElement('p');
+          const scope=(zone.row_codes || []).join('、');
+          row.textContent=scope+'｜'+(zone.status==='ready' ? '預估採收 '+zone.predicted_harvest_window.replace('..','–') : '預測資料更新中');
+          outlook.append(row);
+        }
+        const delivery=document.createElement('p');delivery.textContent=data.delivery?.message || '尚無配送資料';outlook.append(delivery);
+        for(const batch of data.delivery?.batches || []) {
+          const item=document.createElement('p');
+          item.textContent=batch.on_hold?'此批次配送暫停':batch.ship_window_start?'預計出貨 '+fmtDate(batch.ship_window_start)+(batch.ship_window_end?'–'+fmtDate(batch.ship_window_end):''):'出貨日期尚未建立';
+          outlook.append(item);
+          for(const shipment of batch.shipments || []){
+            const line=document.createElement('p');
+            line.textContent=(shipment.shipped_at?'已出貨 '+fmtDate(shipment.shipped_at):'已建立出貨紀錄')+'｜'+(shipment.carrier || '')+' '+(shipment.tracking_no || '單號尚未建立');
+            outlook.append(line);
+          }
+        }
+      } catch(error) {
+        if(current()) { outlook.removeAttribute('data-forecast-run-id'); outlook.textContent=error.message==='403'?'目前沒有收成資訊檢視權限。':'預測資料暫時無法載入，請稍後重試。'; }
+      }
+    };
+    const updatesTask = async () => {
+      try {
+        const updates=await(await read(`/api/customer/farms/${encodeURIComponent(farmId)}/updates`)).json();
+        if(!current())return;
+        document.getElementById('farmUpdateBody').textContent=updates[0]?.update_text || '尚無近況更新。';
+        const record=document.getElementById('growthRecordBody');record.replaceChildren();
+        for(const u of updates){const p=document.createElement('p');p.textContent=u.update_text+' '+fmtDate(u.published_at);record.append(p);}
+      } catch { if(current()) document.getElementById('farmUpdateBody').textContent='近況暫時無法載入。'; }
+    };
+    await Promise.allSettled([photoTask(),harvestTask(),updatesTask(),loadFarmLayoutMap(farmId)]);
+  }
+  setInterval(()=>{if(!document.hidden && currentFarmId && getToken() && !document.getElementById('tabLive').classList.contains('hidden'))loadLiveTab();},300000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden && currentFarmId && getToken())loadLiveTab();});
+  window.addEventListener('storage',event=>{if(event.key===TOKEN_KEY){liveRequest++;liveAbort?.abort();clearLivePhoto();document.getElementById('liveHeroWrap').replaceChildren();document.getElementById('harvestOutlookBody').replaceChildren();location.reload();}});
+
 
   // ==================== 認養位置地圖 ====================
   const ZONE_LABEL = { A: "A區", B: "B區", C: "C區", D: "D區", E: "E區", F: "F區", nursery: "育苗室" };
@@ -558,6 +614,7 @@
   let mapSelectedRowId = null;
 
   async function loadFarmLayoutMap(farmId) {
+    const mapToken = getToken();
     const card = document.getElementById("layoutMapCard");
     const body = document.getElementById("layoutMapBody");
     if (!farmId) { card.classList.add("hidden"); return; }
@@ -578,6 +635,7 @@
       return;
     }
     const data = await resp.json();
+    if (farmId !== currentFarmId || mapToken !== getToken()) return;
     if (!data.has_layout || !data.rows || !data.rows.length) {
       card.classList.remove("hidden");
       body.innerHTML = `<p class="empty-note">認養位置尚未設定。</p>`;
