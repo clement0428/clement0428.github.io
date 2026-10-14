@@ -541,7 +541,17 @@
         const photos = await (await read(`/api/customer/photos?farm_id=${encodeURIComponent(farmId)}`)).json();
         if (!current()) return;
         const latest = photos[0];
-        if (!latest) { wrap.textContent='這個認養區尚未發布現場照片。'; return; }
+        if (!latest) {
+          const note = document.createElement('p');
+          note.className = 'live-empty';
+          note.textContent = '這個認養區尚未發布現場照片，以下為相機安裝後畫面示意：';
+          const demoImg = document.createElement('img');
+          demoImg.src = 'farm-photo-demo.jpg';
+          demoImg.alt = '溫室內部示意圖（非實際相機拍攝，僅供參考）';
+          demoImg.style.cssText = 'width:100%;height:auto;border-radius:8px;display:block;';
+          wrap.replaceChildren(note, demoImg);
+          return;
+        }
         const blob = await (await read(`/api/customer/photos/${encodeURIComponent(latest.id)}/image`)).blob();
         if (!current()) return;
         livePhotoUrl = URL.createObjectURL(blob);
