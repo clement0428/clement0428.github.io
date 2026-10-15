@@ -199,6 +199,11 @@
     padding:6px 16px; font-size:12px; font-weight:700;
   }
 .farm-photo-button{display:block;padding:0;border:0;background:none;width:100%;cursor:zoom-in}.farm-photo-button img{display:block;width:100%;height:auto;border-radius:12px}.farm-photo-button:focus-visible{outline:3px solid #F2C230;outline-offset:4px}
+.zone-photo-card{margin:14px 16px 0;background:var(--white);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+.zone-photo-card h3{margin:0 0 8px;font-size:14px;color:var(--muted);font-weight:700}
+.zone-photo-card .live-empty{margin:0}
+.zone-photo-card .live-banner{margin:0 0 10px}
+.zone-photo-heading{margin:0 0 8px;font-size:14px;font-weight:700;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -502,10 +507,15 @@
   let liveRequest = 0;
   let liveAbort = null;
   let livePhotoUrl = null;
+  let zoneObjectUrls = [];
 
   function clearLivePhoto() {
     if (livePhotoUrl) URL.revokeObjectURL(livePhotoUrl);
     livePhotoUrl = null;
+  }
+  function clearZonePhotos() {
+    zoneObjectUrls.forEach(url => URL.revokeObjectURL(url));
+    zoneObjectUrls = [];
   }
   function photoHeading(iso) {
     const date = new Date(iso);
@@ -526,7 +536,7 @@
     const outlook = document.getElementById('harvestOutlookBody');
     wrap.replaceChildren();
     outlook.replaceChildren();
-    clearLivePhoto();
+    clearLivePhoto(); clearZonePhotos();
     if (!farmId || !token) return;
     const read = async path => {
       const res = await apiFetch(path, {signal, cache:'no-store'});
@@ -536,37 +546,100 @@
       }
       return res;
     };
-    const photoTask = async () => {
+    const legacySingleZonePhoto = async () => {
+      // 沒有 FarmZone 分區設定的舊場，退回單張「整場最新照片」顯示，不假設每個場都已完成分區設定。
+      const photos = await (await read(`/api/customer/photos?farm_id=${encodeURIComponent(farmId)}`)).json();
+      if (!current()) return;
+      const latest = photos[0];
+      if (!latest) {
+        const note = document.createElement('p');
+        note.className = 'live-empty';
+        note.textContent = '這個認養區尚未發布現場照片，以下為相機安裝後畫面示意：';
+        const demoImg = document.createElement('img');
+        demoImg.src = 'farm-photo-demo.jpg';
+        demoImg.alt = '溫室內部示意圖（非實際相機拍攝，僅供參考）';
+        demoImg.style.cssText = 'width:100%;height:auto;border-radius:8px;display:block;';
+        wrap.replaceChildren(note, demoImg);
+        return;
+      }
+      const blob = await (await read(`/api/customer/photos/${encodeURIComponent(latest.id)}/image`)).blob();
+      if (!current()) return;
+      livePhotoUrl = URL.createObjectURL(blob);
+      const heading = document.createElement('h2');
+      heading.textContent = photoHeading(latest.captured_at);
+      const button = document.createElement('button');
+      button.className = 'farm-photo-button';
+      button.type = 'button';
+      button.setAttribute('aria-label','放大農場現場照片');
+      const img = document.createElement('img');
+      img.src = livePhotoUrl;
+      img.alt = '農場現場照片';
+      button.append(img);
+      button.addEventListener('click',()=>openLightbox(img.src));
+      wrap.append(heading,button);
+    };
+
+    const zoneStatusMessage = (status, latestCapturedAt) => {
+      if (status === 'no_camera') return '此區相機尚待設定。';
+      if (status === 'no_photo_yet') return '尚無可用現場照片。';
+      if (status === 'stale') return `影像尚未更新，最後拍攝時間：${fmtDateTime(latestCapturedAt)}`;
+      return '';
+    };
+
+    const renderZoneCard = async (zone) => {
+      const card = document.createElement('section');
+      card.className = 'zone-photo-card';
+      const heading = document.createElement('h3');
+      heading.textContent = zone.zone_name ? `${zone.zone_name} 區` : `區域 ${zone.zone_id}`;
+      card.append(heading);
+      if (zone.status === 'no_camera' || zone.status === 'no_photo_yet') {
+        const note = document.createElement('p');
+        note.className = 'live-empty';
+        note.textContent = zoneStatusMessage(zone.status);
+        card.append(note);
+        return card;
+      }
+      if (zone.status === 'stale') {
+        const banner = document.createElement('div');
+        banner.className = 'live-banner stale';
+        banner.textContent = zoneStatusMessage(zone.status, zone.latest_captured_at);
+        card.append(banner);
+      }
       try {
-        const photos = await (await read(`/api/customer/photos?farm_id=${encodeURIComponent(farmId)}`)).json();
-        if (!current()) return;
-        const latest = photos[0];
-        if (!latest) {
-          const note = document.createElement('p');
-          note.className = 'live-empty';
-          note.textContent = '這個認養區尚未發布現場照片，以下為相機安裝後畫面示意：';
-          const demoImg = document.createElement('img');
-          demoImg.src = 'farm-photo-demo.jpg';
-          demoImg.alt = '溫室內部示意圖（非實際相機拍攝，僅供參考）';
-          demoImg.style.cssText = 'width:100%;height:auto;border-radius:8px;display:block;';
-          wrap.replaceChildren(note, demoImg);
-          return;
-        }
-        const blob = await (await read(`/api/customer/photos/${encodeURIComponent(latest.id)}/image`)).blob();
-        if (!current()) return;
-        livePhotoUrl = URL.createObjectURL(blob);
-        const heading = document.createElement('h2');
-        heading.textContent = photoHeading(latest.captured_at);
+        const blob = await (await read(`/api/customer/photos/${encodeURIComponent(zone.latest_photo_id)}/image`)).blob();
+        if (!current()) return card;
+        const url = URL.createObjectURL(blob);
+        zoneObjectUrls.push(url);
+        const subheading = document.createElement('p');
+        subheading.className = 'zone-photo-heading';
+        subheading.textContent = photoHeading(zone.latest_captured_at);
         const button = document.createElement('button');
         button.className = 'farm-photo-button';
         button.type = 'button';
-        button.setAttribute('aria-label','放大農場現場照片');
+        button.setAttribute('aria-label', `放大${zone.zone_name || zone.zone_id}區現場照片`);
         const img = document.createElement('img');
-        img.src = livePhotoUrl;
-        img.alt = '農場現場照片';
+        img.src = url;
+        img.alt = `${zone.zone_name || zone.zone_id}區現場照片`;
         button.append(img);
-        button.addEventListener('click',()=>openLightbox(img.src));
-        wrap.append(heading,button);
+        button.addEventListener('click', () => openLightbox(img.src));
+        card.append(subheading, button);
+      } catch {
+        const note = document.createElement('p');
+        note.textContent = '照片載入失敗。';
+        card.append(note);
+      }
+      return card;
+    };
+
+    const photoTask = async () => {
+      try {
+        const zones = await (await read(`/api/customer/zone-photo-status?farm_id=${encodeURIComponent(farmId)}`)).json();
+        if (!current()) return;
+        clearZonePhotos();
+        if (!zones.length) { await legacySingleZonePhoto(); return; }
+        const cards = await Promise.all(zones.map(renderZoneCard));
+        if (!current()) return;
+        wrap.replaceChildren(...cards);
       } catch (error) {
         if (!current()) return;
         wrap.textContent = error.message==='403' ? '目前沒有此照片的檢視權限。' : '照片載入失敗。';
@@ -613,7 +686,7 @@
   }
   setInterval(()=>{if(!document.hidden && currentFarmId && getToken() && !document.getElementById('tabLive').classList.contains('hidden'))loadLiveTab();},300000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden && currentFarmId && getToken())loadLiveTab();});
-  window.addEventListener('storage',event=>{if(event.key===TOKEN_KEY){liveRequest++;liveAbort?.abort();clearLivePhoto();document.getElementById('liveHeroWrap').replaceChildren();document.getElementById('harvestOutlookBody').replaceChildren();location.reload();}});
+  window.addEventListener('storage',event=>{if(event.key===TOKEN_KEY){liveRequest++;liveAbort?.abort();clearLivePhoto();clearZonePhotos();document.getElementById('liveHeroWrap').replaceChildren();document.getElementById('harvestOutlookBody').replaceChildren();location.reload();}});
 
 
   // ==================== 認養位置地圖 ====================
