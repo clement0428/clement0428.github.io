@@ -468,7 +468,11 @@
         currentFarmId = farms[0].farm_id;
         await loadLiveTab();
       } else {
-        document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">您的企業目前沒有已授權的場域。</div>`;
+        // 2026-10-17：帳號已開通、尚未選區，不是帳號異常——原文案「沒有已授權的場域」
+        // 讀起來像帳戶有問題。改顯示中性的「尚未選區」。目前沒有後端的「大區共用實景」
+        // 來源可呼叫（這是真正缺的功能，見20261017交接文件），所以照片位置誠實顯示
+        // 「照片更新中」，不假造拍攝時間或借用其他企業的畦位照片。
+        document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">尚未選區<br><span style="font-size:13px;opacity:.7;display:block;margin-top:6px">照片更新中</span></div>`;
       }
       await loadActivities();
       await loadEsgDocuments();
