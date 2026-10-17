@@ -500,6 +500,11 @@
     // farm+zone，不是前端猜的）。目前沒有任何farm被admin設定為共用來源，所以
     // available會是false，畫面照樣落回「尚未選區／照片更新中」——這不是前端寫死，
     // 是後端誠實回報「還沒有可共用的實景」。
+    // 收成與配送區塊只在loadLiveTab()（有farm_id時）才會被填內容，未選區帳號從未
+    // 呼叫過那段，原本會整個留空白卡片——改成跟「農場近況」「成長紀錄」一致的
+    // 簡短狀態文字，不留空白。
+    const outlook = document.getElementById('harvestOutlookBody');
+    if (outlook) { outlook.textContent = '尚未選區，暫無收成與配送資料。'; }
     const wrap = document.getElementById("liveHeroWrap");
     wrap.innerHTML = "";
     try {
