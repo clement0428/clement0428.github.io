@@ -496,9 +496,49 @@
   }
 
   async function loadSharedOverview() {
-    // 目前沒有不要求個人zone授權的後端共用讀取端點（見上方afterLogin註解），
-    // 所以暫時只能顯示誠實的狀態文字，不假造拍攝時間、不借用其他企業的畦位照片。
-    document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">尚未選區<br><span style="font-size:13px;opacity:.7;display:block;margin-top:6px">照片更新中</span></div>`;
+    // 2026-10-17：改接真正的/api/customer/shared-overview（後端admin明確指定共用
+    // farm+zone，不是前端猜的）。目前沒有任何farm被admin設定為共用來源，所以
+    // available會是false，畫面照樣落回「尚未選區／照片更新中」——這不是前端寫死，
+    // 是後端誠實回報「還沒有可共用的實景」。
+    const wrap = document.getElementById("liveHeroWrap");
+    wrap.innerHTML = "";
+    try {
+      const statusResp = await apiFetch("/api/customer/shared-overview", { cache: "no-store" });
+      if (!statusResp.ok) {
+        wrap.innerHTML = `<div class="live-empty">場域資料暫時無法載入，請稍後重試。</div>`;
+        return;
+      }
+      const status = await statusResp.json();
+      if (!status.available) {
+        wrap.innerHTML = `<div class="live-empty">尚未選區<br><span style="font-size:13px;opacity:.7;display:block;margin-top:6px">照片更新中</span></div>`;
+        return;
+      }
+      const imgResp = await apiFetch("/api/customer/shared-overview/image", { cache: "no-store" });
+      if (!imgResp.ok) {
+        wrap.innerHTML = `<div class="live-empty">照片載入失敗，請稍後重試。</div>`;
+        return;
+      }
+      const blob = await imgResp.blob();
+      const url = URL.createObjectURL(blob);
+      const heading = document.createElement("h2");
+      heading.textContent = photoHeading(status.captured_at);
+      const sub = document.createElement("p");
+      sub.className = "live-empty";
+      sub.style.cssText = "padding:4px 16px;margin:0 0 8px;background:none;border:none;text-align:left;font-size:13px;";
+      sub.textContent = "農場大區實景（尚未選區，顯示共用展示畫面）";
+      const button = document.createElement("button");
+      button.className = "farm-photo-button";
+      button.type = "button";
+      button.setAttribute("aria-label", "放大農場大區實景");
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = "農場大區實景";
+      button.append(img);
+      button.addEventListener("click", () => openLightbox(img.src));
+      wrap.append(heading, sub, button);
+    } catch {
+      wrap.innerHTML = `<div class="live-empty">場域資料暫時無法載入，請稍後重試。</div>`;
+    }
   }
 
   function renderFarmSwitcher() {
