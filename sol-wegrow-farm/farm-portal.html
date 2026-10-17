@@ -460,25 +460,45 @@
     if (me.user && me.user.email) document.getElementById("userEmailLabel").textContent = me.user.email;
     showApp();
 
+    // 2026-10-17審查修正：farms、activities、ESG三段彼此獨立——任何一段失敗或丟例外
+    // 都不能擋住另外兩段渲染（原本全部包在同一個try/catch，activities丟錯會讓ESG整段
+    // 不執行）。farms這段還要分清楚401/403/5xx跟「成功但真的是空陣列」，不能
+    // `farmsResp.ok ? data : []`把兩種完全不同的情況都倒成同一個「未選區」畫面。
     try {
       const farmsResp = await apiFetch("/api/customer/farms");
-      farms = farmsResp.ok ? await farmsResp.json() : [];
-      renderFarmSwitcher();
-      if (farms.length) {
-        currentFarmId = farms[0].farm_id;
-        await loadLiveTab();
-      } else {
-        // 2026-10-17：帳號已開通、尚未選區，不是帳號異常——原文案「沒有已授權的場域」
-        // 讀起來像帳戶有問題。改顯示中性的「尚未選區」。目前沒有後端的「大區共用實景」
-        // 來源可呼叫（這是真正缺的功能，見20261017交接文件），所以照片位置誠實顯示
-        // 「照片更新中」，不假造拍攝時間或借用其他企業的畦位照片。
-        document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">尚未選區<br><span style="font-size:13px;opacity:.7;display:block;margin-top:6px">照片更新中</span></div>`;
+      if (farmsResp.status === 401) {
+        setToken(""); showLoginCard("登入已過期，請重新登入。"); return;
       }
-      await loadActivities();
-      await loadEsgDocuments();
+      if (!farmsResp.ok) {
+        farms = [];
+        renderFarmSwitcher();
+        document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">場域資料暫時無法載入，請稍後重試。</div>`;
+      } else {
+        farms = await farmsResp.json();
+        renderFarmSwitcher();
+        if (farms.length) {
+          currentFarmId = farms[0].farm_id;
+          await loadLiveTab();
+        } else {
+          // 帳號已開通、farms API成功回傳空陣列＝真的尚未選區，不是帳號異常。目前沒有
+          // 後端的「大區共用實景」端點可呼叫（已盤點：候選來源是麻豆1場
+          // farm_id=e9348cd2-6cca-4583-a86d-8011032b5570，DEMO企業用的就是這個，有
+          // all_farm+photo entitlement 到2036年——但目前沒有不要求個人zone授權的
+          // 共用讀取端點，所以這裡還是誠實顯示「照片更新中」，不借用其他企業資料）。
+          await loadSharedOverview();
+        }
+      }
     } catch {
-      // 主畫面已經顯示，這裡失敗只影響個別區塊內容，不應該讓整頁又變回白屏。
+      document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">場域資料暫時無法載入，請稍後重試。</div>`;
     }
+    try { await loadActivities(); } catch { /* 活動區塊失敗不影響其他區塊 */ }
+    try { await loadEsgDocuments(); } catch { /* ESG區塊失敗不影響其他區塊 */ }
+  }
+
+  async function loadSharedOverview() {
+    // 目前沒有不要求個人zone授權的後端共用讀取端點（見上方afterLogin註解），
+    // 所以暫時只能顯示誠實的狀態文字，不假造拍攝時間、不借用其他企業的畦位照片。
+    document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">尚未選區<br><span style="font-size:13px;opacity:.7;display:block;margin-top:6px">照片更新中</span></div>`;
   }
 
   function renderFarmSwitcher() {
