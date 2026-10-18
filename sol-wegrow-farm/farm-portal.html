@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="企業員工入口：看現場、活動回憶、ESG下載。">
-<meta name="build-version" content="20261016T1-farm-demo-photo" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261018T1-booking-eligibility-claim" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -309,6 +309,51 @@
   const API_BASE = window.FARM_PORTAL_API_BASE || "https://api.wegrow-orbit.com";
   const TOKEN_KEY = "farm-portal-token";
 
+  // ==================== farm-booking 免費參訪資格交換（2026-10-17）====================
+  // 客戶從booking.wegrow-orbit.com的預約頁被導過來，帶著nonce跟return_url。這裡在
+  // 「真實登入成功」之後（afterLogin()內、showApp()之後）才呼叫claim API——身分
+  // 完全來自這次登入拿到的token，不是URL上任何客戶可以自己改的欄位。return_url
+  // 的目的地網域白名單檢查是防止這個登入頁被當成open redirect/釣魚中繼站用。
+  const BOOKING_RETURN_ORIGIN_ALLOWLIST = ["https://booking.wegrow-orbit.com", "http://localhost:3000"];
+
+  async function handleBookingEligibilityRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const nonce = params.get("booking_eligibility_nonce");
+    const visitDate = params.get("booking_visit_date");
+    const returnUrl = params.get("booking_return_url");
+    if (!nonce || !visitDate || !returnUrl) return; // 一般portal訪問，不是從booking導過來的
+
+    let target;
+    try { target = new URL(returnUrl); } catch { return; }
+    if (!BOOKING_RETURN_ORIGIN_ALLOWLIST.includes(target.origin)) {
+      setStatus("loginStatus", "預約來源網址不受信任，請直接回到威果農場預約頁面重新操作。", "error");
+      return;
+    }
+
+    setStatus("loginStatus", "正在確認免費參訪資格…");
+    // 2026-10-17修正：原本把「fetch失敗/非200」跟「claim正常回應但eligible:false」
+    // 都當成同一種"eligible=0"——booking端看到這個值會顯示「你的資格未通過」，
+    // 但服務本身打不通根本沒驗證到任何東西，不該講成「你不符合資格」。這裡分三種
+    // 結果：eligible=1(通過)／eligible=0&reason=...(真的核對過不符合)／
+    // eligible=error(服務本身有問題，無法判定)。
+    let outcome = { eligible: "error" };
+    try {
+      const resp = await apiFetch("/api/customer/booking-eligibility/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nonce, visit_date: visitDate }),
+      });
+      if (resp.ok) {
+        const body = await resp.json();
+        outcome = body.eligible ? { eligible: "1" } : { eligible: "0", reason: body.reason || "" };
+      }
+    } catch { /* 網路失敗——保持outcome = error，不冒充任何已驗證的結果 */ }
+
+    target.searchParams.set("eligible", outcome.eligible);
+    if (outcome.reason) target.searchParams.set("eligibilityReason", outcome.reason);
+    window.location.href = target.toString();
+  }
+
   // ==================== O4 強制更新提示 ====================
   // 2026-09-28：Clement實測抓到——已開啟的舊分頁不會自己偵測新版，只有手動重新整理
   // 才會拿到新程式碼。只在頁面可見時檢查(節省流量、避免背景分頁狂打)，抓到<meta
@@ -459,6 +504,14 @@
     document.getElementById("orgBrandName").textContent = "Sol-WeGrow-Farm";
     if (me.user && me.user.email) document.getElementById("userEmailLabel").textContent = me.user.email;
     showApp();
+
+    // 這次登入若是從farm-booking的免費參訪流程導過來的，先處理資格交換再導回去——
+    // 不等farms/activities/ESG載入，避免客戶在這個分頁卡太久看不到自己要的結果。
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("booking_eligibility_nonce")) {
+      await handleBookingEligibilityRedirect();
+      return;
+    }
 
     // 2026-10-17審查修正：farms、activities、ESG三段彼此獨立——任何一段失敗或丟例外
     // 都不能擋住另外兩段渲染（原本全部包在同一個try/catch，activities丟錯會讓ESG整段
