@@ -66,6 +66,11 @@
   .live-banner.broken { background:#fdeceb; color:#a3382e; border:1px solid #f3c4bf; }
   .live-banner.denied { background:var(--mist); color:var(--muted); border:1px solid var(--line); }
 
+  .wg-offer-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 0; border-bottom:1px solid var(--line); }
+  .wg-offer-row:last-child { border-bottom:none; }
+  .wg-offer-row p { margin:0; flex:1 1 auto; font-size:13px; }
+  .wg-offer-row button { border:1px solid var(--line); border-radius:8px; padding:6px 12px; background:var(--white); font-size:13px; }
+
   .card { margin: 16px 16px 0; background: var(--white); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
   .card h3 { margin:0 0 10px; font-size:14px; color: var(--muted); font-weight:700; }
   .update-text { font-size:15px; line-height:1.6; }
@@ -250,6 +255,7 @@
     <!-- 看現場 -->
     <section id="tabLive">
       <div id="liveHeroWrap"></div>
+      <section class="card" id="adoptionOfferCard" style="display:none"><h3>這批草莓要寄送嗎？</h3><div id="adoptionOfferBody"></div></section>
       <section class="card"><h3>收成與配送</h3><div id="harvestOutlookBody"></div></section>
       <div class="card wg-adoption-map hidden" id="layoutMapCard">
         <div id="layoutMapBody"></div>
@@ -731,7 +737,44 @@
         for(const u of updates){const p=document.createElement('p');p.textContent=u.update_text+' '+fmtDate(u.published_at);record.append(p);}
       } catch { if(current()) document.getElementById('farmUpdateBody').textContent='近況暫時無法載入。'; }
     };
-    await Promise.allSettled([photoTask(),harvestTask(),updatesTask(),loadFarmLayoutMap(farmId)]);
+    const offersTask = async () => {
+      const card = document.getElementById('adoptionOfferCard');
+      const body = document.getElementById('adoptionOfferBody');
+      try {
+        const offers = await (await read('/api/customer/adoption-offers')).json();
+        if (!current()) return;
+        body.replaceChildren();
+        const pending = offers.filter(o => o.status === 'offered');
+        if (pending.length === 0) { card.style.display = 'none'; return; }
+        card.style.display = '';
+        for (const offer of pending) {
+          const row = document.createElement('div');
+          row.className = 'wg-offer-row';
+          const text = document.createElement('p');
+          text.textContent = `${offer.farm_name}｜可分配數量 ${offer.allocated_quantity}`;
+          const shipBtn = document.createElement('button'); shipBtn.textContent = '要寄';
+          const skipBtn = document.createElement('button'); skipBtn.textContent = '這次不寄';
+          shipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'accept', row));
+          skipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'decline', row));
+          row.append(text, shipBtn, skipBtn);
+          body.append(row);
+        }
+      } catch {
+        if (current()) { card.style.display = 'none'; }
+      }
+    };
+    async function respondOffer(offerId, decision, rowEl) {
+      try {
+        const res = await apiFetch(`/api/customer/adoption-offers/${encodeURIComponent(offerId)}/respond`, {
+          method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({decision}),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        rowEl.textContent = decision === 'accept' ? '已確認要寄，農場會聯繫後續寄送細節。' : '已記錄這次不寄送。';
+      } catch {
+        rowEl.querySelector('p').textContent += '（送出失敗，請重試）';
+      }
+    }
+    await Promise.allSettled([photoTask(),harvestTask(),updatesTask(),loadFarmLayoutMap(farmId),offersTask()]);
   }
   setInterval(()=>{if(!document.hidden && currentFarmId && getToken() && !document.getElementById('tabLive').classList.contains('hidden'))loadLiveTab();},300000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden && currentFarmId && getToken())loadLiveTab();});
