@@ -78,6 +78,14 @@
   .wg-ship-modal-card button { border:1px solid var(--line); border-radius:8px; padding:8px 14px; background:var(--white); font-size:13px; margin:4px 4px 4px 0; }
   .wg-ship-close { margin-top:14px; }
 
+  .wg-history-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .wg-history-controls input[type="date"] { padding:6px 8px; border:1px solid var(--line); border-radius:8px; font-size:13px; }
+  .wg-history-controls button { border:1px solid var(--line); border-radius:8px; padding:6px 14px; background:var(--white); font-size:13px; }
+  .wg-history-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:8px; margin-top:8px; }
+  .wg-history-grid figure { margin:0; }
+  .wg-history-grid img { width:100%; height:90px; object-fit:cover; border-radius:8px; display:block; cursor:zoom-in; }
+  .wg-history-grid figcaption { font-size:11px; color:var(--muted); margin-top:3px; text-align:center; }
+
   .card { margin: 16px 16px 0; background: var(--white); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
   .card h3 { margin:0 0 10px; font-size:14px; color: var(--muted); font-weight:700; }
   .update-text { font-size:15px; line-height:1.6; }
@@ -274,6 +282,16 @@
       <div class="card">
         <h3>成長紀錄</h3>
         <div id="growthRecordBody"><p class="empty-note">尚無紀錄。</p></div>
+      </div>
+      <div class="card">
+        <h3>歷史照片查詢</h3>
+        <div class="wg-history-controls">
+          <input type="date" id="historyPhotoFrom" />
+          <span>至</span>
+          <input type="date" id="historyPhotoTo" />
+          <button type="button" id="historyPhotoSearchBtn">查詢</button>
+        </div>
+        <div id="historyPhotoBody"><p class="empty-note">選擇日期區間查詢歷史照片。</p></div>
       </div>
     </section>
 
@@ -842,37 +860,75 @@
         body.append(form);
 
         const feeP = document.createElement('p');
-        feeP.textContent = s.shipping_fee_twd == null ? '運費：待農場報價，報價前不會收款，不代表免費。' : `運費：NT$ ${s.shipping_fee_twd}`;
+        const feeNum = s.shipping_fee_twd == null ? null : parseFloat(s.shipping_fee_twd);
+        feeP.textContent = feeNum == null ? '運費：待農場報價，報價前不會收款，不代表免費。'
+          : feeNum === 0 ? '運費：NT$ 0（本次免運費）'
+          : `運費：NT$ ${s.shipping_fee_twd}`;
         body.append(feeP);
 
-        if (s.status === 'fee_quoted') {
-          const uploadLabel = document.createElement('p'); uploadLabel.textContent = '運費已確定，請完成匯款後上傳憑證：'; body.append(uploadLabel);
-          const fileInput = document.createElement('input'); fileInput.type = 'file'; fileInput.accept = 'image/*,application/pdf';
-          const submitBtn = document.createElement('button'); submitBtn.textContent = '上傳付款憑證';
-          submitBtn.addEventListener('click', async () => {
-            if (!fileInput.files[0]) { ElMessageFallback('請先選擇檔案'); return; }
-            const fd = new FormData(); fd.append('file', fileInput.files[0]);
+        if (s.status === 'fee_quoted' && feeNum === 0) {
+          const zeroP = document.createElement('p'); zeroP.textContent = '確定免運費，確認收件資料後即可直接進入包裝，不需要上傳任何匯款憑證。'; body.append(zeroP);
+          const zeroBtn = document.createElement('button'); zeroBtn.textContent = '確認，無需付款';
+          zeroBtn.addEventListener('click', async () => {
             try {
-              const res = await apiFetch(`/api/customer/adoption-shipments/${encodeURIComponent(shipmentId)}/payment-proof?consent_version=${s.consent_version}`, {
-                method: 'POST', body: fd,
+              const res = await apiFetch(`/api/customer/adoption-shipments/${encodeURIComponent(shipmentId)}/confirm-zero-fee`, {
+                method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({consent_version: s.consent_version}),
               });
               if (!res.ok) {
-                if (res.status === 409) { ElMessageFallback('運費剛被更新，請重新確認後再上傳一次。'); await renderShipmentPanel(shipmentId); return; }
+                if (res.status === 409) { ElMessageFallback('資料剛被更新，請重新確認後再試一次。'); await renderShipmentPanel(shipmentId); return; }
                 throw new Error(String(res.status));
               }
               await renderShipmentPanel(shipmentId);
-            } catch { ElMessageFallback('上傳失敗，請重試。'); }
+            } catch { ElMessageFallback('送出失敗，請重試。'); }
           });
-          body.append(fileInput, submitBtn);
+          body.append(zeroBtn);
+        } else if (s.status === 'fee_quoted' && feeNum > 0) {
+          if (s.payment_account) {
+            const acc = s.payment_account;
+            const accP = document.createElement('div');
+            accP.innerHTML = `<p>銀行：${escapeHtml(acc.bank_name)}（代碼 ${escapeHtml(acc.bank_code)}）</p><p>戶名：${escapeHtml(acc.account_holder)}</p><p>帳號：<span id="wgAccNo">${escapeHtml(acc.account_number)}</span></p>`;
+            const copyBtn = document.createElement('button'); copyBtn.textContent = '複製帳號';
+            copyBtn.addEventListener('click', () => {
+              navigator.clipboard?.writeText(acc.account_number).then(() => { copyBtn.textContent = '已複製'; setTimeout(() => { copyBtn.textContent = '複製帳號'; }, 1500); });
+            });
+            accP.append(copyBtn);
+            body.append(accP);
+
+            const uploadLabel = document.createElement('p'); uploadLabel.textContent = '請完成匯款後上傳憑證：'; body.append(uploadLabel);
+            const fileInput = document.createElement('input'); fileInput.type = 'file'; fileInput.accept = 'image/*,application/pdf';
+            const submitBtn = document.createElement('button'); submitBtn.textContent = '上傳付款憑證';
+            submitBtn.addEventListener('click', async () => {
+              if (!fileInput.files[0]) { ElMessageFallback('請先選擇檔案'); return; }
+              const fd = new FormData(); fd.append('file', fileInput.files[0]);
+              try {
+                const res = await apiFetch(`/api/customer/adoption-shipments/${encodeURIComponent(shipmentId)}/payment-proof?consent_version=${s.consent_version}`, {
+                  method: 'POST', body: fd,
+                });
+                if (!res.ok) {
+                  if (res.status === 409) { ElMessageFallback('運費剛被更新，請重新確認後再上傳一次。'); await renderShipmentPanel(shipmentId); return; }
+                  throw new Error(String(res.status));
+                }
+                await renderShipmentPanel(shipmentId);
+              } catch { ElMessageFallback('上傳失敗，請重試。'); }
+            });
+            body.append(fileInput, submitBtn);
+          } else {
+            const pendingP = document.createElement('p'); pendingP.textContent = '待農場提供匯款資料，請稍後再回來查看。'; body.append(pendingP);
+          }
         }
       } else if (s.status === 'payment_submitted') {
         const p = document.createElement('p'); p.textContent = '付款憑證已送出，待人工核對，核對後會更新狀態。'; body.append(p);
       } else if (s.status === 'payment_verified') {
         const p = document.createElement('p'); p.textContent = '已核款，農場準備包裝中。'; body.append(p);
+      } else if (s.status === 'no_payment_required') {
+        const p = document.createElement('p'); p.textContent = '本次免運費，已確認，農場準備包裝中。'; body.append(p);
       } else if (s.status === 'packed') {
         const p = document.createElement('p'); p.textContent = '已包裝，準備交寄。'; body.append(p);
       } else if (s.status === 'shipped') {
         const p = document.createElement('p'); p.textContent = `已交寄｜${s.logistics_carrier || ''} ${s.tracking_no || ''}`; body.append(p);
+        if (s.case && s.case.status === 'RESOLVED') {
+          const resolvedP = document.createElement('p'); resolvedP.textContent = `先前問題已處理：${s.case.outcome || ''}`; body.append(resolvedP);
+        }
         const issueBtn = document.createElement('button'); issueBtn.textContent = '收貨有問題';
         issueBtn.addEventListener('click', async () => {
           const note = prompt('請描述收貨問題：');
@@ -887,7 +943,16 @@
         });
         body.append(issueBtn);
       } else if (s.status === 'issue_reported') {
-        const p = document.createElement('p'); p.textContent = `已回報問題：${s.issue_note || ''}（農場將盡快聯繫處理）`; body.append(p);
+        const p = document.createElement('p'); p.textContent = `已回報問題：${s.issue_note || ''}`; body.append(p);
+        if (s.case) {
+          const statusLabel = {NEW:'新案件',AUTO_PENDING:'待AI回覆',AUTO_ANSWERED:'AI已回覆',WAITING_CUSTOMER:'等您回覆',WAITING_STAFF:'待員工處理',HUMAN_ACTIVE:'真人處理中',RESOLVED:'已結案',CANCELLED:'已取消'}[s.case.status] || s.case.status;
+          const caseP = document.createElement('p'); caseP.textContent = `處理狀態：${statusLabel}`; body.append(caseP);
+          if (s.case.staff_reply_note) {
+            const replyP = document.createElement('p'); replyP.textContent = `農場回覆：${s.case.staff_reply_note}`; body.append(replyP);
+          } else {
+            const waitP = document.createElement('p'); waitP.textContent = '農場將盡快聯繫處理。'; body.append(waitP);
+          }
+        }
       }
 
       const closeBtn = document.createElement('button'); closeBtn.textContent = '關閉'; closeBtn.className = 'wg-ship-close'; closeBtn.addEventListener('click', closeShipmentPanel);
@@ -896,6 +961,43 @@
     function ElMessageFallback(text) { alert(text); }
     await Promise.allSettled([photoTask(),harvestTask(),updatesTask(),loadFarmLayoutMap(farmId),offersTask()]);
   }
+
+  // 歷史照片日期查詢——獨立於loadLiveTab()的定期刷新週期之外，監聽器只掛一次
+  // （掛在loadLiveTab內部的話，每次分頁切換/定期刷新都會loadLiveTab()一次，
+  // 重複掛等於點一次查詢卻觸發好幾次）。
+  async function searchHistoryPhotos() {
+    const body = document.getElementById('historyPhotoBody');
+    const fromVal = document.getElementById('historyPhotoFrom').value;
+    const toVal = document.getElementById('historyPhotoTo').value;
+    if (!currentFarmId) { body.innerHTML = '<p class="empty-note">請先選擇場域。</p>'; return; }
+    if (!fromVal || !toVal) { alert('請選擇起訖日期'); return; }
+    body.textContent = '查詢中…';
+    try {
+      const params = new URLSearchParams({
+        farm_id: currentFarmId, captured_from: `${fromVal}T00:00:00+08:00`, captured_to: `${toVal}T23:59:59+08:00`,
+      });
+      const res = await apiFetch(`/api/customer/photos?${params.toString()}`);
+      if (!res.ok) throw new Error(String(res.status));
+      const photos = await res.json();
+      if (photos.length === 0) { body.innerHTML = '<p class="empty-note">這個區間沒有照片紀錄。</p>'; return; }
+      const grid = document.createElement('div'); grid.className = 'wg-history-grid';
+      for (const p of photos) {
+        const fig = document.createElement('figure');
+        const img = document.createElement('img');
+        img.alt = '歷史照片';
+        loadAuthedImage(`/api/customer/photos/${encodeURIComponent(p.id)}/image`, img, () => { img.style.visibility = 'hidden'; });
+        img.addEventListener('click', () => openLightbox(img.src));
+        const cap = document.createElement('figcaption');
+        cap.textContent = `${p.zone_name || '全場'}｜${fmtDateTime(p.captured_at)}`;
+        fig.append(img, cap);
+        grid.append(fig);
+      }
+      body.replaceChildren(grid);
+    } catch {
+      body.innerHTML = '<p class="empty-note">查詢失敗，請重試。</p>';
+    }
+  }
+  document.getElementById('historyPhotoSearchBtn')?.addEventListener('click', searchHistoryPhotos);
   setInterval(()=>{if(!document.hidden && currentFarmId && getToken() && !document.getElementById('tabLive').classList.contains('hidden'))loadLiveTab();},300000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden && currentFarmId && getToken())loadLiveTab();});
   window.addEventListener('storage',event=>{if(event.key===TOKEN_KEY){liveRequest++;liveAbort?.abort();clearLivePhoto();document.getElementById('liveHeroWrap').replaceChildren();document.getElementById('harvestOutlookBody').replaceChildren();location.reload();}});
