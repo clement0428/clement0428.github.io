@@ -71,6 +71,13 @@
   .wg-offer-row p { margin:0; flex:1 1 auto; font-size:13px; }
   .wg-offer-row button { border:1px solid var(--line); border-radius:8px; padding:6px 12px; background:var(--white); font-size:13px; }
 
+  .wg-ship-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .wg-ship-modal-card { background:var(--white); border-radius:14px; padding:20px; max-width:420px; width:100%; max-height:80vh; overflow-y:auto; }
+  .wg-ship-modal-card h3 { margin:0 0 12px; font-size:15px; }
+  .wg-ship-input { display:block; width:100%; margin:0 0 8px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px; box-sizing:border-box; }
+  .wg-ship-modal-card button { border:1px solid var(--line); border-radius:8px; padding:8px 14px; background:var(--white); font-size:13px; margin:4px 4px 4px 0; }
+  .wg-ship-close { margin-top:14px; }
+
   .card { margin: 16px 16px 0; background: var(--white); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
   .card h3 { margin:0 0 10px; font-size:14px; color: var(--muted); font-weight:700; }
   .update-text { font-size:15px; line-height:1.6; }
@@ -297,6 +304,13 @@
       </div>
     </section>
   </main>
+
+  <div id="shipmentModal" class="wg-ship-modal" style="display:none">
+    <div class="wg-ship-modal-card">
+      <h3>寄送確認（私密）</h3>
+      <div id="shipmentModalBody"></div>
+    </div>
+  </div>
 
   <nav class="bottom-nav">
     <button data-tab="live" class="active"><span class="icon">🌱</span>看現場</button>
@@ -744,19 +758,25 @@
         const offers = await (await read('/api/customer/adoption-offers')).json();
         if (!current()) return;
         body.replaceChildren();
-        const pending = offers.filter(o => o.status === 'offered');
-        if (pending.length === 0) { card.style.display = 'none'; return; }
+        const relevant = offers.filter(o => o.status === 'offered' || (o.status === 'accepted' && o.shipment_id));
+        if (relevant.length === 0) { card.style.display = 'none'; return; }
         card.style.display = '';
-        for (const offer of pending) {
+        for (const offer of relevant) {
           const row = document.createElement('div');
           row.className = 'wg-offer-row';
           const text = document.createElement('p');
           text.textContent = `${offer.farm_name}｜可分配數量 ${offer.allocated_quantity}`;
-          const shipBtn = document.createElement('button'); shipBtn.textContent = '要寄';
-          const skipBtn = document.createElement('button'); skipBtn.textContent = '這次不寄';
-          shipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'accept', row));
-          skipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'decline', row));
-          row.append(text, shipBtn, skipBtn);
+          if (offer.status === 'offered') {
+            const shipBtn = document.createElement('button'); shipBtn.textContent = '要寄';
+            const skipBtn = document.createElement('button'); skipBtn.textContent = '這次不寄';
+            shipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'accept', row));
+            skipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'decline', row));
+            row.append(text, shipBtn, skipBtn);
+          } else {
+            const viewBtn = document.createElement('button'); viewBtn.textContent = '查看寄送狀態';
+            viewBtn.addEventListener('click', () => openShipmentPanel(offer.shipment_id));
+            row.append(text, viewBtn);
+          }
           body.append(row);
         }
       } catch {
@@ -769,11 +789,111 @@
           method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({decision}),
         });
         if (!res.ok) throw new Error(String(res.status));
-        rowEl.textContent = decision === 'accept' ? '已確認要寄，農場會聯繫後續寄送細節。' : '已記錄這次不寄送。';
+        const result = await res.json();
+        if (decision === 'accept' && result.shipment_id) {
+          openShipmentPanel(result.shipment_id);
+          loadLiveTab();
+        } else {
+          rowEl.textContent = '已記錄這次不寄送。';
+        }
       } catch {
         rowEl.querySelector('p').textContent += '（送出失敗，請重試）';
       }
     }
+
+    // ── 私密寄送確認頁（地址/運費/付款/物流）────────────────────────
+    async function openShipmentPanel(shipmentId) {
+      const modal = document.getElementById('shipmentModal');
+      const body = document.getElementById('shipmentModalBody');
+      modal.style.display = 'flex';
+      body.textContent = '載入中…';
+      await renderShipmentPanel(shipmentId);
+    }
+    function closeShipmentPanel() { document.getElementById('shipmentModal').style.display = 'none'; }
+
+    async function renderShipmentPanel(shipmentId) {
+      const body = document.getElementById('shipmentModalBody');
+      let s;
+      try {
+        s = await (await apiFetch(`/api/customer/adoption-shipments/${encodeURIComponent(shipmentId)}`)).json();
+      } catch { body.textContent = '讀取失敗，請重試。'; return; }
+      body.replaceChildren();
+
+      const qty = document.createElement('p'); qty.textContent = `數量：${s.quantity}`; body.append(qty);
+
+      if (['pending_address','awaiting_fee_quote','fee_quoted'].includes(s.status)) {
+        const form = document.createElement('div');
+        const nameInput = document.createElement('input'); nameInput.placeholder = '收件人姓名'; nameInput.value = s.recipient_name || '';
+        const phoneInput = document.createElement('input'); phoneInput.placeholder = '收件人電話'; phoneInput.value = s.recipient_phone || '';
+        const addrInput = document.createElement('textarea'); addrInput.placeholder = '收件地址'; addrInput.value = s.address || '';
+        [nameInput, phoneInput, addrInput].forEach(el => { el.className = 'wg-ship-input'; form.append(el); });
+        const saveBtn = document.createElement('button'); saveBtn.textContent = '確認收件資料';
+        saveBtn.addEventListener('click', async () => {
+          try {
+            const res = await apiFetch(`/api/customer/adoption-shipments/${encodeURIComponent(shipmentId)}/address`, {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({recipient_name: nameInput.value, recipient_phone: phoneInput.value, address: addrInput.value}),
+            });
+            if (!res.ok) throw new Error(String(res.status));
+            await renderShipmentPanel(shipmentId);
+          } catch { ElMessageFallback('送出失敗，請確認資料後重試。'); }
+        });
+        form.append(saveBtn);
+        body.append(form);
+
+        const feeP = document.createElement('p');
+        feeP.textContent = s.shipping_fee_twd == null ? '運費：待農場報價，報價前不會收款，不代表免費。' : `運費：NT$ ${s.shipping_fee_twd}`;
+        body.append(feeP);
+
+        if (s.status === 'fee_quoted') {
+          const uploadLabel = document.createElement('p'); uploadLabel.textContent = '運費已確定，請完成匯款後上傳憑證：'; body.append(uploadLabel);
+          const fileInput = document.createElement('input'); fileInput.type = 'file'; fileInput.accept = 'image/*,application/pdf';
+          const submitBtn = document.createElement('button'); submitBtn.textContent = '上傳付款憑證';
+          submitBtn.addEventListener('click', async () => {
+            if (!fileInput.files[0]) { ElMessageFallback('請先選擇檔案'); return; }
+            const fd = new FormData(); fd.append('file', fileInput.files[0]);
+            try {
+              const res = await apiFetch(`/api/customer/adoption-shipments/${encodeURIComponent(shipmentId)}/payment-proof?consent_version=${s.consent_version}`, {
+                method: 'POST', body: fd,
+              });
+              if (!res.ok) {
+                if (res.status === 409) { ElMessageFallback('運費剛被更新，請重新確認後再上傳一次。'); await renderShipmentPanel(shipmentId); return; }
+                throw new Error(String(res.status));
+              }
+              await renderShipmentPanel(shipmentId);
+            } catch { ElMessageFallback('上傳失敗，請重試。'); }
+          });
+          body.append(fileInput, submitBtn);
+        }
+      } else if (s.status === 'payment_submitted') {
+        const p = document.createElement('p'); p.textContent = '付款憑證已送出，待人工核對，核對後會更新狀態。'; body.append(p);
+      } else if (s.status === 'payment_verified') {
+        const p = document.createElement('p'); p.textContent = '已核款，農場準備包裝中。'; body.append(p);
+      } else if (s.status === 'packed') {
+        const p = document.createElement('p'); p.textContent = '已包裝，準備交寄。'; body.append(p);
+      } else if (s.status === 'shipped') {
+        const p = document.createElement('p'); p.textContent = `已交寄｜${s.logistics_carrier || ''} ${s.tracking_no || ''}`; body.append(p);
+        const issueBtn = document.createElement('button'); issueBtn.textContent = '收貨有問題';
+        issueBtn.addEventListener('click', async () => {
+          const note = prompt('請描述收貨問題：');
+          if (!note) return;
+          try {
+            const res = await apiFetch(`/api/customer/adoption-shipments/${encodeURIComponent(shipmentId)}/report-issue`, {
+              method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({note}),
+            });
+            if (!res.ok) throw new Error(String(res.status));
+            await renderShipmentPanel(shipmentId);
+          } catch { ElMessageFallback('回報失敗，請重試。'); }
+        });
+        body.append(issueBtn);
+      } else if (s.status === 'issue_reported') {
+        const p = document.createElement('p'); p.textContent = `已回報問題：${s.issue_note || ''}（農場將盡快聯繫處理）`; body.append(p);
+      }
+
+      const closeBtn = document.createElement('button'); closeBtn.textContent = '關閉'; closeBtn.className = 'wg-ship-close'; closeBtn.addEventListener('click', closeShipmentPanel);
+      body.append(closeBtn);
+    }
+    function ElMessageFallback(text) { alert(text); }
     await Promise.allSettled([photoTask(),harvestTask(),updatesTask(),loadFarmLayoutMap(farmId),offersTask()]);
   }
   setInterval(()=>{if(!document.hidden && currentFarmId && getToken() && !document.getElementById('tabLive').classList.contains('hidden'))loadLiveTab();},300000);
