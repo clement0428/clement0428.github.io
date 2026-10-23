@@ -1064,12 +1064,18 @@
 
           // 個人預期（按您認養的排數比例換算，不是核定供應量）——quantity_basis固定是
           // forecast_not_confirmed_supply，兩種數字絕不能混在一起顯示，避免被誤認為保證量。
-          const week1 = zone.my_weekly_forecast_kg && zone.my_weekly_forecast_kg.week_1;
-          if (week1 && week1.mid != null) {
+          // 顯示未來4週中第一個有非零預測的週，不是硬寫死week_1——很多情況window落在
+          // week_2/3才開始，硬顯示week_1只會一路顯示0，看起來像沒產量。
+          const weekly = zone.my_weekly_forecast_kg || {};
+          const firstActiveWeek = ['week_1', 'week_2', 'week_3', 'week_4']
+            .map((key, idx) => ({ key, idx, v: weekly[key] }))
+            .find(w => w.v && w.v.mid != null && w.v.mid > 0);
+          if (firstActiveWeek) {
+            const { idx, v } = firstActiveWeek;
             const qty = document.createElement('p');
             qty.style.cssText = 'font-size:13px;color:var(--muted);margin-top:-4px;';
             const shareLabel = zone.my_share != null ? `（您認養 ${zone.my_row_count}／共 ${zone.zone_total_row_count} 排）` : '';
-            qty.textContent = `　└ 您的預估週產量約 ${week1.low.toFixed(1)}–${week1.high.toFixed(1)} kg（模型預測，非核定供應量）${shareLabel}`;
+            qty.textContent = `　└ 未來第${idx + 1}週您的預估產量約 ${v.low.toFixed(1)}–${v.high.toFixed(1)} kg（模型預測，非核定供應量）${shareLabel}`;
             modelBody.append(qty);
           }
         }
