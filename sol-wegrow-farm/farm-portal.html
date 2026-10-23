@@ -1061,6 +1061,17 @@
             : zone.status === 'stale' ? '預測資料已過期，等待更新' : '尚無模型預測';
           row.textContent = scope + '｜' + label;
           modelBody.append(row);
+
+          // 個人預期（按您認養的排數比例換算，不是核定供應量）——quantity_basis固定是
+          // forecast_not_confirmed_supply，兩種數字絕不能混在一起顯示，避免被誤認為保證量。
+          const week1 = zone.my_weekly_forecast_kg && zone.my_weekly_forecast_kg.week_1;
+          if (week1 && week1.mid != null) {
+            const qty = document.createElement('p');
+            qty.style.cssText = 'font-size:13px;color:var(--muted);margin-top:-4px;';
+            const shareLabel = zone.my_share != null ? `（您認養 ${zone.my_row_count}／共 ${zone.zone_total_row_count} 排）` : '';
+            qty.textContent = `　└ 您的預估週產量約 ${week1.low.toFixed(1)}–${week1.high.toFixed(1)} kg（模型預測，非核定供應量）${shareLabel}`;
+            modelBody.append(qty);
+          }
         }
       }
 
