@@ -621,6 +621,12 @@
     }
     try { await loadActivities(); } catch { /* 活動區塊失敗不影響其他區塊 */ }
     try { await loadEsgDocuments(); } catch { /* ESG區塊失敗不影響其他區塊 */ }
+
+    // ?tab= 深連結只是切到既有分頁，份額仍由該分頁原本的邏輯計算
+    const deepLinkTab = new URLSearchParams(window.location.search).get("tab");
+    if (deepLinkTab && document.getElementById("tab" + deepLinkTab.charAt(0).toUpperCase() + deepLinkTab.slice(1))) {
+      switchTab(deepLinkTab);
+    }
   }
 
   async function loadSharedOverview() {
