@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeGrow 企業採購</title>
+<meta name="description" content="企業草莓採購入口：供貨目錄、送出需求、查看進度。">
+<meta name="build-version" content="20261025T1-b2b-buyer-batch1" data-testid="wegrow-build-stamp">
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #141713; --muted: #596258; --paper: #fbfaf4; --white: #ffffff;
+    --line: #dfded4; --gold: #b68a35; --green: #153f2a; --mist: #eef1e8; --rose: #c84c41;
+    --shadow: 0 24px 80px rgba(20, 23, 19, .13);
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Noto Sans TC","Microsoft JhengHei",Arial,sans-serif; background:var(--paper); color:var(--ink); }
+  a { color:inherit; text-decoration:none; }
+  button { cursor:pointer; font-family:inherit; }
+  .hidden { display:none !important; }
+
+  header.topbar {
+    position: sticky; top:0; z-index:20; background: var(--white);
+    border-bottom: 1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 20px;
+  }
+  .brand-name { font-size:16px; font-weight:800; }
+  .brand-sub { font-size:11px; color:var(--muted); }
+  .user-menu { display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted); }
+  .user-menu button { border:1px solid var(--line); border-radius:8px; padding:6px 12px; background:var(--white); font-size:13px; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 20px 16px 80px; }
+  .card { background: var(--white); border:1px solid var(--line); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  h2 { margin: 0 0 6px; font-size: 20px; }
+  h3 { margin: 0 0 12px; font-size: 15px; }
+  .muted-p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+
+  #loginCard { max-width: 420px; margin: 60px auto; padding: 28px; background: var(--white); border-radius: 16px; box-shadow: var(--shadow); }
+  #loginCard label { display:block; font-size:12px; color:var(--muted); margin:14px 0 4px; }
+  #loginCard input { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+  .login-btn, .primary { background: var(--green); color:#fff; border:none; border-radius:8px; padding:11px 16px; font-size:14px; font-weight:700; width:100%; margin-top:16px; }
+  .line-login-btn { background:#06C755; color:#fff; border:none; border-radius:8px; padding:11px 16px; font-size:14px; font-weight:700; width:100%; margin-top:10px; }
+  .login-divider { text-align:center; color:var(--muted); font-size:12px; margin:16px 0 4px; }
+  .status { font-size:13px; margin-top:10px; min-height:16px; }
+  .status.error { color: var(--rose); }
+
+  .offering-row, .request-row { padding:12px 0; border-bottom:1px solid var(--line); }
+  .offering-row:last-child, .request-row:last-child { border-bottom:none; }
+  .offering-row .title, .request-row .title { font-weight:700; font-size:14px; }
+  .offering-row .meta, .request-row .meta { font-size:12px; color:var(--muted); margin-top:2px; }
+  .offering-row button { margin-top:8px; border:1px solid var(--green); color:var(--green); background:#fff; border-radius:8px; padding:7px 14px; font-size:13px; }
+  .status-pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:var(--mist); color:var(--green); margin-top:4px; }
+
+  .empty-note { color: var(--muted); font-size: 13px; padding: 12px 0; }
+
+  #requestModal { display:none; position:fixed; inset:0; background:rgba(20,23,19,.45); align-items:center; justify-content:center; z-index:30; padding:16px; }
+  #requestModalBody { background:var(--white); border-radius:14px; padding:20px; max-width:420px; width:100%; max-height:85vh; overflow:auto; }
+  #requestModalBody input, #requestModalBody textarea { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; margin-top:6px; }
+  #requestModalBody label { display:block; font-size:12px; color:var(--muted); margin-top:12px; }
+</style>
+</head>
+<body>
+
+<div id="sessionRestoring" style="max-width:420px;margin:60px auto;text-align:center;color:var(--muted);font-size:14px;padding:20px;">
+  正在載入…
+</div>
+
+<div id="loginCard" class="hidden">
+  <h2>企業採購登入</h2>
+  <p class="muted-p" id="loginIntro">查看供貨、送出採購需求、追蹤進度。</p>
+  <button class="line-login-btn" id="lineLoginBtn">用 LINE 登入</button>
+  <div class="login-divider">或使用 Email</div>
+  <form id="loginForm">
+    <label>帳號 Email</label>
+    <input type="email" id="loginEmail" autocomplete="username" required>
+    <label>密碼</label>
+    <input type="password" id="loginPassword" autocomplete="current-password" required>
+    <button type="submit" class="primary">登入</button>
+  </form>
+  <p class="status" id="loginStatus"></p>
+</div>
+
+<div id="appShell" class="hidden">
+  <header class="topbar">
+    <div>
+      <div class="brand-name">WeGrow 企業採購</div>
+      <div class="brand-sub" id="orgNameLabel"></div>
+    </div>
+    <div class="user-menu">
+      <span id="userEmailLabel"></span>
+      <button id="logoutBtn">登出</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h3>供貨目錄</h3>
+      <div id="catalogBody"><p class="empty-note">載入中…</p></div>
+    </div>
+
+    <div class="card">
+      <h3>我的採購需求</h3>
+      <div id="requestsBody"><p class="empty-note">載入中…</p></div>
+    </div>
+  </main>
+</div>
+
+<div id="requestModal">
+  <div id="requestModalBody"></div>
+</div>
+
+<script>
+(function () {
+  const API_BASE = window.B2B_API_BASE || "https://api.wegrow-orbit.com";
+  const TOKEN_KEY = "b2b_buyer_token";
+
+  function getToken() { return localStorage.getItem(TOKEN_KEY) || ""; }
+  function setToken(t) { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); }
+  async function apiFetch(path, options) {
+    const headers = Object.assign({}, (options && options.headers) || {}, { Authorization: `Bearer ${getToken()}` });
+    return fetch(`${API_BASE}${path}`, Object.assign({}, options, { headers }));
+  }
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function fmtDate(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei" });
+  }
+  function setStatus(id, text, cls) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "status" + (cls ? " " + cls : "");
+  }
+
+  function showRestoring() {
+    document.getElementById("sessionRestoring").classList.remove("hidden");
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+  }
+  function showLoginCard(message) {
+    document.getElementById("sessionRestoring").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("loginCard").classList.remove("hidden");
+    if (message) setStatus("loginStatus", message, "error");
+  }
+  function showApp() {
+    document.getElementById("sessionRestoring").classList.add("hidden");
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.remove("hidden");
+  }
+
+  // 邀請連結帶的token——登入前後都要保留，登入成功的那一刻立刻兌換。
+  const params = new URLSearchParams(window.location.search);
+  const inviteToken = params.get("invite_token");
+  if (inviteToken) {
+    sessionStorage.setItem("b2b_pending_invite_token", inviteToken);
+    document.getElementById("loginIntro").textContent = "您收到了企業採購邀請，登入後即可開始使用。";
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    setStatus("loginStatus", "登入中…");
+    let resp;
+    try {
+      const body = new URLSearchParams({ username: email, password });
+      resp = await fetch(`${API_BASE}/auth/login`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+    } catch { setStatus("loginStatus", "無法連線，請稍後再試。", "error"); return; }
+    if (!resp.ok) { setStatus("loginStatus", "登入失敗：Email 或密碼錯誤。", "error"); return; }
+    const result = await resp.json();
+    setToken(result.access_token);
+    await afterLogin();
+  });
+
+  document.getElementById("lineLoginBtn").addEventListener("click", () => {
+    const redirectTo = "/b2b-buyer/";
+    // return_mode=direct：這是獨立靜態頁，不是Orbit SPA，callback完要直接
+    // 帶line_code導回這個頁面本身，不要經過SPA的/#/login。
+    window.location.href = `${API_BASE}/api/auth/line/login-start?redirect_to=${encodeURIComponent(redirectTo)}&return_mode=direct`;
+  });
+
+  async function handleLineReturn() {
+    const lineCode = params.get("line_code");
+    const lineError = params.get("line_error");
+    if (lineError) {
+      showLoginCard("LINE登入失敗，請重試或改用Email。");
+      history.replaceState(null, "", window.location.pathname);
+      return true;
+    }
+    if (!lineCode) return false;
+    try {
+      const resp = await fetch(`${API_BASE}/api/auth/line/exchange`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: lineCode }),
+      });
+      if (!resp.ok) { showLoginCard("LINE登入失敗，請重試。"); return true; }
+      const result = await resp.json();
+      setToken(result.access_token);
+      history.replaceState(null, "", window.location.pathname);
+      await afterLogin();
+    } catch { showLoginCard("無法連線，請稍後再試。"); }
+    return true;
+  }
+
+  async function redeemPendingInviteIfAny() {
+    const token = sessionStorage.getItem("b2b_pending_invite_token");
+    if (!token) return { ok: true };
+    const resp = await apiFetch(`/api/b2b/invites/${encodeURIComponent(token)}/redeem`, { method: "POST" });
+    sessionStorage.removeItem("b2b_pending_invite_token");
+    if (!resp.ok) {
+      const body = await resp.json().catch(() => ({}));
+      const messages = {
+        invite_invalid: "邀請連結無效，請聯繫業務重新發送。",
+        invite_already_used: "這個邀請連結已經被使用過了。",
+        invite_expired: "邀請連結已過期，請聯繫業務重新發送。",
+        user_already_in_another_organization: "這個帳號已經屬於另一家公司，無法再加入新的公司。",
+      };
+      return { ok: false, message: messages[body.detail] || "邀請兌換失敗，請聯繫業務協助。" };
+    }
+    return { ok: true };
+  }
+
+  async function afterLogin() {
+    const redeemResult = await redeemPendingInviteIfAny();
+    let meResp;
+    try {
+      meResp = await apiFetch("/api/b2b/me");
+    } catch {
+      setToken("");
+      showLoginCard("無法連線，請檢查網路後重新登入。");
+      return;
+    }
+    if (meResp.status === 401) { setToken(""); showLoginCard("登入已過期，請重新登入。"); return; }
+    if (!meResp.ok) {
+      setToken("");
+      showLoginCard(redeemResult.ok ? "此帳號尚未被邀請加入任何企業採購窗口，請聯繫業務。" : redeemResult.message);
+      return;
+    }
+    const me = await meResp.json();
+    document.getElementById("orgNameLabel").textContent = me.organization ? me.organization.name : "";
+    document.getElementById("userEmailLabel").textContent = me.user.email;
+    showApp();
+    loadCatalog();
+    loadMyRequests();
+  }
+
+  async function loadCatalog() {
+    const body = document.getElementById("catalogBody");
+    body.textContent = "載入中…";
+    try {
+      const resp = await apiFetch("/api/b2b/supply-catalog");
+      if (!resp.ok) throw new Error(String(resp.status));
+      const rows = await resp.json();
+      if (!rows.length) { body.innerHTML = '<p class="empty-note">目前沒有公開的供貨公告，請直接聯繫業務詢問。</p>'; return; }
+      body.innerHTML = "";
+      for (const r of rows) {
+        const row = document.createElement("div");
+        row.className = "offering-row";
+        const priceText = r.price_hint_twd == null ? "待報價" : `約 NT$${r.price_hint_twd}`;
+        row.innerHTML = `
+          <div class="title">${escapeHtml(r.crop_name)}</div>
+          <div class="meta">可訂量 ${r.available_quantity}${escapeHtml(r.unit)}｜${fmtDate(r.period_start)}～${fmtDate(r.period_end_exclusive)}｜${priceText}</div>
+          ${r.notes ? `<div class="meta">${escapeHtml(r.notes)}</div>` : ""}
+        `;
+        const btn = document.createElement("button");
+        btn.textContent = "送出採購需求";
+        btn.addEventListener("click", () => openRequestModal(r));
+        row.appendChild(btn);
+        body.appendChild(row);
+      }
+    } catch {
+      body.innerHTML = '<p class="empty-note">載入失敗，請重試。</p>';
+    }
+  }
+
+  const statusLabel = { submitted: "已送出，待業務回覆", quoted: "業務已回覆報價", accepted: "已確認訂單", declined: "無法供應", expired: "報價已逾期" };
+
+  async function loadMyRequests() {
+    const body = document.getElementById("requestsBody");
+    body.textContent = "載入中…";
+    try {
+      const resp = await apiFetch("/api/b2b/purchase-requests");
+      if (!resp.ok) throw new Error(String(resp.status));
+      const rows = await resp.json();
+      if (!rows.length) { body.innerHTML = '<p class="empty-note">尚未送出任何採購需求。</p>'; return; }
+      body.innerHTML = "";
+      for (const r of rows) {
+        const row = document.createElement("div");
+        row.className = "request-row";
+        row.innerHTML = `
+          <div class="title">${escapeHtml(r.crop_name)}｜${r.requested_quantity}${escapeHtml(r.unit)}</div>
+          <div class="meta">${fmtDate(r.created_at)}${r.desired_date ? "｜盼交期 " + fmtDate(r.desired_date) : ""}</div>
+          <span class="status-pill">${statusLabel[r.status] || r.status}</span>
+        `;
+        body.appendChild(row);
+      }
+    } catch {
+      body.innerHTML = '<p class="empty-note">載入失敗，請重試。</p>';
+    }
+  }
+
+  function closeRequestModal() { document.getElementById("requestModal").style.display = "none"; }
+
+  function openRequestModal(offering) {
+    const modal = document.getElementById("requestModal");
+    const body = document.getElementById("requestModalBody");
+    body.innerHTML = `
+      <h3>送出採購需求：${escapeHtml(offering.crop_name)}</h3>
+      <label>需求數量（${escapeHtml(offering.unit)}，可訂量 ${offering.available_quantity}）</label>
+      <input type="number" id="reqQty" min="0.1" step="0.1" value="1">
+      <label>盼交貨日期</label>
+      <input type="date" id="reqDate">
+      <label>備註</label>
+      <textarea id="reqNote" rows="2"></textarea>
+      <p class="status" id="reqStatus"></p>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button id="reqCancelBtn" style="flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px;">取消</button>
+        <button id="reqSubmitBtn" class="primary" style="flex:1;margin-top:0;">送出</button>
+      </div>
+    `;
+    modal.style.display = "flex";
+    document.getElementById("reqCancelBtn").addEventListener("click", closeRequestModal);
+    document.getElementById("reqSubmitBtn").addEventListener("click", async () => {
+      const qty = parseFloat(document.getElementById("reqQty").value);
+      if (!(qty > 0)) { setStatus("reqStatus", "請輸入正確的數量。", "error"); return; }
+      const idempotencyKey = `b2b-${offering.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      setStatus("reqStatus", "送出中…");
+      try {
+        const resp = await apiFetch("/api/b2b/purchase-requests", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idempotency_key: idempotencyKey, offering_id: offering.id, crop_name: offering.crop_name,
+            requested_quantity: qty, unit: offering.unit,
+            desired_date: document.getElementById("reqDate").value || null,
+            note: document.getElementById("reqNote").value || null,
+          }),
+        });
+        if (!resp.ok) throw new Error(String(resp.status));
+        closeRequestModal();
+        loadMyRequests();
+      } catch {
+        setStatus("reqStatus", "送出失敗，請重試。", "error");
+      }
+    });
+  }
+
+  document.getElementById("logoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
+
+  (async () => {
+    const handledLineReturn = await handleLineReturn();
+    if (handledLineReturn) return;
+    if (getToken()) {
+      showRestoring();
+      afterLogin().catch(() => { setToken(""); showLoginCard("連線發生問題，請重新登入。"); });
+    } else {
+      showLoginCard();
+    }
+  })();
+})();
+</script>
+
+</body>
+</html>
