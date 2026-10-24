@@ -297,6 +297,10 @@
 
     <!-- 產量預告 -->
     <section id="tabHarvest" class="hidden">
+      <div id="harvestNotificationCard" class="card hidden">
+        <h3>本次通知對應的份額</h3>
+        <div id="harvestNotificationBody"><p class="empty-note">載入中…</p></div>
+      </div>
       <div class="card">
         <h3>本週／下週預估採收</h3>
         <div id="harvestEstimateBody"><p class="empty-note">載入中…</p></div>
@@ -505,6 +509,13 @@
 
   let currentFarmId = null;
   let farms = [];
+
+  // 通知深連結帶的period/version——核定供應量(全場數字)跟本人份額是分開的兩件事
+  // (見adoption_shipment_customer.py的my-allocation端點)，這兩個值只在這裡讀一次，
+  // 用來在產量預告頁額外顯示「這次通知實際對應的那筆份額」，不靠猜測或用模型預測頂替。
+  const notifiedPeriodId = new URLSearchParams(window.location.search).get("period");
+  const _notifiedVersionRaw = new URLSearchParams(window.location.search).get("version");
+  const notifiedVersion = _notifiedVersionRaw != null && _notifiedVersionRaw !== "" ? parseInt(_notifiedVersionRaw, 10) : null;
 
   // 2026-09-27 修復白屏：不管是「剛登入」還是「用舊token恢復工作階段」，畫面永遠只能是
   // 三種狀態之一——載入中／登入表單（含錯誤訊息）／主畫面，不能同時把登入表單跟主畫面
@@ -1021,6 +1032,41 @@
       container.append(p);
     }
   }
+  async function loadNotifiedAllocation(farmId) {
+    const card = document.getElementById('harvestNotificationCard');
+    const body = document.getElementById('harvestNotificationBody');
+    if (!notifiedPeriodId || !farmId) { card.classList.add('hidden'); return; }
+    card.classList.remove('hidden');
+    body.textContent = '載入中…';
+    try {
+      const qs = notifiedVersion != null ? `?version=${encodeURIComponent(notifiedVersion)}` : '';
+      const res = await apiFetch(
+        `/api/customer/farms/${encodeURIComponent(farmId)}/supply-periods/${encodeURIComponent(notifiedPeriodId)}/my-allocation${qs}`,
+        { cache: 'no-store' },
+      );
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      body.replaceChildren();
+      if (data.is_stale_link) {
+        const banner = document.createElement('p');
+        banner.style.cssText = 'color:#b36b00;font-size:13px;';
+        banner.textContent = `此通知連結對應的版本已更新（目前第 ${data.current_version} 版），以下顯示目前最新資料，不是原通知當時的版本承諾。`;
+        body.append(banner);
+      }
+      const title = document.createElement('p');
+      title.style.cssText = 'font-weight:600;';
+      title.textContent = `${data.product_label}（${fmtDate(data.period_start)}～${fmtDate(data.period_end_exclusive)}）`;
+      body.append(title);
+      const line = document.createElement('p');
+      line.textContent = data.status === 'allocated'
+        ? `您的份額：${data.my_quantity} ${data.offer_unit}｜更新時間：${fmtDateTime(data.allocated_at)}`
+        : '本期供應已核定，您的份額待分配。';
+      body.append(line);
+    } catch (error) {
+      body.innerHTML = `<p class="empty-note">${error.message === '403' ? '此農場尚無有效認養合約，無法顯示個人份額。' : '載入失敗，請稍後重試。'}</p>`;
+    }
+  }
+
   async function loadHarvestTab(farmId) {
     const id = ++harvestRequest;
     const current = () => id === harvestRequest;
@@ -1029,6 +1075,7 @@
     const deliveryBody = document.getElementById('harvestDeliveryBody');
     if (!getToken()) return;
     estBody.textContent = '載入中…';
+    loadNotifiedAllocation(farmId);
 
     if (!farmId) {
       modelBody.innerHTML = '<p class="empty-note">尚未選區，暫無模型預測。</p>';
