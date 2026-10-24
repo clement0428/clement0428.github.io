@@ -602,9 +602,16 @@
         loadHarvestTab(null);
       } else {
         farms = await farmsResp.json();
+        if (farms.length) {
+          // 深連結可能帶?farm=要求顯示特定場域(例如供應期間通知對應的那個農場)——
+          // 客戶若認養不只一場，不能一律顯示清單第一個，會跟通知實際要給他看的
+          // 供應期間對不起來。帶的ID不在他的場域清單內就忽略，照舊用第一個。
+          const requestedFarmId = new URLSearchParams(window.location.search).get("farm");
+          const requestedFarm = requestedFarmId && farms.find(f => f.farm_id === requestedFarmId);
+          currentFarmId = requestedFarm ? requestedFarm.farm_id : farms[0].farm_id;
+        }
         renderFarmSwitcher();
         if (farms.length) {
-          currentFarmId = farms[0].farm_id;
           await loadLiveTab();
         } else {
           // 帳號已開通、farms API成功回傳空陣列＝真的尚未選區，不是帳號異常。目前沒有
