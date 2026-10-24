@@ -1027,10 +1027,10 @@
     if (!iso) return "";
     return new Date(iso + "T00:00:00+08:00").toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric" });
   }
-  function renderForecastItem(container, { product_label, period_start, period_end_exclusive, my_quantity, unit, staleNote }) {
+  function renderForecastItem(container, { crop_name, period_start, period_end_exclusive, my_quantity, unit, staleNote }) {
     const item = document.createElement('div');
     item.className = 'forecast-item';
-    const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🍓 ${product_label}`;
+    const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🍓 ${crop_name || '我的收穫'}`;
     const dateLine = document.createElement('p'); dateLine.className = 'line';
     dateLine.textContent = `預計採收：${fmtMonthDay(period_start)}～${fmtMonthDay(period_end_exclusive)}`;
     const qtyLine = document.createElement('p'); qtyLine.className = 'line';
@@ -1086,7 +1086,7 @@
       if (pendingNotice) {
         const item = document.createElement('div');
         item.className = 'forecast-item';
-        const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🍓 ${escapeHtml(pendingNotice.product_label)}`;
+        const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🍓 ${pendingNotice.crop_name || '我的收穫'}`;
         const line = document.createElement('p'); line.className = 'line'; line.textContent = '本期供應已核定，您的份額待分配。';
         item.append(crop, line);
         body.append(item);
