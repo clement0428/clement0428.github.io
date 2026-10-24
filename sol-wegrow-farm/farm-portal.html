@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="企業員工入口：看現場、活動回憶、ESG下載。">
-<meta name="build-version" content="20261022T1-harvest-and-shipments-tabs" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261024T1-separate-automatic-forecast" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -306,7 +306,13 @@
     <!-- 產量預告 -->
     <section id="tabHarvest" class="hidden">
       <div class="card">
-        <h3>我的採收預告</h3>
+        <h3>個人自動預期收穫</h3>
+        <p style="font-size:12px; color:var(--muted); margin-top:-6px;">由模型依最近採收速率與您的認養範圍自動換算，僅供參考，不是已核定的寄送承諾。</p>
+        <div id="automaticForecastBody"><p class="empty-note">載入中…</p></div>
+      </div>
+      <div class="card">
+        <h3>已核定寄送分配</h3>
+        <p style="font-size:12px; color:var(--muted); margin-top:-6px;">農場人工核定、確定要寄給您的數量。</p>
         <div id="harvestForecastBody"><p class="empty-note">載入中…</p></div>
       </div>
     </section>
@@ -1032,15 +1038,62 @@
     item.className = 'forecast-item';
     const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🍓 ${crop_name || '我的收穫'}`;
     const dateLine = document.createElement('p'); dateLine.className = 'line';
-    dateLine.textContent = `預計採收：${fmtMonthDay(period_start)}～${fmtMonthDay(period_end_exclusive)}`;
+    dateLine.textContent = `寄送期間：${fmtMonthDay(period_start)}～${fmtMonthDay(period_end_exclusive)}`;
     const qtyLine = document.createElement('p'); qtyLine.className = 'line';
-    qtyLine.innerHTML = `您的預計收穫：<span class="qty">${fmtQty(my_quantity)} ${escapeHtml(unit || '')}</span>`;
+    // 這是admin已核定分配的「寄送量」(AdoptionOffer.allocated_quantity)，是人工核定的
+    // 履約數字，不是模型預測——不能跟下面的「自動預期收穫」混標成同一件事。
+    qtyLine.innerHTML = `已核定寄送分配：<span class="qty">${fmtQty(my_quantity)} ${escapeHtml(unit || '')}</span>`;
     item.append(crop, dateLine, qtyLine);
     if (staleNote) {
       const note = document.createElement('p'); note.className = 'stale-note'; note.textContent = staleNote;
       item.append(note);
     }
     container.append(item);
+  }
+
+  // 「個人自動預期收穫」——跟上面的「已核定寄送分配」是兩件事：這個數字由
+  // ④採收基線模型×認養排數自動換算，不需要admin先手動分配才顯示；不可信
+  // (資料不足)時誠實顯示原因，不填0或假精準數字。
+  const FORECAST_UNAVAILABLE_LABEL = {
+    incomplete_observation_window: '農場最近的採收紀錄還不完整，暫時無法自動估算。',
+    plant_count_missing: '這個分區還沒設定株數，暫時無法自動估算。',
+    zone_not_found: '找不到對應分區，暫時無法自動估算。',
+    no_row_share: '尚未設定您在這個分區的排數對應，暫時無法自動估算。',
+  };
+  function renderAutomaticForecastItem(container, entry) {
+    const item = document.createElement('div');
+    item.className = 'forecast-item';
+    const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🤖 ${entry.crop || '個人自動預期'}`;
+    if (entry.available) {
+      const dateLine = document.createElement('p'); dateLine.className = 'line';
+      dateLine.textContent = `預測期間：${fmtMonthDay(entry.window_start)}～${fmtMonthDay(entry.window_end)}`;
+      const qtyLine = document.createElement('p'); qtyLine.className = 'line';
+      qtyLine.innerHTML = `個人自動預期收穫：<span class="qty">${fmtQty(entry.my_expected_kg)} kg</span>（模型估算，僅供參考）`;
+      item.append(crop, dateLine, qtyLine);
+    } else {
+      const line = document.createElement('p'); line.className = 'line';
+      line.textContent = FORECAST_UNAVAILABLE_LABEL[entry.reason] || '資料不足，暫時無法自動估算。';
+      item.append(crop, line);
+    }
+    container.append(item);
+  }
+  async function loadAutomaticForecast(farmId) {
+    const body = document.getElementById('automaticForecastBody');
+    if (!body) return;
+    try {
+      const res = await apiFetch(`/api/customer/farms/${encodeURIComponent(farmId)}/my-automatic-harvest-forecast`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      const zones = data.zones || [];
+      body.replaceChildren();
+      if (!zones.length) {
+        body.innerHTML = '<p class="empty-note">尚未設定可自動估算的分區。</p>';
+        return;
+      }
+      for (const entry of zones) renderAutomaticForecastItem(body, entry);
+    } catch {
+      body.innerHTML = '<p class="empty-note">自動預期收穫暫時無法載入。</p>';
+    }
   }
   async function loadHarvestTab(farmId) {
     const id = ++harvestRequest;
@@ -1050,8 +1103,11 @@
     body.textContent = '載入中…';
     if (!farmId) {
       body.innerHTML = '<p class="empty-note">採收日期確認後，我們會用LINE通知您。</p>';
+      const autoBody = document.getElementById('automaticForecastBody');
+      if (autoBody) autoBody.innerHTML = '';
       return;
     }
+    loadAutomaticForecast(farmId);
     try {
       const [forecastRes, notifiedRes] = await Promise.all([
         apiFetch(`/api/customer/farms/${encodeURIComponent(farmId)}/my-harvest-forecast`, { cache: 'no-store' }),
