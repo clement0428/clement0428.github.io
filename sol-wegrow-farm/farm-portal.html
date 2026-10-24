@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
-<meta name="description" content="企業員工入口：看現場、活動回憶、ESG下載。">
+<meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
 <meta name="build-version" content="20261024T1-separate-automatic-forecast" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
@@ -70,6 +70,8 @@
   .wg-offer-row:last-child { border-bottom:none; }
   .wg-offer-row p { margin:0; flex:1 1 auto; font-size:13px; }
   .wg-offer-row button { border:1px solid var(--line); border-radius:8px; padding:6px 12px; background:var(--white); font-size:13px; }
+  .wg-offer-detail { flex:1 1 100%; font-size:11px; color:var(--muted); }
+  .wg-offer-detail summary { cursor:pointer; }
 
   .wg-ship-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px; }
   .wg-ship-modal-card { background:var(--white); border-radius:14px; padding:20px; max-width:420px; width:100%; max-height:80vh; overflow-y:auto; }
@@ -241,8 +243,8 @@
 </div>
 
 <div id="loginCard">
-  <h2>企業員工登入</h2>
-  <p>請用威果管理員開通的帳號登入，只會看到您企業已授權的農場內容。這不是Demo，會實際呼叫 WeGrow Orbit 後端。</p>
+  <h2>登入我的農場</h2>
+  <p>查看您的農場近況、產量預告與寄送進度。</p>
   <form id="loginForm">
     <label>帳號 Email</label>
     <input type="email" id="loginEmail" autocomplete="username" required>
@@ -616,7 +618,12 @@
           // 供應期間對不起來。帶的ID不在他的場域清單內就忽略，照舊用第一個。
           const requestedFarmId = new URLSearchParams(window.location.search).get("farm");
           const requestedFarm = requestedFarmId && farms.find(f => f.farm_id === requestedFarmId);
-          currentFarmId = requestedFarm ? requestedFarm.farm_id : farms[0].farm_id;
+          // 2026-10-25修正：預設農場原本直接吃後端回傳陣列的第一筆，如果帳號同時
+          // 對測試農場也有授權（例如驗收用的管理員帳號），陣列順序沒有保證，客戶
+          // 登入後可能第一眼就看到測試農場。正常客戶體驗一律優先顯示麻豆1場，
+          // 找不到才退回陣列第一筆（例如帳號真的只被授權別的農場）。
+          const madou1 = farms.find(f => f.farm_name === "麻豆1場");
+          currentFarmId = requestedFarm ? requestedFarm.farm_id : (madou1 || farms[0]).farm_id;
         }
         renderFarmSwitcher();
         if (farms.length) {
@@ -830,22 +837,30 @@
       const p = document.createElement('p'); p.className = 'empty-note'; p.textContent = '目前沒有待確認的寄送。'; body.append(p);
       return;
     }
-    const statusLabel = { offered: '待回覆', accepted: '已接受', declined: '這次不寄' };
+    // 2026-10-25修正：原本「可分配數量 2.00｜offered｜2026-10-24 16:05:12」沒有作物
+    // 名稱、沒有單位、時間堆到秒級，客戶看不懂。改成「紅草莓｜2盒｜待您確認寄送」，
+    // 細節（原始時間戳）收進<details>，不是刪掉只是不堆在第一行。
+    const statusLabel = { offered: '待您確認寄送', accepted: '已確認要寄', declined: '這次不寄' };
     for (const offer of offers) {
       const row = document.createElement('div');
       row.className = 'wg-offer-row';
       const text = document.createElement('p');
-      text.textContent = `${offer.farm_name}｜可分配數量 ${offer.allocated_quantity}｜${statusLabel[offer.status] || offer.status}｜${fmtDateTime(offer.offered_at)}`;
+      const cropPart = offer.crop_name ? `${offer.crop_name}｜` : '';
+      const unitPart = offer.unit ? `${offer.allocated_quantity}${offer.unit}` : `數量 ${offer.allocated_quantity}`;
+      text.textContent = `${cropPart}${unitPart}｜${statusLabel[offer.status] || offer.status}`;
+      const detail = document.createElement('details');
+      detail.className = 'wg-offer-detail';
+      detail.innerHTML = `<summary>詳情</summary><span>${escapeHtml(offer.farm_name)}｜通知時間 ${fmtDateTime(offer.offered_at)}</span>`;
       if (offer.status === 'offered') {
         const shipBtn = document.createElement('button'); shipBtn.textContent = '要寄';
         const skipBtn = document.createElement('button'); skipBtn.textContent = '這次不寄';
         shipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'accept', row));
         skipBtn.addEventListener('click', () => respondOffer(offer.offer_id, 'decline', row));
-        row.append(text, shipBtn, skipBtn);
+        row.append(text, shipBtn, skipBtn, detail);
       } else if (offer.shipment_id) {
         const viewBtn = document.createElement('button'); viewBtn.textContent = '查看寄送狀態';
         viewBtn.addEventListener('click', () => openShipmentPanel(offer.shipment_id));
-        row.append(text, viewBtn);
+        row.append(text, viewBtn, detail);
       } else {
         row.append(text);
       }
