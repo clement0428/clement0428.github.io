@@ -93,6 +93,14 @@
 
   .record-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
   .record-row:last-child { border-bottom:none; }
+
+  /* ---- 我的採收預告 ---- */
+  .forecast-item { padding:14px 0; border-bottom:1px solid var(--line); }
+  .forecast-item:last-child { border-bottom:none; }
+  .forecast-item .crop { font-size:15px; font-weight:800; margin:0 0 6px; }
+  .forecast-item .line { font-size:14px; color:var(--ink); margin:2px 0; }
+  .forecast-item .qty { font-weight:800; color:var(--green); }
+  .forecast-item .stale-note { font-size:12px; color:var(--gold); margin-top:4px; }
   .record-row .date { color:var(--muted); }
 
   /* ---- 認養位置地圖：威果黃／深灰品牌配色（2026-09-28） ---- */
@@ -297,21 +305,9 @@
 
     <!-- 產量預告 -->
     <section id="tabHarvest" class="hidden">
-      <div id="harvestNotificationCard" class="card hidden">
-        <h3>本次通知對應的份額</h3>
-        <div id="harvestNotificationBody"><p class="empty-note">載入中…</p></div>
-      </div>
       <div class="card">
-        <h3>本週／下週預估採收</h3>
-        <div id="harvestEstimateBody"><p class="empty-note">載入中…</p></div>
-      </div>
-      <div class="card">
-        <h3>模型預測（依認養區）</h3>
-        <div id="harvestModelBody"><p class="empty-note">載入中…</p></div>
-      </div>
-      <div class="card">
-        <h3>已核定可供應量與出貨</h3>
-        <div id="harvestDeliveryBody"><p class="empty-note">載入中…</p></div>
+        <h3>我的採收預告</h3>
+        <div id="harvestForecastBody"><p class="empty-note">載入中…</p></div>
       </div>
     </section>
 
@@ -376,11 +372,6 @@
 (function () {
   const API_BASE = window.FARM_PORTAL_API_BASE || "https://api.wegrow-orbit.com";
   const TOKEN_KEY = "farm-portal-token";
-  // 2026-10-22：目前部署僅麻豆1場（見wegrow-orbit-src enterprise_admin.py
-  // MADOU_FARM_ID）——未選區帳號沒有currentFarmId，但人工產量預估是場域層級、
-  // 非客戶專屬資料（/harvest-manual-estimate端點只要求active membership），所以
-  // 這裡可以直接指定場域去查，不用等客戶選區。
-  const MADOU_FARM_ID = "e9348cd2-6cca-4583-a86d-8011032b5570";
 
   // ==================== farm-booking 免費參訪資格交換（2026-10-17）====================
   // 客戶從booking.wegrow-orbit.com的預約頁被導過來，帶著nonce跟return_url。這裡在
@@ -1021,145 +1012,89 @@
     body.append(closeBtn);
   }
 
-  // ── 產量預告：人工預估（場域層級，未選區也看得到）／模型預測／已核定供應量 ──
+  // ── 產量預告：簡化後只顯示「我的採收預告」——每個已分配期間一張卡片，
+  // 日期＋本人真實公斤數，不顯示模型來源/信賴度/核定紀錄/版本等技術細節
+  // （那些留在後台）。
   let harvestRequest = 0;
-  function renderHarvestEstimates(container, list) {
-    if (!list || !list.length) { container.innerHTML = '<p class="empty-note">目前沒有人工發布的預估。</p>'; return; }
-    container.replaceChildren();
-    for (const e of list) {
-      const p = document.createElement('p');
-      p.textContent = `${e.week_label}｜約 ${e.quantity} ${e.unit}（人工評估，${fmtDateTime(e.published_at)}發布${e.note ? '；' + e.note : ''}）`;
-      container.append(p);
-    }
+  function fmtQty(value) {
+    // "2.00" -> 2 -> "2"；"2.50" -> 2.5 -> "2.5"——轉成number再轉回字串，
+    // JS原生就不會留多餘的小數尾端零，不用額外rstrip。
+    const num = Number(value);
+    if (!Number.isFinite(num)) return String(value);
+    return String(Math.round(num * 100) / 100);
   }
-  async function loadNotifiedAllocation(farmId) {
-    const card = document.getElementById('harvestNotificationCard');
-    const body = document.getElementById('harvestNotificationBody');
-    if (!notifiedPeriodId || !farmId) { card.classList.add('hidden'); return; }
-    card.classList.remove('hidden');
-    body.textContent = '載入中…';
-    try {
-      const qs = notifiedVersion != null ? `?version=${encodeURIComponent(notifiedVersion)}` : '';
-      const res = await apiFetch(
-        `/api/customer/farms/${encodeURIComponent(farmId)}/supply-periods/${encodeURIComponent(notifiedPeriodId)}/my-allocation${qs}`,
-        { cache: 'no-store' },
-      );
-      if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json();
-      body.replaceChildren();
-      if (data.is_stale_link) {
-        const banner = document.createElement('p');
-        banner.style.cssText = 'color:#b36b00;font-size:13px;';
-        banner.textContent = `此通知連結對應的版本已更新（目前第 ${data.current_version} 版），以下顯示目前最新資料，不是原通知當時的版本承諾。`;
-        body.append(banner);
-      }
-      const title = document.createElement('p');
-      title.style.cssText = 'font-weight:600;';
-      title.textContent = `${data.product_label}（${fmtDate(data.period_start)}～${fmtDate(data.period_end_exclusive)}）`;
-      body.append(title);
-      const line = document.createElement('p');
-      line.textContent = data.status === 'allocated'
-        ? `您的份額：${data.my_quantity} ${data.offer_unit}｜更新時間：${fmtDateTime(data.allocated_at)}`
-        : '本期供應已核定，您的份額待分配。';
-      body.append(line);
-    } catch (error) {
-      body.innerHTML = `<p class="empty-note">${error.message === '403' ? '此農場尚無有效認養合約，無法顯示個人份額。' : '載入失敗，請稍後重試。'}</p>`;
-    }
+  function fmtMonthDay(iso) {
+    if (!iso) return "";
+    return new Date(iso + "T00:00:00+08:00").toLocaleDateString("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric" });
   }
-
+  function renderForecastItem(container, { product_label, period_start, period_end_exclusive, my_quantity, unit, staleNote }) {
+    const item = document.createElement('div');
+    item.className = 'forecast-item';
+    const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🍓 ${product_label}`;
+    const dateLine = document.createElement('p'); dateLine.className = 'line';
+    dateLine.textContent = `預計採收：${fmtMonthDay(period_start)}～${fmtMonthDay(period_end_exclusive)}`;
+    const qtyLine = document.createElement('p'); qtyLine.className = 'line';
+    qtyLine.innerHTML = `您的預計收穫：<span class="qty">${fmtQty(my_quantity)} ${escapeHtml(unit || '')}</span>`;
+    item.append(crop, dateLine, qtyLine);
+    if (staleNote) {
+      const note = document.createElement('p'); note.className = 'stale-note'; note.textContent = staleNote;
+      item.append(note);
+    }
+    container.append(item);
+  }
   async function loadHarvestTab(farmId) {
     const id = ++harvestRequest;
     const current = () => id === harvestRequest;
-    const estBody = document.getElementById('harvestEstimateBody');
-    const modelBody = document.getElementById('harvestModelBody');
-    const deliveryBody = document.getElementById('harvestDeliveryBody');
-    if (!getToken()) return;
-    estBody.textContent = '載入中…';
-    loadNotifiedAllocation(farmId);
-
+    const body = document.getElementById('harvestForecastBody');
+    if (!getToken() || !body) return;
+    body.textContent = '載入中…';
     if (!farmId) {
-      modelBody.innerHTML = '<p class="empty-note">尚未選區，暫無模型預測。</p>';
-      deliveryBody.innerHTML = '<p class="empty-note">尚未選區，暫無已核定供應量資料。</p>';
-      try {
-        const res = await apiFetch(`/api/customer/farms/${encodeURIComponent(MADOU_FARM_ID)}/harvest-manual-estimate`, { cache: 'no-store' });
-        if (!current()) return;
-        if (!res.ok) throw new Error(String(res.status));
-        const data = await res.json();
-        renderHarvestEstimates(estBody, data.manual_estimates);
-      } catch {
-        if (!current()) return;
-        estBody.innerHTML = '';
-        const p = document.createElement('p'); p.className = 'empty-note'; p.textContent = '載入失敗，請重試。'; estBody.append(p);
-        const retry = document.createElement('button'); retry.textContent = '重試'; retry.onclick = () => loadHarvestTab(null); estBody.append(retry);
-      }
+      body.innerHTML = '<p class="empty-note">採收日期確認後，我們會用LINE通知您。</p>';
       return;
     }
-
-    modelBody.textContent = '載入中…';
-    deliveryBody.textContent = '載入中…';
     try {
-      const res = await apiFetch(`/api/customer/farms/${encodeURIComponent(farmId)}/harvest-outlook`, { cache: 'no-store' });
+      const [forecastRes, notifiedRes] = await Promise.all([
+        apiFetch(`/api/customer/farms/${encodeURIComponent(farmId)}/my-harvest-forecast`, { cache: 'no-store' }),
+        notifiedPeriodId
+          ? apiFetch(`/api/customer/farms/${encodeURIComponent(farmId)}/supply-periods/${encodeURIComponent(notifiedPeriodId)}/my-allocation${notifiedVersion != null ? `?version=${encodeURIComponent(notifiedVersion)}` : ''}`, { cache: 'no-store' }).catch(() => null)
+          : Promise.resolve(null),
+      ]);
       if (!current()) return;
-      if (!res.ok) throw new Error(String(res.status));
-      const data = await res.json();
-      renderHarvestEstimates(estBody, data.manual_estimates);
+      if (!forecastRes.ok) throw new Error(String(forecastRes.status));
+      const forecast = await forecastRes.json();
+      const items = forecast.items || [];
 
-      if (!data.zones || !data.zones.length) {
-        modelBody.innerHTML = `<p class="empty-note">${data.status === 'not_configured' ? '尚無模型預測' : '預測資料更新中'}</p>`;
-      } else {
-        modelBody.replaceChildren();
-        if (data.computed_at) {
-          const updated = document.createElement('p');
-          updated.style.cssText = 'font-size:12px;color:var(--muted);';
-          updated.textContent = `模型預測｜更新時間：${fmtDateTime(data.computed_at)}`;
-          modelBody.append(updated);
-        }
-        for (const zone of data.zones) {
-          const row = document.createElement('p');
-          const scope = (zone.row_codes || []).join('、');
-          const label = zone.status === 'ready' ? '預估採收 ' + zone.predicted_harvest_window.replace('..', '–')
-            : zone.status === 'stale' ? '預測資料已過期，等待更新' : '尚無模型預測';
-          row.textContent = scope + '｜' + label;
-          modelBody.append(row);
-
-          // 個人預期（按您認養的排數比例換算，不是核定供應量）——quantity_basis固定是
-          // forecast_not_confirmed_supply，兩種數字絕不能混在一起顯示，避免被誤認為保證量。
-          // 顯示未來4週中第一個有非零預測的週，不是硬寫死week_1——很多情況window落在
-          // week_2/3才開始，硬顯示week_1只會一路顯示0，看起來像沒產量。
-          const weekly = zone.my_weekly_forecast_kg || {};
-          const firstActiveWeek = ['week_1', 'week_2', 'week_3', 'week_4']
-            .map((key, idx) => ({ key, idx, v: weekly[key] }))
-            .find(w => w.v && w.v.mid != null && w.v.mid > 0);
-          if (firstActiveWeek) {
-            const { idx, v } = firstActiveWeek;
-            const qty = document.createElement('p');
-            qty.style.cssText = 'font-size:13px;color:var(--muted);margin-top:-4px;';
-            const shareLabel = zone.my_share != null ? `（您認養 ${zone.my_row_count}／共 ${zone.zone_total_row_count} 排）` : '';
-            qty.textContent = `　└ 未來第${idx + 1}週您的預估產量約 ${v.low.toFixed(1)}–${v.high.toFixed(1)} kg（模型預測，非核定供應量）${shareLabel}`;
-            modelBody.append(qty);
-          }
+      // 深連結對應的那一期如果還沒分配(不會出現在items裡)，額外顯示一則待分配
+      // 提示——不冒充數字，也不要讓使用者點了通知卻什麼都看不到。
+      let pendingNotice = null;
+      if (notifiedRes && notifiedRes.ok) {
+        const notified = await notifiedRes.json();
+        const alreadyListed = items.some(it => it.period_id === notifiedPeriodId);
+        if (!alreadyListed && notified.status === 'pending_allocation') {
+          pendingNotice = notified;
         }
       }
 
-      const delivery = data.delivery || {};
-      deliveryBody.replaceChildren();
-      const msg = document.createElement('p'); msg.textContent = delivery.message || '尚無配送資料'; deliveryBody.append(msg);
-      for (const batch of delivery.batches || []) {
-        const item = document.createElement('p');
-        item.textContent = batch.on_hold ? '此批次配送暫停' : batch.ship_window_start ? '已核定出貨 ' + fmtDate(batch.ship_window_start) + (batch.ship_window_end ? '–' + fmtDate(batch.ship_window_end) : '') : '出貨日期尚未建立';
-        deliveryBody.append(item);
-        for (const shipment of batch.shipments || []) {
-          const line = document.createElement('p');
-          line.textContent = (shipment.shipped_at ? '已出貨 ' + fmtDate(shipment.shipped_at) : '已建立出貨紀錄') + '｜' + (shipment.carrier || '') + ' ' + (shipment.tracking_no || '單號尚未建立');
-          deliveryBody.append(line);
-        }
+      body.replaceChildren();
+      if (!items.length && !pendingNotice) {
+        body.innerHTML = '<p class="empty-note">採收日期確認後，我們會用LINE通知您。</p>';
+        return;
+      }
+      for (const item of items) {
+        renderForecastItem(body, item);
+      }
+      if (pendingNotice) {
+        const item = document.createElement('div');
+        item.className = 'forecast-item';
+        const crop = document.createElement('p'); crop.className = 'crop'; crop.textContent = `🍓 ${escapeHtml(pendingNotice.product_label)}`;
+        const line = document.createElement('p'); line.className = 'line'; line.textContent = '本期供應已核定，您的份額待分配。';
+        item.append(crop, line);
+        body.append(item);
       }
     } catch (error) {
       if (!current()) return;
-      const msg = error.message === '403' ? '目前沒有收成資訊檢視權限。' : '預測資料暫時無法載入，請稍後重試。';
-      modelBody.innerHTML = `<p class="empty-note">${msg}</p>`;
-      deliveryBody.innerHTML = `<p class="empty-note">${msg}</p>`;
-      if (estBody.textContent === '載入中…') estBody.innerHTML = `<p class="empty-note">${msg}</p>`;
+      const msg = error.message === '403' ? '此農場尚無有效認養合約，無法顯示採收預告。' : '載入失敗，請稍後重試。';
+      body.innerHTML = `<p class="empty-note">${escapeHtml(msg)}</p>`;
     }
   }
 
