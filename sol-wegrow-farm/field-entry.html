@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>現場登記 — 花果抽樣／成熟追蹤</title>
-<meta name="description" content="現場人員登記花果抽樣與成熟追蹤，只記錄實際觀測，不填預估產量。">
-<meta name="build-version" content="20261024T1-field-entry" data-testid="wegrow-build-stamp">
+<title>現場登記 — 每日採收／花果抽樣／成熟追蹤</title>
+<meta name="description" content="現場人員登記每日採收重量、花果抽樣與成熟追蹤，只記錄實際觀測，不填預估產量。">
+<meta name="build-version" content="20261024T2-field-entry" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -60,7 +60,7 @@
 
 <div id="loginCard">
   <h2>現場登記</h2>
-  <p>花果抽樣與成熟追蹤——只記錄實際觀測到的數字，不用填預估產量。</p>
+  <p>每日採收重量、花果抽樣與成熟追蹤——只記錄實際觀測到的數字，不用填預估產量。</p>
   <label>帳號</label>
   <input id="loginEmail" type="text" autocomplete="username">
   <label>密碼</label>
@@ -93,11 +93,49 @@
   </div>
 
   <div class="tabs">
-    <button id="tabSampleBtn" class="active">花果抽樣</button>
+    <button id="tabHarvestBtn" class="active">每日採收重量</button>
+    <button id="tabSampleBtn">花果抽樣</button>
     <button id="tabTrackBtn">成熟追蹤</button>
   </div>
 
-  <section id="sampleTab" class="card">
+  <section id="harvestTab" class="card">
+    <h3>每日採收重量</h3>
+    <p style="font-size:12px; color:var(--muted); margin-top:-4px;">只登記這個分區今天實際採收的事實——沒有採收就按「確認零採收」，不要留空；如果是補登過去幾天累積的量，請勾選「補登」並填涵蓋天數，不要當成單日量。</p>
+    <div class="row">
+      <div>
+        <label class="field">採收日期</label>
+        <input type="date" id="harvestDate">
+      </div>
+      <div>
+        <label class="field">商品重量（公斤）</label>
+        <input type="number" id="harvestWeightKg" min="0" step="0.1" placeholder="例：3.5">
+      </div>
+    </div>
+    <div class="row" style="align-items:center;">
+      <label class="field" style="display:flex; align-items:center; gap:6px; margin:0;">
+        <input type="checkbox" id="harvestConfirmedZero" style="width:auto;"> 確認零採收（今天真的沒採）
+      </label>
+    </div>
+    <div class="row" style="align-items:center;">
+      <label class="field" style="display:flex; align-items:center; gap:6px; margin:0;">
+        <input type="checkbox" id="harvestIsCatchup" style="width:auto;"> 這是補登（累積過去幾天的量）
+      </label>
+    </div>
+    <div class="row hidden" id="harvestCoverageRow">
+      <div>
+        <label class="field">涵蓋天數（例：3天沒登記、今天一次登記，填3）</label>
+        <input type="number" id="harvestCoverageDays" min="2" step="1">
+      </div>
+    </div>
+    <label class="field">備註（選填）</label>
+    <input type="text" id="harvestNotes" placeholder="例：雨天延後採收">
+    <div style="margin-top:12px;">
+      <button class="primary" id="saveHarvestBtn">儲存採收記錄</button>
+    </div>
+    <p class="status" id="harvestStatus"></p>
+  </section>
+
+  <section id="sampleTab" class="card hidden">
     <h3>花果抽樣</h3>
     <div class="row">
       <div>
@@ -233,6 +271,7 @@ async function boot() {
   document.getElementById("loginCard").classList.add("hidden");
   document.getElementById("topbar").classList.remove("hidden");
   document.getElementById("mainArea").classList.remove("hidden");
+  document.getElementById("harvestDate").value = todayStr();
   document.getElementById("sampleDate").value = todayStr();
   document.getElementById("tagDate").value = todayStr();
   document.getElementById("resolveDate").value = todayStr();
@@ -258,6 +297,53 @@ async function loadZones() {
   currentZoneId = zones.length ? zones[0].id : null;
   zoneSelect.addEventListener("change", () => { currentZoneId = zoneSelect.value; loadTrackingList(); });
   await loadTrackingList();
+}
+
+function genSubmissionId() {
+  return "fe-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
+}
+
+async function saveHarvest() {
+  const statusEl = document.getElementById("harvestStatus");
+  if (!currentZoneId) { statusEl.textContent = "請先選擇分區"; statusEl.className = "status error"; return; }
+  const confirmedZero = document.getElementById("harvestConfirmedZero").checked;
+  const isCatchup = document.getElementById("harvestIsCatchup").checked;
+  const weightKgRaw = document.getElementById("harvestWeightKg").value;
+  if (!confirmedZero && weightKgRaw === "") {
+    statusEl.textContent = "請填重量，或勾選「確認零採收」"; statusEl.className = "status error"; return;
+  }
+  let coverageDays = null;
+  if (isCatchup) {
+    coverageDays = parseInt(document.getElementById("harvestCoverageDays").value, 10);
+    if (!coverageDays || coverageDays < 2) {
+      statusEl.textContent = "補登請填涵蓋天數（2以上），不能用間隔天數硬猜"; statusEl.className = "status error"; return;
+    }
+  }
+  const premiumGrams = confirmedZero ? 0 : parseFloat(weightKgRaw) * 1000;
+  statusEl.textContent = "儲存中…"; statusEl.className = "status";
+  try {
+    const resp = await api(`/farms/${currentFarmId}/harvest`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        harvest_date: new Date(document.getElementById("harvestDate").value + "T18:00:00+08:00").toISOString(),
+        premium_grams: premiumGrams,
+        zone_id: parseInt(currentZoneId, 10),
+        is_confirmed_zero: confirmedZero,
+        coverage_days: coverageDays,
+        notes: document.getElementById("harvestNotes").value.trim() || null,
+        submission_id: genSubmissionId(),
+      }),
+    });
+    statusEl.textContent = resp.msg || "已儲存"; statusEl.className = "status success";
+    document.getElementById("harvestWeightKg").value = "";
+    document.getElementById("harvestConfirmedZero").checked = false;
+    document.getElementById("harvestIsCatchup").checked = false;
+    document.getElementById("harvestCoverageRow").classList.add("hidden");
+    document.getElementById("harvestCoverageDays").value = "";
+    document.getElementById("harvestNotes").value = "";
+  } catch (e) {
+    statusEl.textContent = "儲存失敗：" + e.message; statusEl.className = "status error";
+  }
 }
 
 async function saveSample() {
@@ -374,23 +460,35 @@ const STAGE_LABELS = { flower: "花", green_fruit: "青果", white_fruit: "白�
 
 document.getElementById("loginBtn").addEventListener("click", doLogin);
 document.getElementById("logoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
+document.getElementById("saveHarvestBtn").addEventListener("click", saveHarvest);
+document.getElementById("harvestIsCatchup").addEventListener("change", (e) => {
+  document.getElementById("harvestCoverageRow").classList.toggle("hidden", !e.target.checked);
+});
+document.getElementById("harvestConfirmedZero").addEventListener("change", (e) => {
+  const weightInput = document.getElementById("harvestWeightKg");
+  weightInput.disabled = e.target.checked;
+  if (e.target.checked) weightInput.value = "";
+});
 document.getElementById("saveSampleBtn").addEventListener("click", saveSample);
 document.getElementById("saveTagBtn").addEventListener("click", saveTag);
 document.getElementById("resolveCancelBtn").addEventListener("click", () => document.getElementById("resolveDialog").classList.add("hidden"));
 document.getElementById("resolveSaveBtn").addEventListener("click", saveResolve);
 document.getElementById("refreshTrackingBtn").addEventListener("click", loadTrackingList);
-document.getElementById("tabSampleBtn").addEventListener("click", () => {
-  document.getElementById("tabSampleBtn").classList.add("active");
-  document.getElementById("tabTrackBtn").classList.remove("active");
-  document.getElementById("sampleTab").classList.remove("hidden");
-  document.getElementById("trackTab").classList.add("hidden");
-});
-document.getElementById("tabTrackBtn").addEventListener("click", () => {
-  document.getElementById("tabTrackBtn").classList.add("active");
-  document.getElementById("tabSampleBtn").classList.remove("active");
-  document.getElementById("trackTab").classList.remove("hidden");
-  document.getElementById("sampleTab").classList.add("hidden");
-});
+
+const TABS = {
+  harvest: { btn: "tabHarvestBtn", section: "harvestTab" },
+  sample: { btn: "tabSampleBtn", section: "sampleTab" },
+  track: { btn: "tabTrackBtn", section: "trackTab" },
+};
+function showTab(active) {
+  for (const key of Object.keys(TABS)) {
+    document.getElementById(TABS[key].btn).classList.toggle("active", key === active);
+    document.getElementById(TABS[key].section).classList.toggle("hidden", key !== active);
+  }
+}
+document.getElementById("tabHarvestBtn").addEventListener("click", () => showTab("harvest"));
+document.getElementById("tabSampleBtn").addEventListener("click", () => showTab("sample"));
+document.getElementById("tabTrackBtn").addEventListener("click", () => showTab("track"));
 
 if (getToken()) { boot(); }
 </script>
