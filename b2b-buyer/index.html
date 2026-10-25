@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WeGrow 企業採購</title>
 <meta name="description" content="企業草莓採購入口：供貨目錄、送出需求、查看進度。">
-<meta name="build-version" content="20261025T1-b2b-buyer-batch1" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261025T2-b2b-buyer-batch3" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -52,6 +52,9 @@
   .offering-row .meta, .request-row .meta { font-size:12px; color:var(--muted); margin-top:2px; }
   .offering-row button { margin-top:8px; border:1px solid var(--green); color:var(--green); background:#fff; border-radius:8px; padding:7px 14px; font-size:13px; }
   .status-pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:var(--mist); color:var(--green); margin-top:4px; }
+  .secondary-link { display:block; margin-top:8px; border:1px solid var(--green); color:var(--green); background:#fff; border-radius:8px; padding:8px 12px; font-size:13px; width:100%; }
+  .quote-box { margin-top:8px; background:var(--mist); border-radius:8px; padding:10px; }
+  .quote-box select { width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; font-size:13px; }
   .status-pill.pending { background:#fff4e5; color:#8a4b00; }
 
   .empty-note { color: var(--muted); font-size: 13px; padding: 12px 0; }
@@ -284,9 +287,16 @@
         const row = document.createElement("div");
         row.className = "offering-row";
         const priceText = r.price_hint_twd == null ? "待報價" : `約 NT$${r.price_hint_twd}`;
+        // is_reference_only=true代表這個數字還沒接上共用供應池(扣認養保留
+        // 後的真正剩餘)，純粹是業務手動公告的參考值，不能講成「可訂量」
+        // 讓買方以為已經保留庫存——只有接了supply_period_id才是真正剩餘量。
+        const quantityLabel = r.is_reference_only
+          ? `供貨參考 ${r.available_quantity}${escapeHtml(r.unit)}`
+          : `尚餘 ${r.available_quantity}${escapeHtml(r.unit)}`;
         row.innerHTML = `
           <div class="title">${escapeHtml(r.crop_name)}</div>
-          <div class="meta">可訂量 ${r.available_quantity}${escapeHtml(r.unit)}｜${fmtDate(r.period_start)}～${fmtDate(r.period_end_exclusive)}｜${priceText}</div>
+          <div class="meta">${quantityLabel}｜${fmtDate(r.period_start)}～${fmtDate(r.period_end_exclusive)}｜${priceText}</div>
+          ${r.is_reference_only ? '<div class="meta">僅供參考，實際供貨以業務確認為準，可直接提出需求詢問。</div>' : ""}
           ${r.notes ? `<div class="meta">${escapeHtml(r.notes)}</div>` : ""}
         `;
         const btn = document.createElement("button");
@@ -313,6 +323,7 @@
       for (const r of rows) {
         const row = document.createElement("div");
         row.className = "request-row";
+        row.id = `req-row-${r.id}`;
         // buyer_status_label是後端算好的——「已保存，待轉交」跟「業務已收到」
         // 是兩種不同狀態(推送成功與否)，不能用同一句話含糊過去。pending樣式
         // (橙色)只用在還沒推送成功的時候，推送成功後換成預設(綠色)樣式。
@@ -321,27 +332,173 @@
           <div class="title">${escapeHtml(r.crop_name)}｜${r.requested_quantity}${escapeHtml(r.unit)}</div>
           <div class="meta">${fmtDate(r.created_at)}${r.desired_date ? "｜盼交期 " + fmtDate(r.desired_date) : ""}</div>
           <span class="${pillClass}">${escapeHtml(r.buyer_status_label || r.status)}</span>
+          <div id="req-detail-${r.id}"></div>
         `;
         body.appendChild(row);
+        renderRequestDetail(r);
       }
     } catch {
       body.innerHTML = '<p class="empty-note">載入失敗，請重試。</p>';
     }
   }
 
+  function renderRequestDetail(r) {
+    const detail = document.getElementById(`req-detail-${r.id}`);
+    if (!detail) return;
+    if (r.status === "quoted") {
+      // B04報價 → B05確認/拒絕——舊報價被背景蓋掉的話quote_version會不一樣，
+      // 送出時後端會核對，不是只靠前端擋。
+      detail.innerHTML = `
+        <div class="quote-box">
+          <div>單價 NT$${r.quote_unit_price_twd ?? "-"} ／ 總價 NT$${r.quote_total_price_twd ?? "-"}</div>
+          ${r.quote_terms ? `<div class="meta">條件：${escapeHtml(r.quote_terms)}</div>` : ""}
+          ${r.quote_expires_at ? `<div class="meta">報價效期至 ${fmtDate(r.quote_expires_at)}</div>` : ""}
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="primary" style="margin:0" onclick="decideQuote('${r.id}', '${r.sales_quote_version}', true, this)">確認接受</button>
+            <button style="margin:0;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:11px" onclick="decideQuote('${r.id}', '${r.sales_quote_version}', false, this)">拒絕</button>
+          </div>
+          <p class="status" id="decide-status-${r.id}"></p>
+        </div>`;
+    } else if (r.status === "accepted") {
+      detail.innerHTML = `<button class="secondary-link" onclick="loadRequestExtras('${r.id}')">查看交貨/付款狀態、回報問題</button>
+        <div id="req-extras-${r.id}"></div>`;
+    } else if (r.status === "declined" || r.status === "expired") {
+      detail.innerHTML = `<button class="secondary-link" onclick="reorder('${r.id}')">用同規格重新詢價</button>`;
+    }
+  }
+
+  async function decideQuote(requestId, quoteVersion, accept, btn) {
+    const statusEl = document.getElementById(`decide-status-${requestId}`);
+    btn.disabled = true;
+    try {
+      const resp = await apiFetch(`/api/b2b/purchase-requests/${requestId}/${accept ? "accept" : "decline"}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quote_version: quoteVersion }),
+      });
+      if (resp.status === 409) {
+        const body = await resp.json().catch(() => ({}));
+        const messages = {
+          quote_version_stale: "業務剛更新了這筆報價，請重新整理後再確認一次。",
+          insufficient_supply: "供貨量剛好不夠了，請聯繫業務調整數量。",
+          not_in_quoted_state: "這筆需求目前的狀態已經不是待確認報價。",
+        };
+        if (statusEl) { statusEl.textContent = messages[body.detail] || "確認失敗，請重新整理後再試。"; statusEl.className = "status error"; }
+        btn.disabled = false;
+        return;
+      }
+      if (resp.status === 410) {
+        if (statusEl) { statusEl.textContent = "這筆報價已經逾期，請聯繫業務重新報價。"; statusEl.className = "status error"; }
+        btn.disabled = false;
+        return;
+      }
+      if (!resp.ok) throw new Error(String(resp.status));
+      await loadMyRequests();
+    } catch {
+      if (statusEl) { statusEl.textContent = "送出失敗，請重試。"; statusEl.className = "status error"; }
+      btn.disabled = false;
+    }
+  }
+
+  async function loadRequestExtras(requestId) {
+    const el = document.getElementById(`req-extras-${requestId}`);
+    el.innerHTML = '<p class="empty-note">載入中…</p>';
+    try {
+      const [fulfillResp, followupResp] = await Promise.all([
+        apiFetch(`/api/b2b/purchase-requests/${requestId}/fulfillment`),
+        apiFetch(`/api/b2b/purchase-requests/${requestId}/followups`),
+      ]);
+      const fulfillment = fulfillResp.ok ? await fulfillResp.json() : { available: false };
+      const followups = followupResp.ok ? await followupResp.json() : [];
+
+      let fulfillHtml;
+      if (!fulfillment.available) {
+        const reasonText = {
+          order_not_created_yet: "業務尚未建立正式訂單，交貨與付款狀態還看不到。",
+          farm_not_linked: "這筆供貨還沒接上農場資料，無法顯示交貨進度。",
+          sales_unreachable: "暫時無法取得交貨/付款資料，請稍後再試。",
+          order_not_found_in_sales: "訂單資料暫時查不到，請聯繫業務確認。",
+        }[fulfillment.reason] || "交貨/付款資料暫時看不到。";
+        fulfillHtml = `<p class="meta">${reasonText}</p>`;
+      } else {
+        fulfillHtml = fulfillment.lines.map(line => `
+          <div class="meta">${escapeHtml(line.product || "")}：已交寄 ${line.shipped_quantity ?? 0}／剩餘 ${line.remaining_quantity ?? 0}（${escapeHtml(line.status || "")}）</div>
+        `).join("") + `<div class="meta">已收款 NT$${fulfillment.paid_total_twd}｜已退款 NT$${fulfillment.refunded_total_twd}</div>`;
+      }
+
+      const followupHtml = followups.length ? followups.map(f => `
+        <div class="meta">[${{change_date:"改期",cancel_remaining:"取消",complaint:"客訴"}[f.followup_type] || f.followup_type}] ${escapeHtml(f.message)}｜${escapeHtml(f.status_label)}${f.resolution_note ? "：" + escapeHtml(f.resolution_note) : ""}</div>
+      `).join("") : '<p class="empty-note">尚未提出改期/取消/客訴。</p>';
+
+      el.innerHTML = `
+        <div class="quote-box">
+          <b style="font-size:12px;color:var(--muted)">交貨/付款狀態</b>
+          ${fulfillHtml}
+        </div>
+        <div class="quote-box">
+          <b style="font-size:12px;color:var(--muted)">改期／取消／客訴紀錄</b>
+          ${followupHtml}
+          <select id="followup-type-${requestId}" style="margin-top:8px">
+            <option value="change_date">要求改期</option>
+            <option value="cancel_remaining">取消未交貨量</option>
+            <option value="complaint">回報收貨問題</option>
+          </select>
+          <textarea id="followup-msg-${requestId}" rows="2" placeholder="說明內容" style="width:100%;margin-top:6px;padding:8px;border:1px solid var(--line);border-radius:8px;box-sizing:border-box"></textarea>
+          <button class="secondary-link" style="margin-top:6px" onclick="submitFollowup('${requestId}', this)">送出</button>
+          <p class="status" id="followup-status-${requestId}"></p>
+        </div>`;
+    } catch {
+      el.innerHTML = '<p class="empty-note">載入失敗，請重試。</p>';
+    }
+  }
+
+  async function submitFollowup(requestId, btn) {
+    const followupType = document.getElementById(`followup-type-${requestId}`).value;
+    const message = document.getElementById(`followup-msg-${requestId}`).value.trim();
+    const statusEl = document.getElementById(`followup-status-${requestId}`);
+    if (!message) { statusEl.textContent = "請填寫說明內容。"; statusEl.className = "status error"; return; }
+    btn.disabled = true;
+    try {
+      const resp = await apiFetch(`/api/b2b/purchase-requests/${requestId}/followups`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ followup_type: followupType, message }),
+      });
+      if (!resp.ok) throw new Error(String(resp.status));
+      await loadRequestExtras(requestId);
+    } catch {
+      statusEl.textContent = "送出失敗，請重試。";
+      statusEl.className = "status error";
+      btn.disabled = false;
+    }
+  }
+
+  async function reorder(requestId) {
+    try {
+      const resp = await apiFetch(`/api/b2b/purchase-requests/${requestId}/reorder-draft`);
+      if (!resp.ok) throw new Error(String(resp.status));
+      const draft = await resp.json();
+      // B10要求：保留規格，但不沿用舊報價/舊可售量——重新走一次正常送出
+      // 流程，業務要對著當期供貨重新報價。
+      openRequestModal({ crop_name: draft.crop_name, unit: draft.unit, id: "", available_quantity: "請洽業務確認", is_reference_only: true }, draft);
+    } catch {
+      alert("載入上次規格失敗，請重試。");
+    }
+  }
+
   function closeRequestModal() { document.getElementById("requestModal").style.display = "none"; }
 
-  function openRequestModal(offering) {
+  function openRequestModal(offering, prefill) {
     const modal = document.getElementById("requestModal");
     const body = document.getElementById("requestModalBody");
+    const isReorder = !offering.id;
     body.innerHTML = `
-      <h3>送出採購需求：${escapeHtml(offering.crop_name)}</h3>
-      <label>需求數量（${escapeHtml(offering.unit)}，可訂量 ${offering.available_quantity}）</label>
-      <input type="number" id="reqQty" min="0.1" step="0.1" value="1">
+      <h3>${isReorder ? "用同規格重新詢價" : "送出採購需求"}：${escapeHtml(offering.crop_name)}</h3>
+      <label>需求數量（${escapeHtml(offering.unit)}${isReorder ? "" : `，${offering.is_reference_only ? "供貨參考" : "尚餘"} ${offering.available_quantity}`}）</label>
+      <input type="number" id="reqQty" min="0.1" step="0.1" value="${(prefill && prefill.requested_quantity) || 1}">
       <label>盼交貨日期</label>
       <input type="date" id="reqDate">
       <label>備註</label>
-      <textarea id="reqNote" rows="2"></textarea>
+      <textarea id="reqNote" rows="2">${escapeHtml((prefill && prefill.note) || "")}</textarea>
+      ${isReorder ? '<p class="meta">重新詢價不沿用舊價格，業務會依目前供貨重新報價。</p>' : ""}
       <p class="status" id="reqStatus"></p>
       <div style="display:flex;gap:10px;margin-top:16px">
         <button id="reqCancelBtn" style="flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:10px;">取消</button>
@@ -352,7 +509,7 @@
     // 固定在開啟modal的這一刻產生，不是每次按「送出」都重算——如果第一次
     // 因為功能尚未上線(404)失敗，使用者原地重試用的是同一個idempotency_key，
     // 不會因為多按了幾次而變成兩筆不同的需求。
-    const idempotencyKey = `b2b-${offering.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const idempotencyKey = `b2b-${offering.id || "reorder"}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     document.getElementById("reqCancelBtn").addEventListener("click", closeRequestModal);
     document.getElementById("reqSubmitBtn").addEventListener("click", async () => {
       const qty = parseFloat(document.getElementById("reqQty").value);
@@ -363,7 +520,7 @@
         resp = await apiFetch("/api/b2b/purchase-requests", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            idempotency_key: idempotencyKey, offering_id: offering.id, crop_name: offering.crop_name,
+            idempotency_key: idempotencyKey, offering_id: offering.id || null, crop_name: offering.crop_name,
             requested_quantity: qty, unit: offering.unit,
             desired_date: document.getElementById("reqDate").value || null,
             note: document.getElementById("reqNote").value || null,
@@ -390,6 +547,14 @@
   }
 
   document.getElementById("logoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
+
+  // 這幾個是動態產生的HTML裡用inline onclick叫的——inline onclick是在
+  // global scope查找函式，這個IIFE裡定義的函式本來不會被看到，要手動掛到
+  // window上才能被呼叫到。
+  window.decideQuote = decideQuote;
+  window.loadRequestExtras = loadRequestExtras;
+  window.submitFollowup = submitFollowup;
+  window.reorder = reorder;
 
   (async () => {
     const handledLineReturn = await handleLineReturn();
