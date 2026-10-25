@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>現場登記 — 每日採收／花果抽樣／成熟追蹤</title>
 <meta name="description" content="現場人員登記每日採收重量、花果抽樣與成熟追蹤，只記錄實際觀測，不填預估產量。">
-<meta name="build-version" content="20261024T2-field-entry" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261025T1-field-entry" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -54,6 +54,13 @@
   .tracking-item .tag { font-weight:700; }
   .tracking-item .meta { color:var(--muted); font-size:12px; margin-top:2px; }
   .empty-note { color:var(--muted); font-size:13px; text-align:center; padding:20px 0; }
+  .stage-grid label.field { display:flex; align-items:center; gap:5px; }
+  .stage-icon { font-size:16px; }
+  .photo-capture { border:2px dashed var(--line); border-radius:10px; padding:16px; text-align:center; margin-top:4px; }
+  .photo-capture input[type=file] { display:none; }
+  .photo-capture label { display:block; font-size:13px; color:var(--green); font-weight:700; cursor:pointer; }
+  .photo-preview { max-width:100%; max-height:220px; border-radius:8px; margin-top:10px; display:none; }
+  .photo-required-note { font-size:12px; color:var(--muted); margin-top:4px; }
 </style>
 </head>
 <body>
@@ -149,11 +156,18 @@
     </div>
     <label class="field">各階段顆數（只填實際點到的，沒有的留空）</label>
     <div class="stage-grid">
-      <div><label class="field">花</label><input type="number" id="stageFlower" min="0" step="1"></div>
-      <div><label class="field">青果</label><input type="number" id="stageGreenFruit" min="0" step="1"></div>
-      <div><label class="field">白熟</label><input type="number" id="stageWhiteFruit" min="0" step="1"></div>
-      <div><label class="field">轉色</label><input type="number" id="stageColorTurning" min="0" step="1"></div>
-      <div><label class="field">成熟</label><input type="number" id="stageRipe" min="0" step="1"></div>
+      <div><label class="field"><span class="stage-icon">🌸</span>花</label><input type="number" id="stageFlower" min="0" step="1"></div>
+      <div><label class="field"><span class="stage-icon">🟢</span>青果</label><input type="number" id="stageGreenFruit" min="0" step="1"></div>
+      <div><label class="field"><span class="stage-icon">⚪</span>白熟</label><input type="number" id="stageWhiteFruit" min="0" step="1"></div>
+      <div><label class="field"><span class="stage-icon">🟠</span>轉色</label><input type="number" id="stageColorTurning" min="0" step="1"></div>
+      <div><label class="field"><span class="stage-icon">🔴</span>成熟</label><input type="number" id="stageRipe" min="0" step="1"></div>
+    </div>
+    <label class="field" style="margin-top:12px;">現場照片（必填）</label>
+    <div class="photo-capture">
+      <label for="samplePhotoInput">📷 拍照或選擇照片</label>
+      <input type="file" id="samplePhotoInput" accept="image/*" capture="environment">
+      <img id="samplePhotoPreview" class="photo-preview" alt="抽樣照片預覽">
+      <p class="photo-required-note">要看得出實際花果狀態，之後有人力會人工複核，不用自己判斷成熟機率。</p>
     </div>
     <div style="margin-top:12px;">
       <button class="primary" id="saveSampleBtn">儲存抽樣</button>
@@ -346,11 +360,21 @@ async function saveHarvest() {
   }
 }
 
+document.getElementById("samplePhotoInput").addEventListener("change", () => {
+  const file = document.getElementById("samplePhotoInput").files[0];
+  const preview = document.getElementById("samplePhotoPreview");
+  if (!file) { preview.style.display = "none"; return; }
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = "block";
+});
+
 async function saveSample() {
   const statusEl = document.getElementById("sampleStatus");
   const plantCount = parseInt(document.getElementById("samplePlantCount").value, 10);
   if (!currentZoneId) { statusEl.textContent = "請先選擇分區"; statusEl.className = "status error"; return; }
   if (!plantCount || plantCount < 1) { statusEl.textContent = "請填抽樣株數"; statusEl.className = "status error"; return; }
+  const photoFile = document.getElementById("samplePhotoInput").files[0];
+  if (!photoFile) { statusEl.textContent = "請拍照或選擇一張照片——這是必填的"; statusEl.className = "status error"; return; }
   const stageFields = [
     ["flower", "stageFlower"], ["green_fruit", "stageGreenFruit"], ["white_fruit", "stageWhiteFruit"],
     ["color_turning", "stageColorTurning"], ["ripe", "stageRipe"],
@@ -362,16 +386,20 @@ async function saveSample() {
   }
   statusEl.textContent = "儲存中…"; statusEl.className = "status";
   try {
+    const form = new FormData();
+    form.append("sampled_at", new Date(document.getElementById("sampleDate").value + "T12:00:00+08:00").toISOString());
+    form.append("sample_plant_count", String(plantCount));
+    form.append("stage_counts", JSON.stringify(stageCounts));
+    form.append("photo", photoFile);
+    // 不手動設Content-Type——瀏覽器要自己產生multipart boundary，手動設會漏掉boundary參數。
     await api(`/api/harvest/farms/${currentFarmId}/zones/${currentZoneId}/fruit-samples`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sampled_at: new Date(document.getElementById("sampleDate").value + "T12:00:00+08:00").toISOString(),
-        sample_plant_count: plantCount, stage_counts: stageCounts,
-      }),
+      method: "POST", body: form,
     });
     statusEl.textContent = "已儲存"; statusEl.className = "status success";
     for (const [, id] of stageFields) document.getElementById(id).value = "";
     document.getElementById("samplePlantCount").value = "";
+    document.getElementById("samplePhotoInput").value = "";
+    document.getElementById("samplePhotoPreview").style.display = "none";
   } catch (e) {
     statusEl.textContent = "儲存失敗：" + e.message; statusEl.className = "status error";
   }
