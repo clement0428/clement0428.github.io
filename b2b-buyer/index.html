@@ -52,6 +52,7 @@
   .offering-row .meta, .request-row .meta { font-size:12px; color:var(--muted); margin-top:2px; }
   .offering-row button { margin-top:8px; border:1px solid var(--green); color:var(--green); background:#fff; border-radius:8px; padding:7px 14px; font-size:13px; }
   .status-pill { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px; background:var(--mist); color:var(--green); margin-top:4px; }
+  .status-pill.pending { background:#fff4e5; color:#8a4b00; }
 
   .empty-note { color: var(--muted); font-size: 13px; padding: 12px 0; }
 
@@ -136,6 +137,15 @@
     el.className = "status" + (cls ? " " + cls : "");
   }
 
+  // 後端這批B2B路由(/api/b2b/*)是新的，部署受阻期間正式站上還沒有——那時候
+  // 打這些API一定是404，跟「連線失敗」或「你沒有被邀請」是完全不同的原因，
+  // 不能用同一句話含糊過去，否則買方會以為是自己的問題而放棄，而不是等
+  // 部署完成後重新整理就好。
+  const NOT_DEPLOYED_MESSAGE = "此功能即將上線，請稍後再試。您的登入與輸入內容都還保留著，不需要重新操作。";
+  function isNotDeployedYet(resp) {
+    return resp && resp.status === 404;
+  }
+
   function showRestoring() {
     document.getElementById("sessionRestoring").classList.remove("hidden");
     document.getElementById("loginCard").classList.add("hidden");
@@ -210,6 +220,11 @@
     const token = sessionStorage.getItem("b2b_pending_invite_token");
     if (!token) return { ok: true };
     const resp = await apiFetch(`/api/b2b/invites/${encodeURIComponent(token)}/redeem`, { method: "POST" });
+    if (isNotDeployedYet(resp)) {
+      // 功能還沒上線——邀請token留在sessionStorage，不要丟掉，等部署完成
+      // 使用者重新整理這個頁面時還能自動繼續兌換，不需要業務再發一次連結。
+      return { ok: false, notDeployed: true, message: NOT_DEPLOYED_MESSAGE };
+    }
     sessionStorage.removeItem("b2b_pending_invite_token");
     if (!resp.ok) {
       const body = await resp.json().catch(() => ({}));
@@ -234,6 +249,13 @@
       showLoginCard("無法連線，請檢查網路後重新登入。");
       return;
     }
+    if (isNotDeployedYet(meResp) || redeemResult.notDeployed) {
+      // 這裡故意不清token、不丟掉邀請連結——使用者已經登入成功，純粹是
+      // B2B功能本身還沒上線，不是帳號或邀請有問題，不應該被導回登入頁
+      // 重新操作一輪。
+      showLoginCard(NOT_DEPLOYED_MESSAGE);
+      return;
+    }
     if (meResp.status === 401) { setToken(""); showLoginCard("登入已過期，請重新登入。"); return; }
     if (!meResp.ok) {
       setToken("");
@@ -253,6 +275,7 @@
     body.textContent = "載入中…";
     try {
       const resp = await apiFetch("/api/b2b/supply-catalog");
+      if (isNotDeployedYet(resp)) { body.innerHTML = `<p class="empty-note">${NOT_DEPLOYED_MESSAGE}</p>`; return; }
       if (!resp.ok) throw new Error(String(resp.status));
       const rows = await resp.json();
       if (!rows.length) { body.innerHTML = '<p class="empty-note">目前沒有公開的供貨公告，請直接聯繫業務詢問。</p>'; return; }
@@ -277,13 +300,12 @@
     }
   }
 
-  const statusLabel = { submitted: "已送出，待業務回覆", quoted: "業務已回覆報價", accepted: "已確認訂單", declined: "無法供應", expired: "報價已逾期" };
-
   async function loadMyRequests() {
     const body = document.getElementById("requestsBody");
     body.textContent = "載入中…";
     try {
       const resp = await apiFetch("/api/b2b/purchase-requests");
+      if (isNotDeployedYet(resp)) { body.innerHTML = `<p class="empty-note">${NOT_DEPLOYED_MESSAGE}</p>`; return; }
       if (!resp.ok) throw new Error(String(resp.status));
       const rows = await resp.json();
       if (!rows.length) { body.innerHTML = '<p class="empty-note">尚未送出任何採購需求。</p>'; return; }
@@ -291,10 +313,14 @@
       for (const r of rows) {
         const row = document.createElement("div");
         row.className = "request-row";
+        // buyer_status_label是後端算好的——「已保存，待轉交」跟「業務已收到」
+        // 是兩種不同狀態(推送成功與否)，不能用同一句話含糊過去。pending樣式
+        // (橙色)只用在還沒推送成功的時候，推送成功後換成預設(綠色)樣式。
+        const pillClass = (r.status === "submitted" && !r.pushed_to_sales) ? "status-pill pending" : "status-pill";
         row.innerHTML = `
           <div class="title">${escapeHtml(r.crop_name)}｜${r.requested_quantity}${escapeHtml(r.unit)}</div>
           <div class="meta">${fmtDate(r.created_at)}${r.desired_date ? "｜盼交期 " + fmtDate(r.desired_date) : ""}</div>
-          <span class="status-pill">${statusLabel[r.status] || r.status}</span>
+          <span class="${pillClass}">${escapeHtml(r.buyer_status_label || r.status)}</span>
         `;
         body.appendChild(row);
       }
@@ -323,14 +349,18 @@
       </div>
     `;
     modal.style.display = "flex";
+    // 固定在開啟modal的這一刻產生，不是每次按「送出」都重算——如果第一次
+    // 因為功能尚未上線(404)失敗，使用者原地重試用的是同一個idempotency_key，
+    // 不會因為多按了幾次而變成兩筆不同的需求。
+    const idempotencyKey = `b2b-${offering.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     document.getElementById("reqCancelBtn").addEventListener("click", closeRequestModal);
     document.getElementById("reqSubmitBtn").addEventListener("click", async () => {
       const qty = parseFloat(document.getElementById("reqQty").value);
       if (!(qty > 0)) { setStatus("reqStatus", "請輸入正確的數量。", "error"); return; }
-      const idempotencyKey = `b2b-${offering.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setStatus("reqStatus", "送出中…");
+      let resp;
       try {
-        const resp = await apiFetch("/api/b2b/purchase-requests", {
+        resp = await apiFetch("/api/b2b/purchase-requests", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             idempotency_key: idempotencyKey, offering_id: offering.id, crop_name: offering.crop_name,
@@ -339,12 +369,23 @@
             note: document.getElementById("reqNote").value || null,
           }),
         });
-        if (!resp.ok) throw new Error(String(resp.status));
-        closeRequestModal();
-        loadMyRequests();
       } catch {
-        setStatus("reqStatus", "送出失敗，請重試。", "error");
+        // 連線層的失敗(不是404)——表單內容本來就還留在畫面上，不用額外處理。
+        setStatus("reqStatus", "送出失敗，請檢查網路後重試。您填寫的內容還保留著。", "error");
+        return;
       }
+      if (isNotDeployedYet(resp)) {
+        // 故意不closeRequestModal()——數量/日期/備註都還留在輸入框裡，
+        // 等功能上線後使用者可以直接在同一個畫面按「送出」，不用重填。
+        setStatus("reqStatus", NOT_DEPLOYED_MESSAGE, "error");
+        return;
+      }
+      if (!resp.ok) {
+        setStatus("reqStatus", "送出失敗，請重試。您填寫的內容還保留著。", "error");
+        return;
+      }
+      closeRequestModal();
+      loadMyRequests();
     });
   }
 
