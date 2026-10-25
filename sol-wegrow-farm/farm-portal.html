@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
-<meta name="build-version" content="20261024T1-separate-automatic-forecast" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261025T2-line-login" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -44,6 +44,8 @@
   #loginCard label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
   #loginCard input { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-size:14px; margin-bottom:14px; }
   #loginCard button.primary { width:100%; background: var(--green); color:#fff; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:700; }
+  .line-login-btn { width:100%; background:#06C755; color:#fff; border:none; border-radius:8px; padding:12px; font-size:14px; font-weight:700; margin-bottom:4px; }
+  .login-divider { text-align:center; color:var(--muted); font-size:12px; margin:14px 0 10px; }
   .status { font-size:13px; margin:8px 0 0; }
   .status.error { color: var(--rose); }
   .status.success { color: var(--green); }
@@ -244,7 +246,9 @@
 
 <div id="loginCard">
   <h2>登入我的農場</h2>
-  <p>查看您的農場近況、產量預告與寄送進度。</p>
+  <p id="loginIntro">查看您的農場近況、產量預告與寄送進度。</p>
+  <button type="button" class="line-login-btn" id="lineLoginBtn">用 LINE 登入</button>
+  <div class="login-divider">或使用 Email</div>
   <form id="loginForm">
     <label>帳號 Email</label>
     <input type="email" id="loginEmail" autocomplete="username" required>
@@ -1317,13 +1321,55 @@
 
   document.getElementById("logoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
 
-  if (getToken()) {
-    showRestoring();
-    afterLogin().catch(() => {
-      setToken("");
-      showLoginCard("連線發生問題，請重新登入。");
-    });
+  // 2026-10-25補上：這個頁面本來只有Email登入，認養顧客實際上大多從LINE官方
+  // 帳號選單/通知進來，照A02的要求LINE跟Email要能進同一會員。b2b-buyer/
+  // index.html已經有一套測過的LINE登入(return_mode=direct)，這裡照搬同一套，
+  // 只是redirect_to要帶上目前完整的path+query(深連結period/version/farm/tab
+  // 這些參數)，不能只帶裸路徑，否則LINE登入繞一圈回來深連結資訊就不見了。
+  document.getElementById("lineLoginBtn").addEventListener("click", () => {
+    const redirectTo = window.location.pathname + window.location.search;
+    window.location.href = `${API_BASE}/api/auth/line/login-start?redirect_to=${encodeURIComponent(redirectTo)}&return_mode=direct`;
+  });
+
+  async function handleLineReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const lineCode = params.get("line_code");
+    const lineError = params.get("line_error");
+    if (lineError) {
+      showLoginCard("LINE登入失敗，請重試或改用Email。");
+      return true;
+    }
+    if (!lineCode) return false;
+    try {
+      const resp = await fetch(`${API_BASE}/api/auth/line/exchange`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: lineCode }),
+      });
+      if (!resp.ok) { showLoginCard("LINE登入失敗，請重試。"); return true; }
+      const result = await resp.json();
+      setToken(result.access_token);
+      // 把line_code/line_error從網址拿掉，但保留period/version/farm/tab這些
+      // 深連結參數——不能因為多繞了LINE OAuth這一圈，深連結原本要去的地方就不見了。
+      params.delete("line_code"); params.delete("line_error"); params.delete("line_new_member");
+      const cleanQuery = params.toString();
+      history.replaceState(null, "", window.location.pathname + (cleanQuery ? `?${cleanQuery}` : ""));
+      await afterLogin();
+    } catch {
+      showLoginCard("無法連線，請稍後再試。");
+    }
+    return true;
   }
+
+  (async () => {
+    const handledLineReturn = await handleLineReturn();
+    if (handledLineReturn) return;
+    if (getToken()) {
+      showRestoring();
+      afterLogin().catch(() => {
+        setToken("");
+        showLoginCard("連線發生問題，請重新登入。");
+      });
+    }
+  })();
 })();
 </script>
 
