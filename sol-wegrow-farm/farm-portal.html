@@ -1326,8 +1326,21 @@
   // index.html已經有一套測過的LINE登入(return_mode=direct)，這裡照搬同一套，
   // 只是redirect_to要帶上目前完整的path+query(深連結period/version/farm/tab
   // 這些參數)，不能只帶裸路徑，否則LINE登入繞一圈回來深連結資訊就不見了。
+  // 2026-10-26修正：這幾個鍵只代表「上一次LINE登入往返本身的暫態結果」，
+  // 不是業務深連結的一部分——如果使用者停在一個已經帶著失敗line_error的
+  // 頁面上再按一次登入，這裡沒先清掉的話，redirect_to會帶著舊的line_error
+  // 一起送出，backend那邊雖然已經修正不會再疊加，但前端自己也該用同一份
+  // URL API邏輯清乾淨，不是只依賴對方修好。
+  const LINE_RETURN_TRANSIENT_PARAM_KEYS = ["line_code", "line_error", "line_new_member", "line_unlinked"];
+  function stripLineReturnParams(params) {
+    for (const key of LINE_RETURN_TRANSIENT_PARAM_KEYS) params.delete(key);
+    return params;
+  }
+
   document.getElementById("lineLoginBtn").addEventListener("click", () => {
-    const redirectTo = window.location.pathname + window.location.search;
+    const params = stripLineReturnParams(new URLSearchParams(window.location.search));
+    const cleanQuery = params.toString();
+    const redirectTo = window.location.pathname + (cleanQuery ? `?${cleanQuery}` : "");
     window.location.href = `${API_BASE}/api/auth/line/login-start?redirect_to=${encodeURIComponent(redirectTo)}&return_mode=direct`;
   });
 
@@ -1336,6 +1349,12 @@
     const lineCode = params.get("line_code");
     const lineError = params.get("line_error");
     if (lineError) {
+      // 錯誤訊息顯示完就要把這次失敗的暫態參數從網址上拿掉(保留period/
+      // version/farm/tab等深連結參數)——不清掉的話，使用者重新整理頁面
+      // 或再按一次登入時，這個舊值還會留在網址上。
+      stripLineReturnParams(params);
+      const cleanQuery = params.toString();
+      history.replaceState(null, "", window.location.pathname + (cleanQuery ? `?${cleanQuery}` : ""));
       showLoginCard("LINE登入失敗，請重試或改用Email。");
       return true;
     }
@@ -1349,7 +1368,7 @@
       setToken(result.access_token);
       // 把line_code/line_error從網址拿掉，但保留period/version/farm/tab這些
       // 深連結參數——不能因為多繞了LINE OAuth這一圈，深連結原本要去的地方就不見了。
-      params.delete("line_code"); params.delete("line_error"); params.delete("line_new_member");
+      stripLineReturnParams(params);
       const cleanQuery = params.toString();
       history.replaceState(null, "", window.location.pathname + (cleanQuery ? `?${cleanQuery}` : ""));
       await afterLogin();
