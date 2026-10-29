@@ -312,6 +312,11 @@
     <!-- 產量預告 -->
     <section id="tabHarvest" class="hidden">
       <div class="card">
+        <h3>本產季區域初估</h3>
+        <p style="font-size:12px; color:var(--muted); margin-top:-6px;">農場整體初估，跟您個人的認養份額是分開計算的兩件事，僅供參考。</p>
+        <div id="seasonYieldPreviewBody"><p class="empty-note">載入中…</p></div>
+      </div>
+      <div class="card">
         <h3>個人自動預期收穫</h3>
         <p style="font-size:12px; color:var(--muted); margin-top:-6px;">由模型依最近採收速率與您的認養範圍自動換算，僅供參考，不是已核定的寄送承諾。</p>
         <div id="automaticForecastBody"><p class="empty-note">載入中…</p></div>
@@ -1114,12 +1119,66 @@
       body.innerHTML = '<p class="empty-note">自動預期收穫暫時無法載入。</p>';
     }
   }
+  // 「本產季區域初估」——整場/整區層級的暫定總量，跟下面「個人自動預期收穫」
+  // 「已核定寄送分配」完全獨立，不讀取也不影響客戶個人認養份額的歸屬與分配。
+  function renderSeasonYieldPreviewZone(container, zone) {
+    const item = document.createElement('div');
+    item.className = 'forecast-item';
+    const crop = document.createElement('p'); crop.className = 'crop';
+    crop.textContent = `🍈 ${zone.zone_name}｜${zone.variety || '小玉香瓜'}`;
+    const plantedLine = document.createElement('p'); plantedLine.className = 'line';
+    plantedLine.textContent = `定植日期：${fmtMonthDay(zone.planting_date) || '未提供'}`;
+    const qtyLine = document.createElement('p'); qtyLine.className = 'line';
+    qtyLine.innerHTML = `本季初估顆數：<span class="qty">${zone.estimated_total_count}</span> 顆（${zone.estimate_basis}）`;
+    const harvestDateLine = document.createElement('p'); harvestDateLine.className = 'line';
+    harvestDateLine.textContent = `預計採收日期：${zone.harvest_date || zone.harvest_date_note || '確認中'}`;
+    item.append(crop, plantedLine, qtyLine, harvestDateLine);
+    const hs = zone.harvested_summary;
+    if (hs && hs.harvested) {
+      const note = document.createElement('p'); note.className = 'stale-note';
+      note.textContent = `已有採收紀錄：${hs.total_kg} kg／${hs.plant_count_harvested} 株（${hs.note}）`;
+      item.append(note);
+    } else {
+      const note = document.createElement('p'); note.className = 'line';
+      note.style.color = 'var(--muted)'; note.style.fontSize = '12px';
+      note.textContent = '尚無採收紀錄：以上為剩餘預估顆數。';
+      item.append(note);
+    }
+    container.append(item);
+  }
+  async function loadSeasonYieldPreview(farmId) {
+    const body = document.getElementById('seasonYieldPreviewBody');
+    if (!body) return;
+    if (!farmId) { body.innerHTML = '<p class="empty-note">請先選擇場域。</p>'; return; }
+    try {
+      const res = await apiFetch(`/api/customer/farms/${encodeURIComponent(farmId)}/season-yield-preview`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      const zones = data.zones || [];
+      body.replaceChildren();
+      if (!zones.length) {
+        body.innerHTML = '<p class="empty-note">本產季暫無區域初估資料。</p>';
+        return;
+      }
+      for (const zone of zones) renderSeasonYieldPreviewZone(body, zone);
+      if (data.updated_at) {
+        const updated = document.createElement('p');
+        updated.className = 'empty-note';
+        updated.style.marginTop = '8px';
+        updated.textContent = `更新日期：${fmtDateTime(data.updated_at)}`;
+        body.append(updated);
+      }
+    } catch {
+      body.innerHTML = '<p class="empty-note">區域初估暫時無法載入。</p>';
+    }
+  }
   async function loadHarvestTab(farmId) {
     const id = ++harvestRequest;
     const current = () => id === harvestRequest;
     const body = document.getElementById('harvestForecastBody');
     if (!getToken() || !body) return;
     body.textContent = '載入中…';
+    loadSeasonYieldPreview(farmId);
     if (!farmId) {
       body.innerHTML = '<p class="empty-note">採收日期確認後，我們會用LINE通知您。</p>';
       const autoBody = document.getElementById('automaticForecastBody');
