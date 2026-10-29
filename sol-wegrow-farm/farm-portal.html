@@ -54,6 +54,9 @@
   #farmSwitcher { display:flex; gap:8px; padding: 14px 16px 0; overflow-x:auto; }
   #farmSwitcher button { flex:0 0 auto; border:1px solid var(--line); background:var(--white); border-radius:999px; padding:7px 14px; font-size:13px; }
   #farmSwitcher button.active { background: var(--green); color:#fff; border-color: var(--green); }
+  .my-adoption-summary { padding: 8px 16px 0; font-size: 13px; color: var(--muted, #667); }
+  .my-adoption-summary:empty { display: none; }
+  .my-adoption-summary .tier { font-weight: 700; color: var(--green); }
 
   /* ---- 看現場 ---- */
   .live-hero { margin: 14px 16px 0; border-radius:14px; overflow:hidden; background:var(--mist); position:relative; box-shadow: var(--shadow); }
@@ -281,6 +284,7 @@
   </header>
 
   <div id="farmSwitcher"></div>
+  <div id="myAdoptionSummary" class="my-adoption-summary"></div>
 
   <main>
     <!-- 看現場 -->
@@ -711,13 +715,32 @@
     }
   }
 
+  // 2026-10-28修正（Codex獨立重測QA-A02/A03/A05發現）：/api/customer/farms已經回傳
+  // contract(tier_label/unit_count/zone_scope_mode/zone_names)，但這裡原本完全沒
+  // 讀取顯示——認養客戶登入後看不到自己認養的份額是多少、哪個分區，只有管理員
+  // 內部才看得到。只讀顯示用欄位，不影響任何既有的farm切換/資料載入邏輯。
+  function renderMyAdoptionSummary() {
+    const wrap = document.getElementById("myAdoptionSummary");
+    const farm = farms.find(f => f.farm_id === currentFarmId);
+    const contract = farm && farm.contract;
+    if (!contract) { wrap.innerHTML = ""; return; }
+    const tier = contract.tier_label ? `<span class="tier">${escapeHtml(contract.tier_label)}</span>　` : "";
+    const unit = (contract.unit_count != null) ? `認養 ${contract.unit_count} 份　` : "";
+    const scope = contract.zone_scope_mode === "zones" && contract.zone_names && contract.zone_names.length
+      ? `範圍：${contract.zone_names.map(escapeHtml).join("、")}`
+      : (contract.zone_scope_mode === "all_farm" ? "範圍：整場" : "");
+    wrap.innerHTML = `${tier}${unit}${scope}`;
+  }
+
   function renderFarmSwitcher() {
     const el = document.getElementById("farmSwitcher");
+    renderMyAdoptionSummary();
     if (farms.length <= 1) { el.innerHTML = ""; return; }
     el.innerHTML = farms.map(f => `<button data-farm="${f.farm_id}" class="${f.farm_id === currentFarmId ? 'active' : ''}">${escapeHtml(f.farm_name)}</button>`).join("");
     el.querySelectorAll("button").forEach(btn => btn.addEventListener("click", async () => {
       currentFarmId = btn.getAttribute("data-farm");
       el.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+      renderMyAdoptionSummary();
       document.getElementById("liveHeroWrap").innerHTML = "";
       await loadLiveTab();
     }));
