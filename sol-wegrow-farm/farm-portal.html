@@ -38,7 +38,7 @@
   main { max-width: 900px; margin: 0 auto; padding: 0 0 90px; }
 
   /* ---- login ---- */
-  #loginCard { max-width: 420px; margin: 60px auto; background: var(--white); border:1px solid var(--line); border-radius:12px; padding:28px 24px; box-shadow: var(--shadow); }
+  #loginCard, #inviteRedeemCard { max-width: 420px; margin: 60px auto; background: var(--white); border:1px solid var(--line); border-radius:12px; padding:28px 24px; box-shadow: var(--shadow); }
   #loginCard h2 { margin:0 0 6px; font-size:18px; }
   #loginCard p { font-size:13px; color: var(--muted); margin: 0 0 18px; }
   #loginCard label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
@@ -247,6 +247,12 @@
   正在恢復登入狀態…
 </div>
 
+<div id="inviteRedeemCard" class="hidden">
+  <h2>加入企業邀請</h2>
+  <p id="inviteIntro" class="muted">請先用 LINE 或 Email 登入，確認要加入的企業。</p>
+  <div id="inviteRedeemBody"></div>
+</div>
+
 <div id="loginCard">
   <h2>登入我的農場</h2>
   <p id="loginIntro">查看您的農場近況、產量預告與寄送進度。</p>
@@ -394,6 +400,23 @@
   const API_BASE = window.FARM_PORTAL_API_BASE || "https://api.wegrow-orbit.com";
   const TOKEN_KEY = "farm-portal-token";
 
+  // ==================== 邀請連結兌換（LINE-03）====================
+  // ?invite_token=一進頁面就先存sessionStorage，不只信URL——因為用LINE登入會
+  // 整頁導去LINE再導回來，中途query string會被OAuth流程自己的redirect_uri取代，
+  // 用sessionStorage才能撐過這段往返。兌換動作本身一定要先登入(LINE或Email都行)
+  // 才能呼叫，不在這裡提前洩漏任何企業名稱。
+  const INVITE_TOKEN_STORAGE_KEY = "farm-portal-pending-invite-token";
+  (function captureInviteTokenFromUrl() {
+    const token = new URLSearchParams(window.location.search).get("invite_token");
+    if (token) {
+      sessionStorage.setItem(INVITE_TOKEN_STORAGE_KEY, token);
+      document.addEventListener("DOMContentLoaded", () => {
+        const intro = document.getElementById("loginIntro");
+        if (intro) intro.textContent = "請先登入，登入後將顯示您即將加入的企業。";
+      });
+    }
+  })();
+
   // ==================== farm-booking 免費參訪資格交換（2026-10-17）====================
   // 客戶從booking.wegrow-orbit.com的預約頁被導過來，帶著nonce跟return_url。這裡在
   // 「真實登入成功」之後（afterLogin()內、showApp()之後）才呼叫claim API——身分
@@ -536,18 +559,103 @@
   function showRestoring() {
     document.getElementById("sessionRestoring").classList.remove("hidden");
     document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("inviteRedeemCard").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
   }
   function showLoginCard(message) {
     document.getElementById("sessionRestoring").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("inviteRedeemCard").classList.add("hidden");
     document.getElementById("loginCard").classList.remove("hidden");
     if (message) setStatus("loginStatus", message, "error");
   }
   function showApp() {
     document.getElementById("sessionRestoring").classList.add("hidden");
     document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("inviteRedeemCard").classList.add("hidden");
     document.getElementById("appShell").classList.remove("hidden");
+  }
+  function showInviteCard() {
+    document.getElementById("sessionRestoring").classList.add("hidden");
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("inviteRedeemCard").classList.remove("hidden");
+  }
+
+  // 回傳true代表這次afterLogin()已經被邀請兌換流程接管(不管成功/失敗/取消)，
+  // 呼叫端不該再往下跑正常的/api/customer/me檢查；回傳false代表沒有待處理的
+  // 邀請token，照原本流程繼續。
+  async function handlePendingInviteRedemption() {
+    const token = sessionStorage.getItem(INVITE_TOKEN_STORAGE_KEY);
+    if (!token) return false;
+
+    const body = document.getElementById("inviteRedeemBody");
+    showInviteCard();
+    body.innerHTML = "<p>讀取邀請內容中…</p>";
+
+    let previewResp;
+    try {
+      previewResp = await apiFetch(`/api/customer/invites/${encodeURIComponent(token)}`);
+    } catch {
+      body.innerHTML = `<p class="status error">無法連線到 WeGrow Orbit 後端，請稍後再試。</p><button id="inviteBackToLoginBtn">返回登入</button>`;
+      document.getElementById("inviteBackToLoginBtn").addEventListener("click", () => { sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY); showLoginCard(); });
+      return true;
+    }
+    if (previewResp.status === 401) {
+      // 還沒登入——保留pending token，正常顯示登入表單，登入成功後afterLogin()
+      // 會再次呼叫這支函式。
+      showLoginCard();
+      return true;
+    }
+    if (!previewResp.ok) {
+      body.innerHTML = `<p class="status error">找不到這個邀請連結，可能已失效。</p><button id="inviteBackToLoginBtn">返回登入</button>`;
+      document.getElementById("inviteBackToLoginBtn").addEventListener("click", () => { sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY); showLoginCard(); });
+      return true;
+    }
+    const preview = await previewResp.json();
+    const STATUS_MESSAGE = {
+      expired: "這個邀請連結已經過期，請聯絡威果重新產生。",
+      revoked: "這個邀請連結已經被撤銷。",
+      exhausted: "這個邀請連結已經被使用過了。",
+    };
+    if (preview.status !== "active") {
+      body.innerHTML = `<p class="status error">${STATUS_MESSAGE[preview.status] || "這個邀請連結目前無法使用。"}</p><button id="inviteBackToLoginBtn">返回登入</button>`;
+      document.getElementById("inviteBackToLoginBtn").addEventListener("click", () => { sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY); showLoginCard(); });
+      return true;
+    }
+
+    body.innerHTML = `
+      <p>您即將加入企業：<strong>${escapeHtml(preview.organization_name || "")}</strong></p>
+      <p class="muted">角色：${preview.role === "org_admin" ? "企業管理員" : "一般成員"}</p>
+      <button type="button" class="primary" id="inviteConfirmBtn" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;">確認加入</button>
+      <p class="status" id="inviteRedeemStatus"></p>
+    `;
+    document.getElementById("inviteConfirmBtn").addEventListener("click", async () => {
+      setStatus("inviteRedeemStatus", "處理中…");
+      let redeemResp;
+      try {
+        redeemResp = await apiFetch(`/api/customer/invites/${encodeURIComponent(token)}/redeem`, { method: "POST" });
+      } catch {
+        setStatus("inviteRedeemStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error");
+        return;
+      }
+      if (!redeemResp.ok) {
+        const errBody = await redeemResp.json().catch(() => ({}));
+        setStatus("inviteRedeemStatus", `加入失敗：${errBody.detail || redeemResp.status}`, "error");
+        return;
+      }
+      const result = await redeemResp.json();
+      sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY);
+      if (result.status === "pending_confirmation") {
+        body.innerHTML = `<p>已送出加入申請，待威果管理員確認後即可開始使用。</p><button id="inviteDoneBtn">返回登入</button>`;
+        document.getElementById("inviteDoneBtn").addEventListener("click", () => showLoginCard());
+      } else {
+        body.innerHTML = `<p>已成功加入企業，正在為您載入資料…</p>`;
+        showApp();
+        await afterLogin();
+      }
+    });
+    return true;
   }
 
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -570,6 +678,11 @@
   // token——不管失敗原因是401、其他4xx（沒會籍/需要改密碼）、還是fetch本身丟例外
   // （斷網），都不能讓呼叫端還停在「登入表單跟主畫面都隱藏」的中間狀態。
   async function afterLogin() {
+    // 邀請兌換流程接管：還沒處理完邀請前，不先跑/api/customer/me(那支對完全
+    // 沒有任何membership的新身分一律403，會把使用者直接彈回登入頁，邀請連結
+    // 根本沒機會顯示)。
+    if (await handlePendingInviteRedemption()) return;
+
     let meResp;
     try {
       meResp = await apiFetch("/api/customer/me");
