@@ -38,7 +38,7 @@
   main { max-width: 900px; margin: 0 auto; padding: 0 0 90px; }
 
   /* ---- login ---- */
-  #loginCard { max-width: 420px; margin: 60px auto; background: var(--white); border:1px solid var(--line); border-radius:12px; padding:28px 24px; box-shadow: var(--shadow); }
+  #loginCard, #unentitledCard { max-width: 420px; margin: 60px auto; background: var(--white); border:1px solid var(--line); border-radius:12px; padding:28px 24px; box-shadow: var(--shadow); }
   #loginCard h2 { margin:0 0 6px; font-size:18px; }
   #loginCard p { font-size:13px; color: var(--muted); margin: 0 0 18px; }
   #loginCard label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
@@ -260,6 +260,12 @@
     <button type="submit" class="primary">登入</button>
   </form>
   <p class="status" id="loginStatus"></p>
+</div>
+
+<div id="unentitledCard" class="hidden" data-testid="customer-not-entitled">
+  <h2>已登入，尚未開通認養服務</h2>
+  <p>您的 LINE 會員身分已建立，但目前沒有可查看的認養農場。請向威果確認合約開通；這不會影響您以後用同一個 LINE 帳號登入。</p>
+  <button type="button" id="unentitledLogoutBtn">切換帳號</button>
 </div>
 
 <div id="appShell" class="hidden">
@@ -536,19 +542,29 @@
   function showRestoring() {
     document.getElementById("sessionRestoring").classList.remove("hidden");
     document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("unentitledCard").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
   }
   function showLoginCard(message) {
     document.getElementById("sessionRestoring").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("unentitledCard").classList.add("hidden");
     document.getElementById("loginCard").classList.remove("hidden");
     if (message) setStatus("loginStatus", message, "error");
+  }
+  function showUnentitled() {
+    document.getElementById("sessionRestoring").classList.add("hidden");
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("unentitledCard").classList.remove("hidden");
   }
   function showApp() {
     document.getElementById("sessionRestoring").classList.add("hidden");
     document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("unentitledCard").classList.add("hidden");
     document.getElementById("appShell").classList.remove("hidden");
   }
+  document.getElementById("unentitledLogoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
 
   document.getElementById("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -566,9 +582,7 @@
     await afterLogin();
   });
 
-  // afterLogin() 對外只有兩種結果：成功叫showApp()，失敗一律叫showLoginCard(訊息)並清掉
-  // token——不管失敗原因是401、其他4xx（沒會籍/需要改密碼）、還是fetch本身丟例外
-  // （斷網），都不能讓呼叫端還停在「登入表單跟主畫面都隱藏」的中間狀態。
+  // 身分與認養授權分開：403 顯示已登入但未開通，不能清掉有效身分或誤載農場資料。
   async function afterLogin() {
     let meResp;
     try {
@@ -583,10 +597,14 @@
       showLoginCard("登入已過期，請重新登入。");
       return;
     }
+    if (meResp.status === 403) {
+      showUnentitled();
+      return;
+    }
     if (!meResp.ok) {
       const body = await meResp.json().catch(() => ({}));
       setToken("");
-      showLoginCard(body.detail === "password_change_required" ? "首次登入必須更換密碼才能繼續，請聯絡威果協助處理。" : "此帳號尚未被開通任何企業會籍，請聯絡威果確認。");
+      showLoginCard(body.detail === "password_change_required" ? "首次登入必須更換密碼才能繼續，請聯絡威果協助處理。" : "農場資料暫時無法載入，請稍後重試。");
       return;
     }
     const me = await meResp.json();
@@ -594,7 +612,10 @@
     // 驗權(membership_role/organization.id)，只是不再反映到畫面標題文字。
     document.title = "Sol-WeGrow-Farm";
     document.getElementById("orgBrandName").textContent = "Sol-WeGrow-Farm";
-    if (me.user && me.user.email) document.getElementById("userEmailLabel").textContent = me.user.email;
+    if (me.user) {
+      const syntheticEmail = (me.user.email || "").endsWith("@internal.wegrow-orbit.local");
+      document.getElementById("userEmailLabel").textContent = syntheticEmail ? (me.user.name || "LINE 會員") : (me.user.email || me.user.name || "會員");
+    }
     showApp();
 
     // 這次登入若是從farm-booking的免費參訪流程導過來的，先處理資格交換再導回去——
@@ -1437,7 +1458,15 @@
       stripLineReturnParams(params);
       const cleanQuery = params.toString();
       history.replaceState(null, "", window.location.pathname + (cleanQuery ? `?${cleanQuery}` : ""));
-      showLoginCard("LINE登入失敗，請重試或改用Email。");
+      const lineErrors = {
+        state_cookie_mismatch: "LINE登入沒有在同一個瀏覽器完成，請從此頁重新點選登入。",
+        state_expired: "LINE登入逾時，請重新點選登入。",
+        state_already_used: "這次 LINE 登入已使用，請重新點選登入。",
+        token_exchange_failed: "LINE驗證暫時失敗，請重新點選登入。",
+        line_service_unavailable: "LINE服務暫時無法連線，請稍後重新點選登入。",
+        account_inactive: "這個帳號已停用，請聯絡威果確認。",
+      };
+      showLoginCard(lineErrors[lineError] || "LINE登入未完成，請重試或改用Email。若在 LINE 內建瀏覽器無法開啟，可改用手機 Chrome 開啟此頁。");
       return true;
     }
     if (!lineCode) return false;
@@ -1445,7 +1474,13 @@
       const resp = await fetch(`${API_BASE}/api/auth/line/exchange`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: lineCode }),
       });
-      if (!resp.ok) { showLoginCard("LINE登入失敗，請重試。"); return true; }
+      if (!resp.ok) {
+        stripLineReturnParams(params);
+        const cleanQuery = params.toString();
+        history.replaceState(null, "", window.location.pathname + (cleanQuery ? `?${cleanQuery}` : ""));
+        showLoginCard("LINE登入憑證已失效，請重新點選登入。");
+        return true;
+      }
       const result = await resp.json();
       setToken(result.access_token);
       // 把line_code/line_error從網址拿掉，但保留period/version/farm/tab這些
