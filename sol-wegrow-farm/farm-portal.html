@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
-<meta name="build-version" content="20261031T1-approval-invite-application" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261031T2-forgot-password" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -253,6 +253,12 @@
   <div id="inviteRedeemBody"></div>
 </div>
 
+<div id="passwordResetCard" class="hidden">
+  <h2>設定新密碼</h2>
+  <p class="muted">已確認您的 LINE 身分，請設定新的登入密碼。</p>
+  <div id="passwordResetBody"></div>
+</div>
+
 <div id="loginCard">
   <h2>登入我的農場</h2>
   <p id="loginIntro">查看您的農場近況、產量預告與寄送進度。</p>
@@ -265,6 +271,9 @@
     <input type="password" id="loginPassword" autocomplete="current-password" required>
     <button type="submit" class="primary">登入</button>
   </form>
+  <p style="text-align:center;margin-top:10px;">
+    <a href="#" id="forgotPasswordLink" style="font-size:13px;color:var(--muted);">忘記密碼？</a>
+  </p>
   <p class="status" id="loginStatus"></p>
 </div>
 
@@ -423,6 +432,15 @@
     }
   })();
 
+  // ==================== 忘記密碼（2026-10-31）====================
+  // backend沒有email發送能力，不做寄信重設連結這一套——改成重用LINE OAuth
+  // 身分：客戶點「忘記密碼」時先設這個旗標再導去LINE登入，整頁導去LINE再
+  // 導回來query string會被取代，一定要用sessionStorage撐過這段往返(跟
+  // INVITE_TOKEN_STORAGE_KEY同一個理由)。LINE登入成功拿到新token後，
+  // afterLogin()要先處理這個旗標、顯示設新密碼表單，而不是直接走正常的
+  // /api/customer/me檢查。
+  const PENDING_PASSWORD_RESET_KEY = "farm-portal-pending-password-reset";
+
   // ==================== farm-booking 免費參訪資格交換（2026-10-17）====================
   // 客戶從booking.wegrow-orbit.com的預約頁被導過來，帶著nonce跟return_url。這裡在
   // 「真實登入成功」之後（afterLogin()內、showApp()之後）才呼叫claim API——身分
@@ -566,6 +584,7 @@
     document.getElementById("sessionRestoring").classList.remove("hidden");
     document.getElementById("loginCard").classList.add("hidden");
     document.getElementById("inviteRedeemCard").classList.add("hidden");
+    document.getElementById("passwordResetCard").classList.add("hidden");
     document.getElementById("unentitledCard").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
   }
@@ -573,6 +592,7 @@
     document.getElementById("sessionRestoring").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
     document.getElementById("inviteRedeemCard").classList.add("hidden");
+    document.getElementById("passwordResetCard").classList.add("hidden");
     document.getElementById("unentitledCard").classList.add("hidden");
     document.getElementById("loginCard").classList.remove("hidden");
     if (message) setStatus("loginStatus", message, "error");
@@ -582,12 +602,14 @@
     document.getElementById("loginCard").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
     document.getElementById("inviteRedeemCard").classList.add("hidden");
+    document.getElementById("passwordResetCard").classList.add("hidden");
     document.getElementById("unentitledCard").classList.remove("hidden");
   }
   function showApp() {
     document.getElementById("sessionRestoring").classList.add("hidden");
     document.getElementById("loginCard").classList.add("hidden");
     document.getElementById("inviteRedeemCard").classList.add("hidden");
+    document.getElementById("passwordResetCard").classList.add("hidden");
     document.getElementById("unentitledCard").classList.add("hidden");
     document.getElementById("appShell").classList.remove("hidden");
   }
@@ -595,8 +617,67 @@
     document.getElementById("sessionRestoring").classList.add("hidden");
     document.getElementById("loginCard").classList.add("hidden");
     document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("passwordResetCard").classList.add("hidden");
     document.getElementById("unentitledCard").classList.add("hidden");
     document.getElementById("inviteRedeemCard").classList.remove("hidden");
+  }
+  function showPasswordResetCard() {
+    document.getElementById("sessionRestoring").classList.add("hidden");
+    document.getElementById("loginCard").classList.add("hidden");
+    document.getElementById("appShell").classList.add("hidden");
+    document.getElementById("inviteRedeemCard").classList.add("hidden");
+    document.getElementById("unentitledCard").classList.add("hidden");
+    document.getElementById("passwordResetCard").classList.remove("hidden");
+  }
+
+  // 回傳true代表這次afterLogin()已經被「忘記密碼」流程接管；回傳false代表
+  // 沒有待處理的重設旗標，照原本流程繼續。身分完全來自這次LINE登入拿到的
+  // token，不是表單上任何客戶可以自己改的欄位。
+  async function handlePendingPasswordReset() {
+    if (!sessionStorage.getItem(PENDING_PASSWORD_RESET_KEY)) return false;
+    showPasswordResetCard();
+    const body = document.getElementById("passwordResetBody");
+    body.innerHTML = `
+      <form id="passwordResetForm">
+        <label>新密碼（至少 8 碼）</label>
+        <input type="password" id="newPassword1" minlength="8" required autocomplete="new-password">
+        <label>再輸入一次新密碼</label>
+        <input type="password" id="newPassword2" minlength="8" required autocomplete="new-password">
+        <button type="submit" class="primary" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;margin-top:10px;">儲存新密碼</button>
+      </form>
+      <p class="status" id="passwordResetStatus"></p>
+    `;
+    document.getElementById("passwordResetForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const p1 = document.getElementById("newPassword1").value;
+      const p2 = document.getElementById("newPassword2").value;
+      if (p1 !== p2) {
+        setStatus("passwordResetStatus", "兩次輸入的密碼不一致。", "error");
+        return;
+      }
+      if (p1.length < 8) {
+        setStatus("passwordResetStatus", "密碼至少需要 8 碼。", "error");
+        return;
+      }
+      setStatus("passwordResetStatus", "儲存中…");
+      let resp;
+      try {
+        resp = await apiFetch("/api/customer/password/change", {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ new_password: p1 }),
+        });
+      } catch {
+        setStatus("passwordResetStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error");
+        return;
+      }
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        setStatus("passwordResetStatus", errBody.detail === "password_too_short" ? "密碼至少需要 8 碼。" : `儲存失敗：${errBody.detail || resp.status}`, "error");
+        return;
+      }
+      sessionStorage.removeItem(PENDING_PASSWORD_RESET_KEY);
+      await afterLogin();
+    });
+    return true;
   }
 
   // 回傳true代表這次afterLogin()已經被邀請兌換流程接管(不管成功/失敗/取消)，
@@ -818,6 +899,9 @@
 
   // 身分與認養授權分開：403 顯示已登入但未開通，不能清掉有效身分或誤載農場資料。
   async function afterLogin() {
+    // 忘記密碼流程接管：客戶可能完全沒有membership(甚至還沒申請)，一樣要能
+    // 設新密碼，不能先跑/api/customer/me被403擋下來。
+    if (await handlePendingPasswordReset()) return;
     // 邀請兌換流程接管：還沒處理完邀請前，不先跑/api/customer/me(那支對完全
     // 沒有任何membership的新身分一律403，會把使用者直接彈回登入頁，邀請連結
     // 根本沒機會顯示)。
@@ -1680,6 +1764,15 @@
   }
 
   document.getElementById("lineLoginBtn").addEventListener("click", () => {
+    const params = stripLineReturnParams(new URLSearchParams(window.location.search));
+    const cleanQuery = params.toString();
+    const redirectTo = window.location.pathname + (cleanQuery ? `?${cleanQuery}` : "");
+    window.location.href = `${API_BASE}/api/auth/line/login-start?redirect_to=${encodeURIComponent(redirectTo)}&return_mode=direct`;
+  });
+
+  document.getElementById("forgotPasswordLink").addEventListener("click", (e) => {
+    e.preventDefault();
+    sessionStorage.setItem(PENDING_PASSWORD_RESET_KEY, "1");
     const params = stripLineReturnParams(new URLSearchParams(window.location.search));
     const cleanQuery = params.toString();
     const redirectTo = window.location.pathname + (cleanQuery ? `?${cleanQuery}` : "");
