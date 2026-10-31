@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
-<meta name="build-version" content="20261031T2-forgot-password" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261031T3-device-cap" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -300,9 +300,19 @@
     </div>
     <div class="user-menu">
       <span id="userEmailLabel"></span>
+      <button id="deviceManageBtn">登入裝置</button>
       <button id="logoutBtn">登出</button>
     </div>
   </header>
+
+  <div id="deviceManagePanel" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;display:flex;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:var(--white);border-radius:12px;padding:20px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto;">
+      <h3 style="margin:0 0 8px;">登入裝置管理</h3>
+      <p class="muted" style="font-size:13px;margin:0 0 12px;">同一帳號最多可同時在 5 台裝置登入；超過時需先撤銷舊裝置才能在新裝置登入。</p>
+      <div id="deviceManageBody"></div>
+      <button type="button" id="deviceManageCloseBtn" style="width:100%;margin-top:14px;border:1px solid var(--line);background:var(--white);border-radius:8px;padding:10px;">關閉</button>
+    </div>
+  </div>
 
   <div id="farmSwitcher"></div>
   <div id="myAdoptionSummary" class="my-adoption-summary"></div>
@@ -414,6 +424,23 @@
 (function () {
   const API_BASE = window.FARM_PORTAL_API_BASE || "https://api.wegrow-orbit.com";
   const TOKEN_KEY = "farm-portal-token";
+
+  // ==================== 五台裝置登入上限（2026-10-31）====================
+  // 這個device_id只是「這台瀏覽器/裝置」的高熵隨機標籤，跟身分驗證無關——
+  // 真正的身分驗證還是靠token本身。放localStorage不是sessionStorage，因為
+  // 要的是「同一台裝置」跨瀏覽session都算同一台，不是每次開頁籤就變成新裝置；
+  // 一旦產生就不再換，否則同一支手機每次登入都會被backend當成新裝置，5台
+  // 上限形同虛設。
+  const DEVICE_ID_KEY = "farm-portal-device-id";
+  function getOrCreateDeviceId() {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      id = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  }
+  const DEVICE_ID = getOrCreateDeviceId();
 
   // ==================== 邀請連結兌換（LINE-03）====================
   // ?invite_token=一進頁面就先存sessionStorage，不只信URL——因為用LINE登入會
@@ -888,9 +915,13 @@
     setStatus("loginStatus", "登入中…");
     let resp;
     try {
-      const body = new URLSearchParams({ username: email, password });
+      const body = new URLSearchParams({ username: email, password, device_id: DEVICE_ID });
       resp = await fetch(`${API_BASE}/auth/login`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
     } catch { setStatus("loginStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error"); return; }
+    if (resp.status === 409) {
+      setStatus("loginStatus", "此帳號已達 5 台裝置登入上限，請改用您另一台已登入的裝置，在畫面右上角「登入裝置」中撤銷一台舊裝置後再試。", "error");
+      return;
+    }
     if (!resp.ok) { setStatus("loginStatus", "登入失敗：Email 或密碼錯誤。", "error"); return; }
     const result = await resp.json();
     setToken(result.access_token);
@@ -1747,6 +1778,55 @@
 
   document.getElementById("logoutBtn").addEventListener("click", () => { setToken(""); location.reload(); });
 
+  // ==================== 登入裝置管理（2026-10-31，E17/E18）====================
+  async function loadDeviceManagePanel() {
+    const body = document.getElementById("deviceManageBody");
+    body.innerHTML = "<p>讀取中…</p>";
+    let resp;
+    try {
+      resp = await apiFetch("/api/customer/device-sessions");
+    } catch {
+      body.innerHTML = '<p class="status error">無法連線，請稍後再試。</p>';
+      return;
+    }
+    if (!resp.ok) {
+      body.innerHTML = '<p class="status error">讀取裝置清單失敗。</p>';
+      return;
+    }
+    const sessions = await resp.json();
+    if (sessions.length === 0) {
+      body.innerHTML = "<p>目前沒有已登入的裝置紀錄。</p>";
+      return;
+    }
+    body.innerHTML = sessions.map((s) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);gap:8px;">
+        <div>
+          <div>${escapeHtml(s.label || (s.login_method === "line" ? "LINE登入" : "Email登入"))}</div>
+          <div class="muted" style="font-size:12px;">最後活動：${fmtDateTime(s.last_active_at)}</div>
+        </div>
+        <button type="button" class="device-revoke-btn" data-id="${s.id}" style="border:1px solid var(--line);background:var(--white);border-radius:8px;padding:6px 10px;font-size:12px;flex:0 0 auto;">撤銷</button>
+      </div>
+    `).join("");
+    body.querySelectorAll(".device-revoke-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        btn.textContent = "處理中…";
+        try {
+          const revokeResp = await apiFetch(`/api/customer/device-sessions/${encodeURIComponent(btn.dataset.id)}/revoke`, { method: "POST" });
+          if (!revokeResp.ok) { btn.disabled = false; btn.textContent = "撤銷"; return; }
+        } catch { btn.disabled = false; btn.textContent = "撤銷"; return; }
+        await loadDeviceManagePanel();
+      });
+    });
+  }
+  document.getElementById("deviceManageBtn").addEventListener("click", () => {
+    document.getElementById("deviceManagePanel").classList.remove("hidden");
+    loadDeviceManagePanel();
+  });
+  document.getElementById("deviceManageCloseBtn").addEventListener("click", () => {
+    document.getElementById("deviceManagePanel").classList.add("hidden");
+  });
+
   // 2026-10-25補上：這個頁面本來只有Email登入，認養顧客實際上大多從LINE官方
   // 帳號選單/通知進來，照A02的要求LINE跟Email要能進同一會員。b2b-buyer/
   // index.html已經有一套測過的LINE登入(return_mode=direct)，這裡照搬同一套，
@@ -1804,8 +1884,15 @@
     if (!lineCode) return false;
     try {
       const resp = await fetch(`${API_BASE}/api/auth/line/exchange`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: lineCode }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: lineCode, device_id: DEVICE_ID }),
       });
+      if (resp.status === 409) {
+        stripLineReturnParams(params);
+        const cleanQuery = params.toString();
+        history.replaceState(null, "", window.location.pathname + (cleanQuery ? `?${cleanQuery}` : ""));
+        showLoginCard("此帳號已達 5 台裝置登入上限，請改用您另一台已登入的裝置，在畫面右上角「登入裝置」中撤銷一台舊裝置後再試。");
+        return true;
+      }
       if (!resp.ok) {
         stripLineReturnParams(params);
         const cleanQuery = params.toString();
