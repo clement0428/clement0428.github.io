@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
-<meta name="build-version" content="20261031T3-device-cap" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261031T4-forgot-password-link" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -254,8 +254,8 @@
 </div>
 
 <div id="passwordResetCard" class="hidden">
-  <h2>設定新密碼</h2>
-  <p class="muted">已確認您的 LINE 身分，請設定新的登入密碼。</p>
+  <h2 id="passwordResetTitle">忘記密碼</h2>
+  <p class="muted" id="passwordResetIntro"></p>
   <div id="passwordResetBody"></div>
 </div>
 
@@ -658,51 +658,124 @@
   }
 
   // 回傳true代表這次afterLogin()已經被「忘記密碼」流程接管；回傳false代表
-  // 沒有待處理的重設旗標，照原本流程繼續。身分完全來自這次LINE登入拿到的
-  // token，不是表單上任何客戶可以自己改的欄位。
+  // 沒有待處理的重設旗標，照原本流程繼續。
+  //
+  // 2026-10-31修正：這裡原本是「LINE OAuth完成當下，直接在同一個session改
+  // 密碼」——這其實是「已登入改密碼」的變形，不是真正的忘記密碼流程(入口→
+  // 本人收到重設連結→連結短效且一次性→自行設定新密碼)。現在改成：這次
+  // OAuth只用來證明「現在操作瀏覽器的這個人」擁有這個LINE帳號，用這個身分
+  // 呼叫/password/forgot-start，後端會把一個獨立的短效一次性連結推播到
+  // 同一個LINE帳號——這個頁面接下來只負責告訴客戶「請查看LINE訊息」，
+  // 不會也不能在這裡直接改密碼。真正改密碼在handleResetTokenEntry()，
+  // 客戶要從LINE訊息點連結進來、全新頁面載入、不需要登入。
   async function handlePendingPasswordReset() {
     if (!sessionStorage.getItem(PENDING_PASSWORD_RESET_KEY)) return false;
+    sessionStorage.removeItem(PENDING_PASSWORD_RESET_KEY);
     showPasswordResetCard();
+    document.getElementById("passwordResetTitle").textContent = "忘記密碼";
+    document.getElementById("passwordResetIntro").textContent = "已確認您的 LINE 身分，正在為您發送重設連結。";
     const body = document.getElementById("passwordResetBody");
+    body.innerHTML = "<p>確認身分中…</p>";
+    let resp;
+    try {
+      resp = await apiFetch("/api/customer/password/forgot-start", { method: "POST" });
+    } catch {
+      body.innerHTML = `<p class="status error">無法連線到 WeGrow Orbit 後端，請稍後再試。</p><button id="pwResetBackBtn">返回登入</button>`;
+      document.getElementById("pwResetBackBtn").addEventListener("click", () => showLoginCard());
+      return true;
+    }
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      const msg = errBody.detail === "no_line_binding"
+        ? "這個帳號目前沒有可用來接收重設連結的 LINE 綁定，請聯絡威果協助處理。"
+        : `發送失敗：${errBody.detail || resp.status}`;
+      body.innerHTML = `<p class="status error">${msg}</p><button id="pwResetBackBtn">返回登入</button>`;
+      document.getElementById("pwResetBackBtn").addEventListener("click", () => showLoginCard());
+      return true;
+    }
     body.innerHTML = `
-      <form id="passwordResetForm">
-        <label>新密碼（至少 8 碼）</label>
-        <input type="password" id="newPassword1" minlength="8" required autocomplete="new-password">
-        <label>再輸入一次新密碼</label>
-        <input type="password" id="newPassword2" minlength="8" required autocomplete="new-password">
-        <button type="submit" class="primary" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;margin-top:10px;">儲存新密碼</button>
-      </form>
-      <p class="status" id="passwordResetStatus"></p>
+      <p>已透過 LINE 傳送重設密碼連結給您，請在 15 分鐘內查看 LINE 訊息並點擊連結設定新密碼。</p>
+      <p class="muted" style="font-size:13px;">這個連結僅能使用一次，逾期或使用過需要重新申請。</p>
+      <button type="button" id="pwResetDoneBtn" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;">返回登入</button>
     `;
-    document.getElementById("passwordResetForm").addEventListener("submit", async (e) => {
+    document.getElementById("pwResetDoneBtn").addEventListener("click", () => { setToken(""); showLoginCard(); });
+    return true;
+  }
+
+  // ==================== 忘記密碼：連結兌換頁（2026-10-31）====================
+  // 客戶從LINE訊息點連結進來，網址帶?reset_token=xxx，這是全新的瀏覽器狀態，
+  // 完全不需要登入——這支函式必須在bootstrap最前面就檢查，搶在
+  // handleLineReturn()/getToken()判斷之前，否則舊token或舊session邏輯可能
+  // 搶先跑掉。回傳true代表這次載入已被接管，呼叫端不該再跑其他初始化。
+  async function handleResetTokenEntry() {
+    const token = new URLSearchParams(window.location.search).get("reset_token");
+    if (!token) return false;
+    showPasswordResetCard();
+    document.getElementById("passwordResetTitle").textContent = "設定新密碼";
+    document.getElementById("passwordResetIntro").textContent = "";
+    const body = document.getElementById("passwordResetBody");
+    body.innerHTML = "<p>確認連結中…</p>";
+
+    let previewResp;
+    try {
+      previewResp = await fetch(`${API_BASE}/api/customer/password/reset-token/${encodeURIComponent(token)}/preview`);
+    } catch {
+      body.innerHTML = `<p class="status error">無法連線到 WeGrow Orbit 後端，請稍後再試。</p><button id="pwResetTokenBackBtn">返回登入</button>`;
+      document.getElementById("pwResetTokenBackBtn").addEventListener("click", () => { history.replaceState(null, "", window.location.pathname); showLoginCard(); });
+      return true;
+    }
+    const preview = await previewResp.json().catch(() => ({ status: "invalid" }));
+    const STATUS_MESSAGE = {
+      used: "這個重設連結已經使用過了，請重新申請一次忘記密碼。",
+      expired: "這個重設連結已經過期（僅 15 分鐘內有效），請重新申請一次忘記密碼。",
+      invalid: "找不到這個重設連結，可能網址不完整。",
+    };
+    if (preview.status !== "active") {
+      body.innerHTML = `<p class="status error">${STATUS_MESSAGE[preview.status] || "這個連結目前無法使用。"}</p><button id="pwResetTokenBackBtn">返回登入</button>`;
+      document.getElementById("pwResetTokenBackBtn").addEventListener("click", () => { history.replaceState(null, "", window.location.pathname); showLoginCard(); });
+      return true;
+    }
+
+    body.innerHTML = `
+      <form id="resetTokenForm">
+        <label>新密碼（至少 8 碼）</label>
+        <input type="password" id="resetTokenPassword1" minlength="8" required autocomplete="new-password">
+        <label>再輸入一次新密碼</label>
+        <input type="password" id="resetTokenPassword2" minlength="8" required autocomplete="new-password">
+        <button type="submit" class="primary" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;margin-top:10px;">設定新密碼</button>
+      </form>
+      <p class="status" id="resetTokenStatus"></p>
+    `;
+    document.getElementById("resetTokenForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const p1 = document.getElementById("newPassword1").value;
-      const p2 = document.getElementById("newPassword2").value;
-      if (p1 !== p2) {
-        setStatus("passwordResetStatus", "兩次輸入的密碼不一致。", "error");
-        return;
-      }
-      if (p1.length < 8) {
-        setStatus("passwordResetStatus", "密碼至少需要 8 碼。", "error");
-        return;
-      }
-      setStatus("passwordResetStatus", "儲存中…");
-      let resp;
+      const p1 = document.getElementById("resetTokenPassword1").value;
+      const p2 = document.getElementById("resetTokenPassword2").value;
+      if (p1 !== p2) { setStatus("resetTokenStatus", "兩次輸入的密碼不一致。", "error"); return; }
+      if (p1.length < 8) { setStatus("resetTokenStatus", "密碼至少需要 8 碼。", "error"); return; }
+      setStatus("resetTokenStatus", "儲存中…");
+      let confirmResp;
       try {
-        resp = await apiFetch("/api/customer/password/change", {
+        confirmResp = await fetch(`${API_BASE}/api/customer/password/reset-token/${encodeURIComponent(token)}/confirm`, {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ new_password: p1 }),
         });
       } catch {
-        setStatus("passwordResetStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error");
+        setStatus("resetTokenStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error");
         return;
       }
-      if (!resp.ok) {
-        const errBody = await resp.json().catch(() => ({}));
-        setStatus("passwordResetStatus", errBody.detail === "password_too_short" ? "密碼至少需要 8 碼。" : `儲存失敗：${errBody.detail || resp.status}`, "error");
+      if (!confirmResp.ok) {
+        const errBody = await confirmResp.json().catch(() => ({}));
+        const msg = errBody.detail === "reset_token_not_usable"
+          ? "這個重設連結已經失效（可能已使用過或已過期），請重新申請一次忘記密碼。"
+          : errBody.detail === "password_too_short" ? "密碼至少需要 8 碼。" : `儲存失敗：${errBody.detail || confirmResp.status}`;
+        setStatus("resetTokenStatus", msg, "error");
         return;
       }
-      sessionStorage.removeItem(PENDING_PASSWORD_RESET_KEY);
-      await afterLogin();
+      history.replaceState(null, "", window.location.pathname);
+      document.getElementById("passwordResetBody").innerHTML = `
+        <p>密碼已重設成功，請用新密碼登入。</p>
+        <button type="button" id="pwResetTokenDoneBtn" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;">前往登入</button>
+      `;
+      document.getElementById("pwResetTokenDoneBtn").addEventListener("click", () => showLoginCard());
     });
     return true;
   }
@@ -1915,6 +1988,8 @@
   }
 
   (async () => {
+    const handledResetToken = await handleResetTokenEntry();
+    if (handledResetToken) return;
     const handledLineReturn = await handleLineReturn();
     if (handledLineReturn) return;
     if (getToken()) {
