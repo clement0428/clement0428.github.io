@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
-<meta name="build-version" content="20261030T1-line-public-customer" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261031T1-approval-invite-application" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -602,6 +602,11 @@
   // 回傳true代表這次afterLogin()已經被邀請兌換流程接管(不管成功/失敗/取消)，
   // 呼叫端不該再往下跑正常的/api/customer/me檢查；回傳false代表沒有待處理的
   // 邀請token，照原本流程繼續。
+  //
+  // 2026-10-31：邀請連結分兩種，先用免登入的新版preview判斷是哪一種，再分流——
+  // 不能像以前只打舊版/api/customer/invites/{token}，那支完全不檢查
+  // requires_approval，審核制邀請被它處理會變成只有membership、沒有photo
+  // entitlement/預設物流/booking資格的半套帳號，而且整個跳過Clement審核。
   async function handlePendingInviteRedemption() {
     const token = sessionStorage.getItem(INVITE_TOKEN_STORAGE_KEY);
     if (!token) return false;
@@ -610,6 +615,27 @@
     showInviteCard();
     body.innerHTML = "<p>讀取邀請內容中…</p>";
 
+    let approvalPreviewResp;
+    try {
+      approvalPreviewResp = await fetch(`${API_BASE}/api/customer/enterprise-invites/${encodeURIComponent(token)}/preview`);
+    } catch {
+      body.innerHTML = `<p class="status error">無法連線到 WeGrow Orbit 後端，請稍後再試。</p><button id="inviteBackToLoginBtn">返回登入</button>`;
+      document.getElementById("inviteBackToLoginBtn").addEventListener("click", () => { sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY); showLoginCard(); });
+      return true;
+    }
+    if (approvalPreviewResp.status === 404) {
+      body.innerHTML = `<p class="status error">找不到這個邀請連結，可能已失效。</p><button id="inviteBackToLoginBtn">返回登入</button>`;
+      document.getElementById("inviteBackToLoginBtn").addEventListener("click", () => { sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY); showLoginCard(); });
+      return true;
+    }
+    if (approvalPreviewResp.ok) {
+      return await handleApprovalInviteFlow(token, body, await approvalPreviewResp.json());
+    }
+    // 400 not_an_approval_invite：既有LINE-03/04一鍵兌換邀請，走原本流程。
+    return await handleLegacyInviteRedemption(token, body);
+  }
+
+  async function handleLegacyInviteRedemption(token, body) {
     let previewResp;
     try {
       previewResp = await apiFetch(`/api/customer/invites/${encodeURIComponent(token)}`);
@@ -671,6 +697,104 @@
         showApp();
         await afterLogin();
       }
+    });
+    return true;
+  }
+
+  // 2026-10-31：Clement的LINE邀請審核流程(requires_approval=True)——客戶要先
+  // 用LINE或Email登入(建立/帶出帳號)，才能送出五欄位申請；preview本身不用
+  // 登入就能看企業名稱，但/apply一定要帶登入後的token，身分完全來自token，
+  // 不信任表單上任何可被客戶自己改的欄位。
+  async function handleApprovalInviteFlow(token, body, preview) {
+    const STATUS_MESSAGE = {
+      expired: "這個邀請連結已經過期，請聯絡威果重新產生。",
+      revoked: "這個邀請連結已經被撤銷。",
+      claimed: "這個邀請連結已經被使用過了。",
+    };
+    if (preview.status !== "active") {
+      body.innerHTML = `<p class="status error">${STATUS_MESSAGE[preview.status] || "這個邀請連結目前無法使用。"}</p><button id="inviteBackToLoginBtn">返回登入</button>`;
+      document.getElementById("inviteBackToLoginBtn").addEventListener("click", () => { sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY); showLoginCard(); });
+      return true;
+    }
+    if (!getToken()) {
+      // 還沒登入——保留pending token，顯示登入表單；登入成功後afterLogin()會
+      // 再次呼叫到這裡，preview內容不會因為多打一次API而改變。
+      document.getElementById("loginIntro").textContent =
+        `請先登入，登入後即可申請加入「${preview.organization_name || ""}」。`;
+      showLoginCard();
+      return true;
+    }
+
+    const orgName = escapeHtml(preview.organization_name || "");
+    const farmName = escapeHtml(preview.farm_name || "");
+    const unitLabel = escapeHtml(preview.adoption_unit_label || "單位");
+    const fixedUnitCount = preview.adoption_unit_count;
+    body.innerHTML = `
+      <p>您即將申請加入企業：<strong>${orgName}</strong>${farmName ? `（${farmName}）` : ""}</p>
+      <p class="muted">送出後需等候威果人工審核，核准後才會開通認養照片等服務。</p>
+      <form id="applicationForm">
+        <label>收件人姓名</label>
+        <input type="text" id="appRecipientName" required>
+        <label>收件人電話</label>
+        <input type="tel" id="appRecipientPhone" required>
+        <label>收件人地址（物流預設寄送地址）</label>
+        <input type="text" id="appRecipientAddress" required>
+        <label>Email（供日後通知與 Email 登入使用）</label>
+        <input type="email" id="appEmail" required>
+        <label>認養${unitLabel}數</label>
+        <input type="number" id="appAdoptionUnitCount" min="1" ${fixedUnitCount != null ? `max="${fixedUnitCount}" value="${fixedUnitCount}"` : ""} required>
+        <label>設定登入密碼（至少 8 碼，之後可用 Email + 此密碼登入）</label>
+        <input type="password" id="appPassword" minlength="8" required>
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin-top:10px;">
+          <input type="checkbox" id="appCompanyConfirm" required style="margin-top:3px;">
+          <span>我確認本次申請是代表「${orgName}」提出，上述資料屬實。</span>
+        </label>
+        <button type="submit" class="primary" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;margin-top:14px;">送出申請</button>
+      </form>
+      <p class="status" id="applicationStatus"></p>
+    `;
+    document.getElementById("applicationForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!document.getElementById("appCompanyConfirm").checked) {
+        setStatus("applicationStatus", "請先勾選確認本次申請代表該企業。", "error");
+        return;
+      }
+      setStatus("applicationStatus", "送出中…");
+      const payload = {
+        recipient_name: document.getElementById("appRecipientName").value.trim(),
+        recipient_phone: document.getElementById("appRecipientPhone").value.trim(),
+        recipient_address: document.getElementById("appRecipientAddress").value.trim(),
+        email: document.getElementById("appEmail").value.trim(),
+        adoption_unit_count: parseInt(document.getElementById("appAdoptionUnitCount").value, 10) || null,
+        password: document.getElementById("appPassword").value,
+      };
+      let applyResp;
+      try {
+        applyResp = await apiFetch(`/api/customer/enterprise-invites/${encodeURIComponent(token)}/apply`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+        });
+      } catch {
+        setStatus("applicationStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error");
+        return;
+      }
+      if (!applyResp.ok) {
+        const errBody = await applyResp.json().catch(() => ({}));
+        const ERROR_MESSAGE = {
+          missing_required_fields: "請填寫所有必填欄位。",
+          password_too_short: "密碼至少需要 8 碼。",
+          adoption_unit_exceeds_invite: `認養${unitLabel}數不能超過邀請預設的數量。`,
+          invite_revoked: "這個邀請連結已經被撤銷。",
+          invite_expired: "這個邀請連結已經過期，請聯絡威果重新產生。",
+          invite_already_claimed: "這個邀請連結已經被使用過了。",
+        };
+        const terminal = ["invite_revoked", "invite_expired", "invite_already_claimed"];
+        setStatus("applicationStatus", ERROR_MESSAGE[errBody.detail] || `送出失敗：${errBody.detail || applyResp.status}`, "error");
+        if (terminal.includes(errBody.detail)) sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY);
+        return;
+      }
+      sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY);
+      body.innerHTML = `<p>已送出申請，待威果審核後將通知您並開通服務。</p><button id="appDoneBtn">繼續</button>`;
+      document.getElementById("appDoneBtn").addEventListener("click", () => afterLogin());
     });
     return true;
   }
