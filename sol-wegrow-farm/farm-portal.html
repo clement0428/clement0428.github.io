@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
-<meta name="build-version" content="20261101T1-application-form-mobile-ux" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261101T2-fix-stale-title-after-claimed" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -931,6 +931,13 @@
   // 登入就能看企業名稱，但/apply一定要帶登入後的token，身分完全來自token，
   // 不信任表單上任何可被客戶自己改的欄位。
   async function handleApprovalInviteFlow(token, body, preview) {
+    // 這個標題/說明段落一進函式就統一設定(不只在表單分支設)——否則「已經用過/
+    // 過期/撤銷」這類終止狀態會先return，殘留上面靜態的「請先用 LINE 或 Email
+    // 登入」字樣，即使使用者其實已經登入。2026-11-01正式站真人驗收截圖抓到這個
+    // 情況：reload後顯示「已使用過」時，標題還卡在「加入企業邀請」。
+    document.getElementById("inviteRedeemTitle").textContent = "開通您的認養農場";
+    document.getElementById("inviteIntro").textContent = "";
+
     const STATUS_MESSAGE = {
       expired: "這個邀請連結已經過期，請聯絡威果重新產生。",
       revoked: "這個邀請連結已經被撤銷。",
@@ -949,10 +956,6 @@
       showLoginCard();
       return true;
     }
-
-    // 已登入才會走到這裡——不能再顯示上面殘留的「請先用 LINE 或 Email 登入」字樣。
-    document.getElementById("inviteRedeemTitle").textContent = "開通您的認養農場";
-    document.getElementById("inviteIntro").textContent = "";
 
     const orgName = escapeHtml(preview.organization_name || "");
     const farmName = escapeHtml(preview.farm_name || "");
