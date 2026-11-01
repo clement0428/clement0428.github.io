@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sol-WeGrow-Farm</title>
 <meta name="description" content="我的農場入口：看現場、產量預告、我的寄送、活動回憶、ESG下載。">
-<meta name="build-version" content="20261031T4-forgot-password-link" data-testid="wegrow-build-stamp">
+<meta name="build-version" content="20261101T1-application-form-mobile-ux" data-testid="wegrow-build-stamp">
 <link rel="icon" href="data:,">
 <style>
   :root {
@@ -49,6 +49,48 @@
   .status { font-size:13px; margin:8px 0 0; }
   .status.error { color: var(--rose); }
   .status.success { color: var(--green); }
+
+  /* ---- 加入企業邀請／認養申請表單（2026-11-01 手機版面修正，只限定這個表單） ---- */
+  #inviteRedeemCard { max-width:480px; width:100%; }
+  @media (max-width:480px) {
+    #inviteRedeemCard { margin:12px auto; padding:20px; }
+  }
+  #inviteRedeemCard > p.muted:empty { display:none; margin:0; }
+  .app-org-card { background:var(--mist); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .app-org-card .org-name { font-size:15px; font-weight:800; color:var(--ink); }
+  .app-org-card .org-meta { font-size:13px; color:var(--muted); margin-top:4px; }
+  .app-org-card .org-meta .unit { color:var(--green); font-weight:700; }
+  .app-intro { font-size:13px; color:var(--muted); margin:0 0 16px; line-height:1.6; }
+  #applicationForm { display:flex; flex-direction:column; gap:16px; }
+  #applicationForm .field { display:flex; flex-direction:column; }
+  #applicationForm .field label { font-size:13px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+  #applicationForm .field input[type="text"],
+  #applicationForm .field input[type="tel"],
+  #applicationForm .field input[type="email"],
+  #applicationForm .field input[type="password"] {
+    width:100%; min-height:48px; padding:12px 14px; border-radius:8px; border:1px solid var(--line);
+    font-size:16px; background:var(--white); color:var(--ink);
+  }
+  #applicationForm .field input:focus { outline:2px solid var(--gold); outline-offset:1px; }
+  #applicationForm .field-hint { font-size:12px; color:var(--muted); margin-top:6px; }
+  #applicationForm .field-error { font-size:12px; color:var(--rose); margin-top:6px; }
+  #applicationForm .pw-row { position:relative; display:flex; align-items:center; }
+  #applicationForm .pw-row input { padding-right:68px; }
+  #applicationForm .pw-toggle {
+    position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    border:none; background:transparent; color:var(--green); font-size:13px; font-weight:700;
+    padding:8px 10px; min-height:40px;
+  }
+  #applicationForm .checkbox-row {
+    display:flex; align-items:flex-start; gap:10px; font-size:13px; font-weight:400; color:var(--ink);
+    line-height:1.5; cursor:pointer;
+  }
+  #applicationForm .checkbox-row input[type="checkbox"] { width:18px; height:18px; flex:0 0 18px; margin:2px 0 0; }
+  #applicationForm button[type="submit"] {
+    width:100%; min-height:48px; background:var(--green); color:#fff; border:none; border-radius:8px;
+    font-size:16px; font-weight:700; margin-top:4px;
+  }
+  #applicationForm button[type="submit"]:disabled { opacity:.6; cursor:not-allowed; }
 
   /* ---- farm switcher ---- */
   #farmSwitcher { display:flex; gap:8px; padding: 14px 16px 0; overflow-x:auto; }
@@ -248,7 +290,7 @@
 </div>
 
 <div id="inviteRedeemCard" class="hidden">
-  <h2>加入企業邀請</h2>
+  <h2 id="inviteRedeemTitle">加入企業邀請</h2>
   <p id="inviteIntro" class="muted">請先用 LINE 或 Email 登入，確認要加入的企業。</p>
   <div id="inviteRedeemBody"></div>
 </div>
@@ -817,6 +859,8 @@
   }
 
   async function handleLegacyInviteRedemption(token, body) {
+    document.getElementById("inviteRedeemTitle").textContent = "加入企業邀請";
+    document.getElementById("inviteIntro").textContent = "請先用 LINE 或 Email 登入，確認要加入的企業。";
     let previewResp;
     try {
       previewResp = await apiFetch(`/api/customer/invites/${encodeURIComponent(token)}`);
@@ -906,49 +950,115 @@
       return true;
     }
 
+    // 已登入才會走到這裡——不能再顯示上面殘留的「請先用 LINE 或 Email 登入」字樣。
+    document.getElementById("inviteRedeemTitle").textContent = "開通您的認養農場";
+    document.getElementById("inviteIntro").textContent = "";
+
     const orgName = escapeHtml(preview.organization_name || "");
     const farmName = escapeHtml(preview.farm_name || "");
     const unitLabel = escapeHtml(preview.adoption_unit_label || "單位");
     const fixedUnitCount = preview.adoption_unit_count;
     body.innerHTML = `
-      <p>您即將申請加入企業：<strong>${orgName}</strong>${farmName ? `（${farmName}）` : ""}</p>
-      <p class="muted">送出後需等候威果人工審核，核准後才會開通認養照片等服務。</p>
-      <form id="applicationForm">
-        <label>收件人姓名</label>
-        <input type="text" id="appRecipientName" required>
-        <label>收件人電話</label>
-        <input type="tel" id="appRecipientPhone" required>
-        <label>收件人地址（物流預設寄送地址）</label>
-        <input type="text" id="appRecipientAddress" required>
-        <label>Email（供日後通知與 Email 登入使用）</label>
-        <input type="email" id="appEmail" required>
-        <label>認養${unitLabel}數</label>
-        <input type="number" id="appAdoptionUnitCount" min="1" ${fixedUnitCount != null ? `max="${fixedUnitCount}" value="${fixedUnitCount}"` : ""} required>
-        <label>設定登入密碼（至少 8 碼，之後可用 Email + 此密碼登入）</label>
-        <input type="password" id="appPassword" minlength="8" required>
-        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin-top:10px;">
-          <input type="checkbox" id="appCompanyConfirm" required style="margin-top:3px;">
-          <span>我確認本次申請是代表「${orgName}」提出，上述資料屬實。</span>
+      <div class="app-org-card">
+        <div class="org-name">${orgName}</div>
+        <div class="org-meta">${farmName ? `${farmName} · ` : ""}${fixedUnitCount != null ? `<span class="unit">認養${fixedUnitCount}${unitLabel}</span>` : "認養數量由威果核定"}</div>
+      </div>
+      <p class="app-intro">填寫一次，核准後即可查看農場；收件資料會自動帶入日後寄送。</p>
+      <form id="applicationForm" novalidate>
+        <div class="field">
+          <label for="appRecipientName">收件人姓名</label>
+          <input type="text" id="appRecipientName" name="name" autocomplete="name" required>
+          <p class="field-error hidden" id="appRecipientNameError"></p>
+        </div>
+        <div class="field">
+          <label for="appRecipientPhone">聯絡電話</label>
+          <input type="tel" id="appRecipientPhone" name="tel" autocomplete="tel" required>
+          <p class="field-error hidden" id="appRecipientPhoneError"></p>
+        </div>
+        <div class="field">
+          <label for="appRecipientAddress">收件地址</label>
+          <input type="text" id="appRecipientAddress" name="street-address" autocomplete="street-address" required>
+          <p class="field-hint">日後寄送會自動帶入，可再修改。</p>
+          <p class="field-error hidden" id="appRecipientAddressError"></p>
+        </div>
+        <div class="field">
+          <label for="appEmail">Email</label>
+          <input type="email" id="appEmail" name="email" autocomplete="email" required>
+          <p class="field-hint">用於核准通知；之後也可改用此 Email + 您設定的密碼登入。</p>
+          <p class="field-error hidden" id="appEmailError"></p>
+        </div>
+        <div class="field">
+          <label for="appPassword">設定密碼</label>
+          <div class="pw-row">
+            <input type="password" id="appPassword" name="new-password" autocomplete="new-password" minlength="8" required>
+            <button type="button" class="pw-toggle" id="appPasswordToggle" aria-label="顯示或隱藏密碼">顯示</button>
+          </div>
+          <p class="field-hint">至少 8 碼，之後可用 Email + 此密碼登入。</p>
+          <p class="field-error hidden" id="appPasswordError"></p>
+        </div>
+        <label class="checkbox-row" for="appCompanyConfirm">
+          <input type="checkbox" id="appCompanyConfirm" required>
+          <span>我確認代表此企業申請，以上資料正確。</span>
         </label>
-        <button type="submit" class="primary" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;margin-top:14px;">送出申請</button>
+        <p class="field-error hidden" id="appCompanyConfirmError"></p>
+        <button type="submit" id="appSubmitBtn">送出申請</button>
       </form>
       <p class="status" id="applicationStatus"></p>
     `;
+
+    document.getElementById("appPasswordToggle").addEventListener("click", () => {
+      const pw = document.getElementById("appPassword");
+      const toggle = document.getElementById("appPasswordToggle");
+      const show = pw.type === "password";
+      pw.type = show ? "text" : "password";
+      toggle.textContent = show ? "隱藏" : "顯示";
+    });
+
+    function clearFieldErrors() {
+      ["appRecipientNameError", "appRecipientPhoneError", "appRecipientAddressError", "appEmailError", "appPasswordError", "appCompanyConfirmError"].forEach((id) => {
+        const el = document.getElementById(id);
+        el.textContent = "";
+        el.classList.add("hidden");
+      });
+      setStatus("applicationStatus", "");
+    }
+    function setFieldError(id, message) {
+      const el = document.getElementById(id);
+      el.textContent = message;
+      el.classList.remove("hidden");
+    }
+
     document.getElementById("applicationForm").addEventListener("submit", async (e) => {
       e.preventDefault();
+      clearFieldErrors();
       if (!document.getElementById("appCompanyConfirm").checked) {
-        setStatus("applicationStatus", "請先勾選確認本次申請代表該企業。", "error");
+        setFieldError("appCompanyConfirmError", "請先勾選確認本次申請代表該企業。");
         return;
       }
-      setStatus("applicationStatus", "送出中…");
+
+      const submitBtn = document.getElementById("appSubmitBtn");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "正在送出…";
+      setStatus("applicationStatus", "正在送出…");
+
+      // 認養數量完全來自preview(邀請本身)，不接受客戶在表單上自行修改或擴大——
+      // 後端submit_application()仍會獨立比對invite.adoption_unit_count，這裡
+      // 只是不給前端一個可編輯的輸入框，不是唯一的安全防線。
       const payload = {
         recipient_name: document.getElementById("appRecipientName").value.trim(),
         recipient_phone: document.getElementById("appRecipientPhone").value.trim(),
         recipient_address: document.getElementById("appRecipientAddress").value.trim(),
         email: document.getElementById("appEmail").value.trim(),
-        adoption_unit_count: parseInt(document.getElementById("appAdoptionUnitCount").value, 10) || null,
+        adoption_unit_count: fixedUnitCount,
         password: document.getElementById("appPassword").value,
+        company_confirmed: true,
       };
+
+      function resetSubmitBtn() {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "送出申請";
+      }
+
       let applyResp;
       try {
         applyResp = await apiFetch(`/api/customer/enterprise-invites/${encodeURIComponent(token)}/apply`, {
@@ -956,25 +1066,36 @@
         });
       } catch {
         setStatus("applicationStatus", "無法連線到 WeGrow Orbit 後端，請稍後再試。", "error");
+        resetSubmitBtn();
         return;
       }
       if (!applyResp.ok) {
         const errBody = await applyResp.json().catch(() => ({}));
-        const ERROR_MESSAGE = {
-          missing_required_fields: "請填寫所有必填欄位。",
-          password_too_short: "密碼至少需要 8 碼。",
-          adoption_unit_exceeds_invite: `認養${unitLabel}數不能超過邀請預設的數量。`,
+        const FIELD_ERROR_MAP = {
+          password_too_short: ["appPasswordError", "密碼至少需要 8 碼。"],
+          company_confirm_required: ["appCompanyConfirmError", "請先勾選確認本次申請代表該企業。"],
+        };
+        const TERMINAL_MESSAGE = {
           invite_revoked: "這個邀請連結已經被撤銷。",
           invite_expired: "這個邀請連結已經過期，請聯絡威果重新產生。",
           invite_already_claimed: "這個邀請連結已經被使用過了。",
         };
-        const terminal = ["invite_revoked", "invite_expired", "invite_already_claimed"];
-        setStatus("applicationStatus", ERROR_MESSAGE[errBody.detail] || `送出失敗：${errBody.detail || applyResp.status}`, "error");
-        if (terminal.includes(errBody.detail)) sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY);
+        if (FIELD_ERROR_MAP[errBody.detail]) {
+          const [fieldId, message] = FIELD_ERROR_MAP[errBody.detail];
+          setFieldError(fieldId, message);
+        } else if (TERMINAL_MESSAGE[errBody.detail]) {
+          sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY);
+          setStatus("applicationStatus", TERMINAL_MESSAGE[errBody.detail], "error");
+        } else if (errBody.detail === "missing_required_fields") {
+          setStatus("applicationStatus", "請填寫所有必填欄位。", "error");
+        } else {
+          setStatus("applicationStatus", `送出失敗：${errBody.detail || applyResp.status}`, "error");
+        }
+        resetSubmitBtn();
         return;
       }
       sessionStorage.removeItem(INVITE_TOKEN_STORAGE_KEY);
-      body.innerHTML = `<p>已送出申請，待威果審核後將通知您並開通服務。</p><button id="appDoneBtn">繼續</button>`;
+      body.innerHTML = `<p class="status success">申請已送出，等待 Clement 核准。</p><button type="button" id="appDoneBtn" style="width:100%;min-height:48px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;">繼續</button>`;
       document.getElementById("appDoneBtn").addEventListener("click", () => afterLogin());
     });
     return true;
