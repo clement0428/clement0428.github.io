@@ -1,0 +1,1 @@
+System.register(["./useOfflineQueue-legacy-fcw12dAP.js"],function(e,t){var u;return{setters:[function(e){e.a,u=e.i,e.n,e.o,e.r,e.t}],execute:function(){e("queueWrite",u)}}});
