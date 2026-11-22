@@ -1765,11 +1765,10 @@
       const data = await res.json();
       if (!current()) return;
       body.replaceChildren();
-      if (!data.has_contract) {
-        body.innerHTML = '<p class="empty-note">此場域尚無認養合約，收穫方案待確認。</p>';
-        return;
-      }
       if (!data.items.length) {
+        // has_contract只代表「這個場域有沒有認養合約」這個事實，不是「有沒有收穫方案」——
+        // 管理員也可以直接對企業(無合約)確認方案，items才是真正的判斷依據(見後端
+        // my_harvest_fulfillment 2026-11-22修正，規格3.1「無合約也可有管理員確認的方案權益」)。
         body.innerHTML = '<p class="empty-note">尚無已確認的收穫方案；若您只有照片權限，仍可在「看現場」正常查看。</p>';
         return;
       }
