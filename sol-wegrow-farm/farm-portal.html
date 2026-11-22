@@ -143,6 +143,19 @@
   .record-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
   .record-row:last-child { border-bottom:none; }
 
+  /* ---- 我的收穫（約定／交付／剩餘累計，跟下面「我的採收預告」區塊獨立）---- */
+  .fulfillment-card .crop { font-size:15px; font-weight:800; margin:0 0 10px; }
+  .fulfillment-numbers { display:grid; grid-template-columns:repeat(2,1fr); gap:10px 14px; margin-bottom:10px; }
+  .fulfillment-number { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .fulfillment-number .label { font-size:12px; color:var(--muted); }
+  .fulfillment-number .value { font-size:16px; font-weight:800; color:var(--ink); overflow-wrap:break-word; }
+  .fulfillment-progress-wrap { margin:4px 0 10px; }
+  .fulfillment-progress-bar { height:8px; border-radius:999px; background:var(--mist); overflow:hidden; }
+  .fulfillment-progress-fill { height:100%; background:var(--green); border-radius:999px; }
+  .fulfillment-progress-pct { display:block; font-size:12px; color:var(--muted); margin-top:4px; }
+  .fulfillment-subtitle { font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
+  .fulfillment-card .record-row { font-size:12px; }
+
   /* ---- 我的採收預告 ---- */
   .forecast-item { padding:14px 0; border-bottom:1px solid var(--line); }
   .forecast-item:last-child { border-bottom:none; }
@@ -335,6 +348,7 @@
     </div>
     <div class="desktop-nav" id="desktopNav">
       <button data-tab="live" class="active">看現場</button>
+      <button data-tab="fulfillment">我的收穫</button>
       <button data-tab="harvest">產量預告</button>
       <button data-tab="shipments">我的寄送</button>
       <button data-tab="activities">活動回憶</button>
@@ -384,6 +398,13 @@
         </div>
         <div id="historyPhotoBody"><p class="empty-note">選擇日期區間查詢歷史照片。</p></div>
       </div>
+    </section>
+
+    <!-- 我的收穫：累計約定/交付/剩餘，跟下面「產量預告」(未來預估)分開計算，
+         彼此可連結但不可混成同一數字。 -->
+    <section id="tabFulfillment" class="hidden">
+      <p class="empty-note" id="fulfillmentUpdatedAt" style="margin:12px 16px 0;"></p>
+      <div id="fulfillmentBody"><p class="empty-note" style="margin:12px 16px 0;">載入中…</p></div>
     </section>
 
     <!-- 產量預告 -->
@@ -450,6 +471,7 @@
 
   <nav class="bottom-nav">
     <button data-tab="live" class="active"><span class="icon">🌱</span>看現場</button>
+    <button data-tab="fulfillment"><span class="icon">🧺</span>我的收穫</button>
     <button data-tab="harvest"><span class="icon">📦</span>產量預告</button>
     <button data-tab="shipments"><span class="icon">🚚</span>我的寄送</button>
     <button data-tab="activities"><span class="icon">📷</span>活動回憶</button>
@@ -1194,6 +1216,7 @@
         farms = [];
         renderFarmSwitcher();
         document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">場域資料暫時無法載入，請稍後重試。</div>`;
+        loadFulfillmentTab(null);
         loadHarvestTab(null);
       } else {
         farms = await farmsResp.json();
@@ -1224,6 +1247,7 @@
       }
     } catch {
       document.getElementById("liveHeroWrap").innerHTML = `<div class="live-empty">場域資料暫時無法載入，請稍後重試。</div>`;
+      loadFulfillmentTab(null);
       loadHarvestTab(null);
     }
     try { await loadActivities(); } catch { /* 活動區塊失敗不影響其他區塊 */ }
@@ -1244,6 +1268,7 @@
     // 產量預告／我的寄送兩個分頁是固定入口，未選區帳號一樣要能看——人工預估走
     // 場域層級的/harvest-manual-estimate（不需要harvest entitlement），模型預測／
     // 已核定供應量則誠實顯示「尚未選區」而非假裝有資料。
+    loadFulfillmentTab(null);
     loadHarvestTab(null);
     loadShipmentsTab();
     const wrap = document.getElementById("liveHeroWrap");
@@ -1637,6 +1662,126 @@
     body.append(closeBtn);
   }
 
+  // ── 我的收穫：約定／已交付／尚待交付／運送中累計進度，跟下面「產量預告」
+  // (未來預估)完全獨立計算，不共用同一份扣帳公式——這裡只讀後端
+  // /my-harvest-fulfillment彙總結果，前端不自己另算一次。
+  let fulfillmentRequest = 0;
+  const FULFILLMENT_EVENT_TYPE_LABEL = { delivery: '交付', reversal: '沖銷', redelivery: '補寄', gift: '贈品' };
+  function renderFulfillmentCard(container, item) {
+    const card = document.createElement('div');
+    card.className = 'card fulfillment-card';
+    const title = document.createElement('p'); title.className = 'crop';
+    title.textContent = `🧺 ${item.crop_name}${item.variety ? '｜' + item.variety : ''}（${item.unit}）`;
+    card.append(title);
+
+    if (item.quantity_type === 'unconfirmed') {
+      const note = document.createElement('p'); note.className = 'empty-note';
+      note.textContent = '收穫方案待確認';
+      card.append(note);
+      container.append(card);
+      return;
+    }
+
+    const isGuaranteed = item.quantity_type === 'guaranteed';
+    const committedLabel = isGuaranteed ? '約定收穫' : '本季預估';
+    const mkNumber = (label, value) => {
+      const d = document.createElement('div'); d.className = 'fulfillment-number';
+      const l = document.createElement('span'); l.className = 'label'; l.textContent = label;
+      const v = document.createElement('span'); v.className = 'value'; v.textContent = value;
+      d.append(l, v);
+      return d;
+    };
+    const numbers = document.createElement('div'); numbers.className = 'fulfillment-numbers';
+    numbers.append(mkNumber(committedLabel, `${fmtQty(item.committed)} ${item.unit}`));
+    numbers.append(mkNumber('已交付', `${fmtQty(item.delivered)} ${item.unit}`));
+    if (isGuaranteed && item.remaining != null) {
+      numbers.append(mkNumber('尚待交付', `${fmtQty(item.remaining)} ${item.unit}`));
+    }
+    numbers.append(mkNumber('其中運送中', `${fmtQty(item.in_transit)} ${item.unit}`));
+    card.append(numbers);
+
+    if (isGuaranteed && item.progress_pct != null) {
+      const wrap = document.createElement('div'); wrap.className = 'fulfillment-progress-wrap';
+      const bar = document.createElement('div'); bar.className = 'fulfillment-progress-bar';
+      const fill = document.createElement('div'); fill.className = 'fulfillment-progress-fill';
+      fill.style.width = `${Math.max(0, Math.min(100, item.progress_pct))}%`;
+      bar.append(fill);
+      const pct = document.createElement('span'); pct.className = 'fulfillment-progress-pct';
+      pct.textContent = `交付進度 ${Math.round(item.progress_pct)}%`;
+      wrap.append(bar, pct);
+      card.append(wrap);
+    }
+
+    if (Number(item.overdelivered) > 0) {
+      const note = document.createElement('p'); note.className = 'stale-note';
+      note.textContent = `超額交付 ${fmtQty(item.overdelivered)} ${item.unit}（不計入下一期約定）`;
+      card.append(note);
+    }
+    if (Number(item.gift_total) > 0) {
+      const note = document.createElement('p'); note.className = 'line';
+      note.style.color = 'var(--muted)'; note.style.fontSize = '12px';
+      note.textContent = `贈品另計：${fmtQty(item.gift_total)} ${item.unit}（不抵約定）`;
+      card.append(note);
+    }
+    if (item.recognition_basis === 'shipped') {
+      const note = document.createElement('p'); note.className = 'stale-note';
+      note.textContent = '本方案依合約約定按「寄出」計入履約（非簽收）';
+      card.append(note);
+    }
+
+    const recTitle = document.createElement('p'); recTitle.className = 'fulfillment-subtitle'; recTitle.textContent = '收穫紀錄（近期）';
+    card.append(recTitle);
+    if (!item.recent_events.length) {
+      const empty = document.createElement('p'); empty.className = 'empty-note'; empty.textContent = '尚無交付紀錄。';
+      card.append(empty);
+    } else {
+      for (const ev of item.recent_events) {
+        const row = document.createElement('div'); row.className = 'record-row';
+        const dateSpan = document.createElement('span'); dateSpan.className = 'date'; dateSpan.textContent = fmtDateTime(ev.occurred_at);
+        const descSpan = document.createElement('span');
+        descSpan.textContent = `${FULFILLMENT_EVENT_TYPE_LABEL[ev.event_type] || ev.event_type} ${fmtQty(ev.quantity)} ${item.unit}`;
+        row.append(dateSpan, descSpan);
+        card.append(row);
+      }
+    }
+    container.append(card);
+  }
+  async function loadFulfillmentTab(farmId) {
+    const id = ++fulfillmentRequest;
+    const current = () => id === fulfillmentRequest;
+    const body = document.getElementById('fulfillmentBody');
+    const updatedEl = document.getElementById('fulfillmentUpdatedAt');
+    if (!getToken() || !body) return;
+    body.innerHTML = '<p class="empty-note">載入中…</p>';
+    if (updatedEl) updatedEl.textContent = '';
+    if (!farmId) {
+      body.innerHTML = '<p class="empty-note">請先選擇場域。</p>';
+      return;
+    }
+    try {
+      const res = await apiFetch(`/api/customer/farms/${encodeURIComponent(farmId)}/my-harvest-fulfillment`, { cache: 'no-store' });
+      if (!current()) return;
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      if (!current()) return;
+      body.replaceChildren();
+      if (!data.has_contract) {
+        body.innerHTML = '<p class="empty-note">此場域尚無認養合約，收穫方案待確認。</p>';
+        return;
+      }
+      if (!data.items.length) {
+        body.innerHTML = '<p class="empty-note">尚無已確認的收穫方案；若您只有照片權限，仍可在「看現場」正常查看。</p>';
+        return;
+      }
+      for (const item of data.items) renderFulfillmentCard(body, item);
+      if (data.updated_at && updatedEl) updatedEl.textContent = `資料更新時間：${fmtDateTime(data.updated_at)}`;
+    } catch (error) {
+      if (!current()) return;
+      const msg = error.message === '403' ? '此農場尚無有效認養合約，無法顯示收穫資料。' : '載入失敗，請稍後重試。';
+      body.innerHTML = `<p class="empty-note">${escapeHtml(msg)}</p>`;
+    }
+  }
+
   // ── 產量預告：簡化後只顯示「我的採收預告」——每個已分配期間一張卡片，
   // 日期＋本人真實公斤數，不顯示模型來源/信賴度/核定紀錄/版本等技術細節
   // （那些留在後台）。
@@ -1891,13 +2036,14 @@
 
   // ---- tabs ----
   function switchTab(tab) {
-    ["live", "harvest", "shipments", "activities", "esg"].forEach(t => {
+    ["live", "fulfillment", "harvest", "shipments", "activities", "esg"].forEach(t => {
       document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle("hidden", t !== tab);
     });
     document.querySelectorAll("[data-tab]").forEach(btn => btn.classList.toggle("active", btn.getAttribute("data-tab") === tab));
     // 兩個固定入口在登入/選區時就已經背景載入過一次；這裡重打一次是故意的——
     // 使用者可能在頁面開著很久後才點進來，重新整理一次資料比沿用舊畫面可靠，
-    // 兩個函式都有自己的request序號，快速切換分頁不會互相蓋掉。
+    // 每個函式都有自己的request序號，快速切換分頁不會互相蓋掉。
+    if (tab === "fulfillment") loadFulfillmentTab(currentFarmId);
     if (tab === "harvest") loadHarvestTab(currentFarmId);
     if (tab === "shipments") loadShipmentsTab();
   }
