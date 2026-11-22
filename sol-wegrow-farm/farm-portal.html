@@ -1325,13 +1325,16 @@
       ? `範圍：${contract.zone_names.map(escapeHtml).join("、")}`
       : (contract.zone_scope_mode === "all_farm" ? "範圍：整場" : "");
     // source==="direct_grant"：2026-11-22新增——沒有合約不等於沒有資料，已核准
-    // 的認養單位數/期間先顯示，收穫方案(保證/預估數量)待管理員確認後才會出現
-    // 在「我的收穫」頁籤，這裡不猜測、不预先顯示任何保證顆數。
+    // 的認養單位數/期間先顯示。2026-11-23修正：這裡原本無條件加一句「收穫方案
+    // 待確認」，但這個函式不知道「我的收穫」頁籤實際有沒有已發布的方案——
+    // 共生農場年度方案發布後，這句話會跟下面頁籤的真實約定數字互相矛盾
+    // (production真實客戶James驗證時親眼看到)。是否已確認完全由「我的收穫」
+    // 頁籤自己的空/非空狀態表達，這裡只陳述已核准的客觀事實，不重複猜測。
     if (contract.source === "direct_grant") {
       const unit = (contract.adoption_unit_count != null)
         ? `已核准認養 ${contract.adoption_unit_count} ${escapeHtml(contract.adoption_unit_label || "")}　` : "";
       const until = contract.entitlement_ends_at ? `到期：${fmtDateTime(contract.entitlement_ends_at)}　` : "未設定到期日（永久有效）　";
-      wrap.innerHTML = `${unit}${until}${scope}　<span class="stale-note" style="display:inline;">收穫方案待確認</span>`;
+      wrap.innerHTML = `${unit}${until}${scope}`;
       return;
     }
     const tier = contract.tier_label ? `<span class="tier">${escapeHtml(contract.tier_label)}</span>　` : "";
