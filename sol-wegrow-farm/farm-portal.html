@@ -1321,11 +1321,21 @@
     const farm = farms.find(f => f.farm_id === currentFarmId);
     const contract = farm && farm.contract;
     if (!contract) { wrap.innerHTML = ""; return; }
-    const tier = contract.tier_label ? `<span class="tier">${escapeHtml(contract.tier_label)}</span>　` : "";
-    const unit = (contract.unit_count != null) ? `認養 ${contract.unit_count} 份　` : "";
     const scope = contract.zone_scope_mode === "zones" && contract.zone_names && contract.zone_names.length
       ? `範圍：${contract.zone_names.map(escapeHtml).join("、")}`
       : (contract.zone_scope_mode === "all_farm" ? "範圍：整場" : "");
+    // source==="direct_grant"：2026-11-22新增——沒有合約不等於沒有資料，已核准
+    // 的認養單位數/期間先顯示，收穫方案(保證/預估數量)待管理員確認後才會出現
+    // 在「我的收穫」頁籤，這裡不猜測、不预先顯示任何保證顆數。
+    if (contract.source === "direct_grant") {
+      const unit = (contract.adoption_unit_count != null)
+        ? `已核准認養 ${contract.adoption_unit_count} ${escapeHtml(contract.adoption_unit_label || "")}　` : "";
+      const until = contract.entitlement_ends_at ? `到期：${fmtDateTime(contract.entitlement_ends_at)}　` : "未設定到期日（永久有效）　";
+      wrap.innerHTML = `${unit}${until}${scope}　<span class="stale-note" style="display:inline;">收穫方案待確認</span>`;
+      return;
+    }
+    const tier = contract.tier_label ? `<span class="tier">${escapeHtml(contract.tier_label)}</span>　` : "";
+    const unit = (contract.unit_count != null) ? `認養 ${contract.unit_count} 份　` : "";
     wrap.innerHTML = `${tier}${unit}${scope}`;
   }
 
